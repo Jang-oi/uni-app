@@ -1,10 +1,11 @@
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { isMasterMode, validateConfig } from './config'
+import { config, disableMasterMode, enableMasterMode, isMasterMode, validateConfig } from './config'
 import { crawlerBrowser } from './crawler/browser'
 import { crawlerScheduler } from './crawler/scheduler'
 import { socketClient } from './socket/client'
+import { hasValidCredentials, loadCredentials, saveCredentials } from './store'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -22,12 +23,12 @@ function createWindow(): void {
 
   // 브라우저 윈도우 생성
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 860,
+    width: 1400,
+    height: 900,
     show: false,
-    title: `Uni App ${isMasterMode() ? '(Master)' : '(Client)'}`,
+    title: 'Uni App',
     icon: uniIcon,
-    resizable: false,
+    resizable: true,
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -39,7 +40,7 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
-    console.log(`[App] ${isMasterMode() ? 'Master' : 'Client'} 모드로 실행`)
+    console.log('[App] 일반 모드로 실행 (관리자 기능은 인증 후 사용 가능)')
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -73,18 +74,128 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  // 크롤러 수동 실행 (Master 모드 전용)
-  if (isMasterMode()) {
-    ipcMain.handle('crawler:run-vacation', async () => {
-      await crawlerScheduler.runVacationCrawler()
-      return { success: true }
-    })
+  // ==================== 관리자 인증 ====================
 
-    ipcMain.handle('crawler:run-task', async () => {
-      await crawlerScheduler.runTaskCrawler()
-      return { success: true }
-    })
-  }
+  /**
+   * 관리자 비밀번호 확인
+   */
+  ipcMain.handle('admin:verify-password', async (_event, password: string) => {
+    const isValid = password === config.adminPassword
+    console.log('[Admin] 비밀번호 인증:', isValid ? '성공' : '실패')
+    return { success: isValid }
+  })
+
+  // ==================== 자격증명 관리 ====================
+
+  /**
+   * 저장된 자격증명 로드
+   */
+  ipcMain.handle('credentials:load', async () => {
+    const creds = loadCredentials()
+    console.log('[Credentials] 자격증명 로드')
+    return { success: true, data: creds }
+  })
+
+  /**
+   * 자격증명 저장
+   */
+  ipcMain.handle('credentials:save', async (_event, credentials) => {
+    saveCredentials(credentials)
+    console.log('[Credentials] 자격증명 저장됨')
+    return { success: true }
+  })
+
+  /**
+   * 자격증명 유효성 확인
+   */
+  ipcMain.handle('credentials:validate', async () => {
+    const isValid = hasValidCredentials()
+    return { success: true, isValid }
+  })
+
+  // ==================== 크롤러 제어 ====================
+
+  /**
+   * 크롤러 스케줄러 시작 (Master 모드 활성화)
+   */
+  ipcMain.handle('crawler:start-scheduler', async () => {
+    if (isMasterMode()) {
+      console.log('[Crawler] 이미 실행 중입니다')
+      return { success: false, message: '이미 실행 중입니다' }
+    }
+
+    if (!hasValidCredentials()) {
+      console.log('[Crawler] 자격증명이 설정되지 않았습니다')
+      return { success: false, message: '자격증명을 먼저 설정하세요' }
+    }
+
+    // Socket.io로 Master 권한 요청
+    const claimed = await socketClient.claimMaster()
+    if (!claimed) {
+      console.log('[Crawler] Master 권한 획득 실패 (다른 PC가 실행 중)')
+      return { success: false, message: '다른 PC에서 이미 크롤러가 실행 중입니다' }
+    }
+
+    enableMasterMode()
+    crawlerScheduler.start()
+    console.log('[Crawler] 스케줄러 시작됨')
+
+    return { success: true }
+  })
+
+  /**
+   * 크롤러 스케줄러 정지 (Master 모드 비활성화)
+   */
+  ipcMain.handle('crawler:stop-scheduler', async () => {
+    if (!isMasterMode()) {
+      console.log('[Crawler] 실행 중이 아닙니다')
+      return { success: false, message: '실행 중이 아닙니다' }
+    }
+
+    crawlerScheduler.stop()
+    crawlerBrowser.destroy()
+    disableMasterMode()
+
+    // Socket.io로 Master 권한 반납
+    socketClient.releaseMaster()
+
+    console.log('[Crawler] 스케줄러 정지됨')
+    return { success: true }
+  })
+
+  /**
+   * 휴가 크롤러 수동 실행
+   */
+  ipcMain.handle('crawler:run-vacation', async () => {
+    if (!hasValidCredentials()) {
+      return { success: false, message: '자격증명을 먼저 설정하세요' }
+    }
+
+    await crawlerScheduler.runVacationCrawler()
+    return { success: true }
+  })
+
+  /**
+   * 업무 크롤러 수동 실행
+   */
+  ipcMain.handle('crawler:run-task', async () => {
+    if (!hasValidCredentials()) {
+      return { success: false, message: '자격증명을 먼저 설정하세요' }
+    }
+
+    await crawlerScheduler.runTaskCrawler()
+    return { success: true }
+  })
+
+  /**
+   * 크롤러 상태 확인
+   */
+  ipcMain.handle('crawler:status', async () => {
+    return {
+      success: true,
+      isRunning: isMasterMode()
+    }
+  })
 
   // 메인 윈도우 생성
   createWindow()
@@ -97,12 +208,6 @@ app.whenReady().then(() => {
 
   // TODO: HyperV 모니터 시작 (모든 앱)
   // hypervMonitor.start()
-
-  // Master 모드일 때만 크롤러 시작
-  if (isMasterMode()) {
-    console.log('[App] Master 모드 - 크롤러 기능 활성화')
-    crawlerScheduler.start()
-  }
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -118,7 +223,7 @@ app.on('window-all-closed', () => {
   // Socket 연결 해제
   socketClient.disconnect()
 
-  // 크롤러 정지
+  // 크롤러 정지 (실행 중이었다면)
   if (isMasterMode()) {
     crawlerScheduler.stop()
     crawlerBrowser.destroy()

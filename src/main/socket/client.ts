@@ -35,6 +35,40 @@ class SocketClient {
   }
 
   /**
+   * Master 권한 요청
+   */
+  async claimMaster(): Promise<boolean> {
+    if (!this.socket || !this.socket.connected) {
+      console.warn('[Socket] 서버 연결되지 않음')
+      return false
+    }
+
+    return new Promise((resolve) => {
+      this.socket!.emit('master:claim', { hostname: os.hostname() }, (response: { success: boolean }) => {
+        if (response.success) {
+          console.log('[Socket] Master 권한 획득 성공')
+          resolve(true)
+        } else {
+          console.log('[Socket] Master 권한 획득 실패 (다른 PC가 실행 중)')
+          resolve(false)
+        }
+      })
+    })
+  }
+
+  /**
+   * Master 권한 반납
+   */
+  releaseMaster(): void {
+    if (!this.socket || !this.socket.connected) {
+      return
+    }
+
+    this.socket.emit('master:release', { hostname: os.hostname() })
+    console.log('[Socket] Master 권한 반납')
+  }
+
+  /**
    * 이벤트 리스너 설정
    */
   private setupEventListeners(): void {
@@ -47,7 +81,6 @@ class SocketClient {
       // 클라이언트 정보 전송
       this.socket?.emit('client:connect', {
         hostname: os.hostname(),
-        appMode: config.appMode,
         timestamp: new Date().toISOString()
       })
     })
@@ -99,6 +132,12 @@ class SocketClient {
       this.sendToRenderer('hyperv:request-received', data)
 
       // TODO: Windows 알림 표시
+    })
+
+    // Master 권한 강제 해제 (다른 PC가 Master 요청)
+    this.socket.on('master:revoked', (data) => {
+      console.log('[Socket] Master 권한이 다른 PC에게 넘어감:', data.newMasterHostname)
+      this.sendToRenderer('master:revoked', data)
     })
   }
 

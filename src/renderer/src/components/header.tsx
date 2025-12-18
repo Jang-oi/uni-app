@@ -10,7 +10,6 @@ interface HeaderProps {
 }
 
 const tabs = [
-  { id: '홈', label: '홈' },
   { id: '일정', label: '일정' },
   {
     id: '업무',
