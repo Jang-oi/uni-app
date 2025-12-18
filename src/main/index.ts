@@ -1,24 +1,38 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { config, isMasterMode, validateConfig } from './config'
+import { socketClient } from './socket/client'
+
+let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+  // 설정 유효성 검사
+  const validation = validateConfig()
+  if (!validation.valid) {
+    console.error('[Config] 설정 오류:')
+    validation.errors.forEach((error) => console.error('  -', error))
+  }
+
+  // 브라우저 윈도우 생성
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 860,
     show: false,
+    title: `Uni App ${isMasterMode() ? '(Master)' : '(Client)'}`,
+    resizable: true,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      nodeIntegration: false,
+      contextIsolation: true
     }
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow?.show()
+    console.log(`[App] ${isMasterMode() ? 'Master' : 'Client'} 모드로 실행`)
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -52,7 +66,24 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  // 메인 윈도우 생성
   createWindow()
+
+  // Socket.io 클라이언트 연결
+  if (mainWindow) {
+    socketClient.setMainWindow(mainWindow)
+    socketClient.connect()
+  }
+
+  // TODO: HyperV 모니터 시작 (모든 앱)
+  // hypervMonitor.start()
+
+  // Master 모드일 때만 크롤러 시작
+  if (isMasterMode()) {
+    console.log('[App] Master 모드 - 크롤러 기능 활성화')
+    // TODO: 크롤러 스케줄러 시작
+    // crawlerScheduler.start()
+  }
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -65,6 +96,12 @@ app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  // Socket 연결 해제
+  socketClient.disconnect()
+
+  // TODO: HyperV 모니터 정지
+  // hypervMonitor.stop()
+
   if (process.platform !== 'darwin') {
     app.quit()
   }

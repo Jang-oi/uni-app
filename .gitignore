@@ -7,3 +7,6 @@ out
 
 # Project exclude paths
 /src/preload/index.d.ts
+
+.idea
+.claude
