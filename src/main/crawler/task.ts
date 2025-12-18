@@ -4,6 +4,7 @@
  */
 
 import { config } from '../config'
+import { loadCredentials } from '../store'
 import { crawlerBrowser } from './browser'
 
 interface TaskData {
@@ -26,10 +27,12 @@ class TaskCrawler {
     try {
       // 브라우저 초기화
       await crawlerBrowser.init()
-      // 업무 사이트 이동
-      const siteUrl = config.taskSiteUrl
+
+      // 자격증명 로드
+      const credentials = loadCredentials()
+      const siteUrl = credentials.taskSite.url
       if (!siteUrl) {
-        throw new Error('TASK_SITE_URL이 설정되지 않았습니다')
+        throw new Error('업무 사이트 URL이 설정되지 않았습니다')
       }
 
       await crawlerBrowser.navigateTo(siteUrl)
@@ -42,9 +45,9 @@ class TaskCrawler {
       }
 
       // 팀원 목록
-      const teamMembers = config.teamMembers || []
+      const teamMembers = credentials.teamMembers
       if (teamMembers.length === 0) {
-        console.warn('[TaskCrawler] TEAM_MEMBERS가 설정되지 않았습니다')
+        console.warn('[TaskCrawler] 팀 멤버가 설정되지 않았습니다')
         return []
       }
 

@@ -4,6 +4,7 @@
  */
 
 import { config } from '../config'
+import { loadCredentials } from '../store'
 import { crawlerBrowser } from './browser'
 
 interface VacationData {
@@ -25,10 +26,11 @@ class VacationCrawler {
       // 브라우저 초기화
       await crawlerBrowser.init()
 
-      // 휴가 사이트 이동
-      const siteUrl = config.vacationSiteUrl
+      // 자격증명 로드
+      const credentials = loadCredentials()
+      const siteUrl = credentials.vacationSite.url
       if (!siteUrl) {
-        throw new Error('VACATION_SITE_URL이 설정되지 않았습니다')
+        throw new Error('휴가 사이트 URL이 설정되지 않았습니다')
       }
 
       await crawlerBrowser.navigateTo(siteUrl)

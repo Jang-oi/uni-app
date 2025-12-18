@@ -3,13 +3,13 @@
  * node-cron을 사용한 주기적 크롤링 실행
  */
 
-import cron from 'node-cron'
+import cron, { ScheduledTask } from 'node-cron'
 import { taskCrawler } from './task'
 import { vacationCrawler } from './vacation'
 
 class CrawlerScheduler {
-  private vacationJob: cron.ScheduledTask | null = null
-  private taskJob: cron.ScheduledTask | null = null
+  private vacationJob: ScheduledTask | null = null
+  private taskJob: ScheduledTask | null = null
 
   /**
    * 스케줄러 시작
