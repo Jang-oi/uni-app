@@ -18,6 +18,14 @@ const api = {
   },
   onHypervRequest: (callback: (data: any) => void) => {
     ipcRenderer.on('hyperv:request-received', (_event, data) => callback(data))
+  },
+
+  // 크롤러 수동 실행 (Master 모드 전용)
+  runVacationCrawler: async () => {
+    return await ipcRenderer.invoke('crawler:run-vacation')
+  },
+  runTaskCrawler: async () => {
+    return await ipcRenderer.invoke('crawler:run-task')
   }
 }
 

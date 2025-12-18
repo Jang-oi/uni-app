@@ -3,24 +3,30 @@ import { AnimatePresence } from 'motion/react'
 import { Header } from '@/components/header'
 import { AdminPage } from '@/pages/admin-page'
 import { CalendarPage } from '@/pages/calendar-page'
-import { TasksPage } from '@/pages/tasks-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
+import { PersonalTasksPage } from './pages/personal-tasks-page'
+import { TeamTasksPage } from './pages/team-tasks-page'
+import { VersionPage } from './pages/version-page'
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('홈')
+  const [activeTab, setActiveTab] = useState('일정')
 
   const renderPage = () => {
     switch (activeTab) {
       case '일정':
         return <CalendarPage key="calendar" />
-      case '업무':
-        return <TasksPage key="tasks" />
+      case '팀업무':
+        return <TeamTasksPage key="team-tasks" />
+      case '개인업무':
+        return <PersonalTasksPage key="personal-tasks" />
       case '가상머신':
         return <VirtualMachinesPage key="vm" />
+      case '버전관리':
+        return <VersionPage key="version" />
       case '관리자':
         return <AdminPage key="admin" />
       default:
-        return <TasksPage key="tasks" />
+        return <CalendarPage key="calendar" />
     }
   }
 

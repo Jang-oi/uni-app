@@ -32,32 +32,46 @@ export function AdminPage() {
     vacation: { running: false, lastRun: '2024-01-15 09:00:12', status: 'success' }
   })
 
-  const handleStartWorkCrawler = () => {
+  const handleStartWorkCrawler = async () => {
     setCrawlerStatus((prev) => ({
       ...prev,
       work: { ...prev.work, running: true }
     }))
-    // TODO: 실제 크롤러 시작 로직
-    setTimeout(() => {
+
+    try {
+      await window.api.runTaskCrawler()
       setCrawlerStatus((prev) => ({
         ...prev,
         work: { running: false, lastRun: new Date().toLocaleString('ko-KR'), status: 'success' }
       }))
-    }, 3000)
+    } catch (error) {
+      console.error('[AdminPage] 업무 크롤러 실행 오류:', error)
+      setCrawlerStatus((prev) => ({
+        ...prev,
+        work: { running: false, lastRun: new Date().toLocaleString('ko-KR'), status: 'error' }
+      }))
+    }
   }
 
-  const handleStartVacationCrawler = () => {
+  const handleStartVacationCrawler = async () => {
     setCrawlerStatus((prev) => ({
       ...prev,
       vacation: { ...prev.vacation, running: true }
     }))
-    // TODO: 실제 크롤러 시작 로직
-    setTimeout(() => {
+
+    try {
+      await window.api.runVacationCrawler()
       setCrawlerStatus((prev) => ({
         ...prev,
         vacation: { running: false, lastRun: new Date().toLocaleString('ko-KR'), status: 'success' }
       }))
-    }, 3000)
+    } catch (error) {
+      console.error('[AdminPage] 휴가 크롤러 실행 오류:', error)
+      setCrawlerStatus((prev) => ({
+        ...prev,
+        vacation: { running: false, lastRun: new Date().toLocaleString('ko-KR'), status: 'error' }
+      }))
+    }
   }
 
   const handleSaveCredentials = () => {
@@ -74,8 +88,7 @@ export function AdminPage() {
       className="p-8 space-y-6"
     >
       <div>
-        <h1 className="text-3xl font-semibold text-slate-900 mb-2">일정/휴가</h1>
-        <p className="text-slate-600">팀원들의 일정과 휴가를 확인하세요</p>
+        <h1 className="text-3xl font-semibold text-slate-900 mb-2">관리자</h1>
       </div>
 
       <div className="grid grid-cols-2 gap-6">

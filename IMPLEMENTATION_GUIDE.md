@@ -7,12 +7,14 @@
 **진행률**: ~25% (UI 레이아웃 완료, 데이터 연동 미완)
 
 ✅ **완료**
+
 - Electron-Vite 기본 구조
 - React + TypeScript + Tailwind
 - UI 컴포넌트 (shadcn/ui)
 - 4개 페이지 레이아웃
 
 ❌ **미완**
+
 - Electron 메인 프로세스 확장
 - Socket.io 연동
 - 상태 관리
@@ -23,6 +25,7 @@
 ## Phase 1: Electron 메인 프로세스 구조 (Master/Client 모드)
 
 ### 📁 디렉토리 구조
+
 ```
 src/main/
 ├── index.ts              # 진입점 (현재 기본만 존재)
@@ -44,12 +47,14 @@ src/main/
 ```
 
 ### 🔧 필요 패키지
+
 ```bash
 pnpm add socket.io-client node-cron
 pnpm add -D @types/node-cron
 ```
 
 ### 📝 환경 설정 (.env)
+
 ```env
 # 앱 모드 (Master = 크롤러 포함)
 APP_MODE=client  # client | master
@@ -64,7 +69,9 @@ TEAM_MEMBERS=홍길동,김철수,이영희
 ```
 
 ### 구현 핵심
+
 **main/index.ts**
+
 ```typescript
 const isMaster = process.env.APP_MODE === 'master'
 
@@ -74,7 +81,7 @@ app.whenReady().then(() => {
   hypervMonitor.start()
 
   if (isMaster) {
-    crawlerScheduler.start()  // Master만 크롤러 실행
+    crawlerScheduler.start() // Master만 크롤러 실행
   }
 })
 ```
@@ -84,11 +91,13 @@ app.whenReady().then(() => {
 ## Phase 2: Socket.io 클라이언트 (양방향 통신)
 
 ### 📁 파일
+
 ```
 src/main/socket/client.ts
 ```
 
 ### 구현 핵심
+
 ```typescript
 import { io } from 'socket.io-client'
 
@@ -115,6 +124,7 @@ class SocketClient {
 ```
 
 ### Renderer ↔ Main IPC
+
 ```typescript
 // preload/index.ts
 contextBridge.exposeInMainWorld('electron', {
@@ -128,6 +138,7 @@ contextBridge.exposeInMainWorld('electron', {
 ## Phase 3: 크롤러 모듈 (Master 전용)
 
 ### 📁 파일
+
 ```
 src/main/crawler/
 ├── scheduler.ts
@@ -139,6 +150,7 @@ src/main/crawler/
 ### 구현 핵심
 
 **scheduler.ts**
+
 ```typescript
 import cron from 'node-cron'
 
@@ -158,13 +170,14 @@ class CrawlerScheduler {
 ```
 
 **browser.ts (BrowserWindow 크롤링)**
+
 ```typescript
 class CrawlerBrowser {
   window: BrowserWindow
 
   async init() {
     this.window = new BrowserWindow({
-      show: false,  // 숨김 모드
+      show: false, // 숨김 모드
       webPreferences: { contextIsolation: true }
     })
   }
@@ -180,6 +193,7 @@ class CrawlerBrowser {
 ```
 
 **vacation.ts**
+
 ```typescript
 class VacationCrawler {
   async crawl() {
@@ -216,6 +230,7 @@ class VacationCrawler {
 ## Phase 4: HyperV 모니터 (모든 앱)
 
 ### 📁 파일
+
 ```
 src/main/hyperv/
 ├── monitor.ts
@@ -225,6 +240,7 @@ src/main/hyperv/
 ### 구현 핵심
 
 **monitor.ts**
+
 ```typescript
 import { exec } from 'child_process'
 
@@ -269,6 +285,7 @@ class HypervMonitor {
 ## Phase 5: 상태 관리 (Zustand)
 
 ### 📁 파일
+
 ```
 src/renderer/src/stores/
 ├── vacation.ts
@@ -277,6 +294,7 @@ src/renderer/src/stores/
 ```
 
 ### 🔧 패키지
+
 ```bash
 pnpm add zustand
 ```
@@ -284,6 +302,7 @@ pnpm add zustand
 ### 구현 핵심
 
 **stores/task.ts**
+
 ```typescript
 import { create } from 'zustand'
 
@@ -303,11 +322,12 @@ window.electron.onTaskUpdated((_, data) => {
 })
 ```
 
-**pages/tasks-page.tsx**
+**pages/team-tasks-page.tsx**
+
 ```typescript
 import { useTaskStore } from '@/stores/task'
 
-export function TasksPage() {
+export function TeamTasksPage() {
   const tasks = useTaskStore((state) => state.tasks)  // 실시간 데이터
 
   return <Table data={tasks} />
@@ -319,6 +339,7 @@ export function TasksPage() {
 ## Phase 6: Express 서버 (별도 프로젝트)
 
 ### 📁 디렉토리
+
 ```
 team-dashboard-server/
 ├── src/
@@ -335,6 +356,7 @@ team-dashboard-server/
 ```
 
 ### 🔧 패키지
+
 ```bash
 pnpm init
 pnpm add express socket.io @prisma/client cors
@@ -344,6 +366,7 @@ pnpm add -D typescript @types/express @types/node prisma
 ### 구현 핵심
 
 **index.ts**
+
 ```typescript
 import express from 'express'
 import { createServer } from 'http'
@@ -385,6 +408,7 @@ server.listen(3000)
 ```
 
 **prisma/schema.prisma**
+
 ```prisma
 datasource db {
   provider = "sqlite"
@@ -421,6 +445,7 @@ model HypervStatus {
 ## 실행 순서
 
 ### 1단계: 환경 설정
+
 ```bash
 # Electron App
 cd uni-app
@@ -436,12 +461,14 @@ npx prisma migrate dev
 ```
 
 ### 2단계: 서버 시작
+
 ```bash
 cd team-dashboard-server
 pnpm dev  # http://localhost:3000
 ```
 
 ### 3단계: Electron App 시작
+
 ```bash
 # Client 모드 (일반 팀원)
 cd uni-app
@@ -456,18 +483,21 @@ APP_MODE=master pnpm dev
 ## 다음 단계 체크리스트
 
 ### Phase 1-2 (기초)
+
 - [ ] .env 설정 파일 생성
 - [ ] Socket.io 클라이언트 구현
 - [ ] IPC 통신 설정 (preload)
 - [ ] Zustand 상태 관리
 
 ### Phase 3-4 (고급)
+
 - [ ] 크롤러 스케줄러 (Master)
 - [ ] BrowserWindow 크롤링
 - [ ] HyperV 모니터 (PowerShell)
 - [ ] 알림 시스템
 
 ### Phase 5-6 (백엔드)
+
 - [ ] Express 서버 생성
 - [ ] Prisma + SQLite 설정
 - [ ] Socket.io 서버

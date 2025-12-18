@@ -1,10 +1,16 @@
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { config, isMasterMode, validateConfig } from './config'
+import { isMasterMode, validateConfig } from './config'
+import { crawlerBrowser } from './crawler/browser'
+import { crawlerScheduler } from './crawler/scheduler'
 import { socketClient } from './socket/client'
 
 let mainWindow: BrowserWindow | null = null
+
+export const uniIcon = is.dev
+  ? join(__dirname, '../../build/unicorn3.ico') // 개발 환경 경로
+  : join(process.resourcesPath, 'unicorn3.ico') // 빌드된 앱(프로덕션) 경로
 
 function createWindow(): void {
   // 설정 유효성 검사
@@ -20,7 +26,8 @@ function createWindow(): void {
     height: 860,
     show: false,
     title: `Uni App ${isMasterMode() ? '(Master)' : '(Client)'}`,
-    resizable: true,
+    icon: uniIcon,
+    resizable: false,
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -66,6 +73,19 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  // 크롤러 수동 실행 (Master 모드 전용)
+  if (isMasterMode()) {
+    ipcMain.handle('crawler:run-vacation', async () => {
+      await crawlerScheduler.runVacationCrawler()
+      return { success: true }
+    })
+
+    ipcMain.handle('crawler:run-task', async () => {
+      await crawlerScheduler.runTaskCrawler()
+      return { success: true }
+    })
+  }
+
   // 메인 윈도우 생성
   createWindow()
 
@@ -81,8 +101,7 @@ app.whenReady().then(() => {
   // Master 모드일 때만 크롤러 시작
   if (isMasterMode()) {
     console.log('[App] Master 모드 - 크롤러 기능 활성화')
-    // TODO: 크롤러 스케줄러 시작
-    // crawlerScheduler.start()
+    crawlerScheduler.start()
   }
 
   app.on('activate', function () {
@@ -98,6 +117,12 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   // Socket 연결 해제
   socketClient.disconnect()
+
+  // 크롤러 정지
+  if (isMasterMode()) {
+    crawlerScheduler.stop()
+    crawlerBrowser.destroy()
+  }
 
   // TODO: HyperV 모니터 정지
   // hypervMonitor.stop()

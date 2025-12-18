@@ -5,12 +5,12 @@
 import { create } from 'zustand'
 
 export interface Task {
-  id: string
-  title: string
-  assignee: string
-  status: 'pending' | 'in-progress' | 'completed'
-  priority: 'high' | 'medium' | 'low'
-  dueDate: string
+  SR_IDX: string
+  REQ_TITLE: string
+  CM_NAME: string
+  STATUS: string
+  WRITER: string
+  REQ_DATE_ALL: string
 }
 
 export interface TaskAlert {

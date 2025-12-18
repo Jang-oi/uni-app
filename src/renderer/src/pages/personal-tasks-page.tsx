@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollArea } from '../components/ui/scroll-area'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
 import { useTaskStore, type Task } from '../stores/task'
 
 const priorityConfig = {
@@ -33,8 +34,12 @@ const statusConfig = {
   completed: { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', label: '완료' }
 }
 
-export function TasksPage() {
-  // Zustand 스토어에서 실시간 데이터 가져오기
+function truncateText(text: string, maxLength: number) {
+  if (!text || text.length <= maxLength) return { isTruncated: false, displayText: text || '' }
+  return { isTruncated: true, displayText: text.slice(0, maxLength) + '...' }
+}
+
+export function PersonalTasksPage() {
   const tasks = useTaskStore((state) => state.tasks)
 
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -52,16 +57,34 @@ export function TasksPage() {
       }
     },
     {
-      accessorKey: 'title',
-      header: ({ column }) => {
+      accessorKey: 'CM_NAME',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-1 text-xs font-medium w-full justify-start"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          고객사
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const { displayText, isTruncated } = truncateText(row.original.CM_NAME, 8)
         return (
-          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-            제목
-            <HugeiconsIcon icon={ArrowUpDownIcon} className="ml-2 h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <span className="text-[11px] font-medium cursor-default block">{displayText}</span>
+              </TooltipTrigger>
+              {isTruncated && (
+                <TooltipContent>
+                  <p>{row.original.CM_NAME}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         )
-      },
-      cell: ({ row }) => <div className="font-medium">{row.getValue('title')}</div>
+      }
     },
     {
       accessorKey: 'assignee',
@@ -121,8 +144,8 @@ export function TasksPage() {
       className="p-8 space-y-6"
     >
       <div>
-        <h1 className="text-3xl font-semibold text-slate-900 mb-2">일정/휴가</h1>
-        <p className="text-slate-600">팀원들의 일정과 휴가를 확인하세요</p>
+        <h1 className="text-3xl font-semibold text-slate-900 mb-2">개인 업무</h1>
+        <p className="text-slate-600">{}님의 업무를 확인하세요.</p>
       </div>
       <div className="flex items-center py-4">
         <Input
