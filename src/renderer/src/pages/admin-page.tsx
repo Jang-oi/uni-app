@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label'
 export function AdminPage() {
   // ==================== 인증 상태 ====================
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [adminPassword, setAdminPassword] = useState('')
+  const [adminPassword, setAdminPassword] = useState(import.meta.env.VITE_DEV_ADMIN_PASSWORD || '')
   const [authError, setAuthError] = useState('')
   const [showAdminPassword, setShowAdminPassword] = useState(false)
 
@@ -226,7 +226,13 @@ export function AdminPage() {
   // ==================== 인증되지 않은 경우: 비밀번호 입력 화면 ====================
   if (!isAuthenticated) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center min-h-screen p-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-center justify-center mt-20"
+      >
         <Card className="w-full max-w-md">
           <CardHeader>
             <div className="flex flex-col items-center gap-4">

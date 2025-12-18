@@ -3,6 +3,16 @@
  * 런타임 관리자 모드 지원
  */
 
+import { config as dotenvConfig } from 'dotenv'
+import { resolve } from 'path'
+
+// 개발 환경에서 .env.development 로드
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = resolve(__dirname, '../../.env.development')
+  dotenvConfig({ path: envPath })
+  console.log('[Config] .env.development 로드됨:', envPath)
+}
+
 export interface AppConfig {
   serverUrl: string
   adminPassword: string // 관리자 메뉴 접근 비밀번호
@@ -14,6 +24,8 @@ export interface AppConfig {
 export function loadConfig(): AppConfig {
   const serverUrl = process.env.SERVER_URL || 'http://localhost:3000'
   const adminPassword = process.env.ADMIN_PASSWORD || 'admin123' // 기본값 (운영 시 반드시 변경)
+
+  console.log('[Config] ADMIN_PASSWORD:', adminPassword)
 
   return {
     serverUrl,

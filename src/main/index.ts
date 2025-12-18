@@ -23,12 +23,12 @@ function createWindow(): void {
 
   // 브라우저 윈도우 생성
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: 800,
+    height: 860,
     show: false,
     title: 'Uni App',
     icon: uniIcon,
-    resizable: true,
+    resizable: false,
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

@@ -5,6 +5,11 @@ out
 .eslintcache
 *.log*
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # Project exclude paths
 /src/preload/index.d.ts
 
