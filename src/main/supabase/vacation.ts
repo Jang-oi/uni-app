@@ -78,7 +78,7 @@ export async function syncVacationsToSupabase(rawData: VacationRawData[]): Promi
 }
 
 /**
- * 월별 휴가 데이터 조회
+ * 월별 휴가 데이터 조회 (camelCase 변환)
  */
 export async function getVacationsByMonth(year: string, month: string) {
   try {
@@ -106,7 +106,22 @@ export async function getVacationsByMonth(year: string, month: string) {
     }
 
     console.log(`[Supabase:Vacation] ${data?.length ?? 0}건 조회 완료`)
-    return data ?? []
+
+    // snake_case를 camelCase로 변환
+    const transformedData = (data ?? []).map((item: any) => ({
+      useId: item.use_id,
+      usName: item.us_name,
+      deptName: item.dept_name,
+      itemName: item.item_name,
+      useSdate: item.use_sdate,
+      useEdate: item.use_edate,
+      useStime: item.use_stime,
+      useEtime: item.use_etime,
+      useDesc: item.use_desc,
+      useTimeTypeName: item.use_time_type_name
+    }))
+
+    return transformedData
   } catch (error) {
     console.error('[Supabase:Vacation] 조회 중 오류:', error)
     return []

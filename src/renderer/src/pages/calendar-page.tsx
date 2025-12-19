@@ -283,12 +283,12 @@ export function CalendarPage() {
                         ))}
 
                         {hiddenCount > 0 && (
-                          <button
+                          <Button
                             onClick={() => handleMoreClick(date)}
                             className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold hover:underline w-full text-left px-1.5"
                           >
                             +{hiddenCount}개 더보기
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>

@@ -1,9 +1,22 @@
 /**
  * 휴가 데이터 상태 관리 스토어 (Zustand)
+ * Supabase 직접 연동
  */
 
 import { create } from 'zustand'
-import { api, VacationDto } from '@/lib/api'
+
+export type VacationDto = {
+  useId: string
+  usName: string
+  deptName: string
+  itemName: string
+  useSdate: string // YYYY-MM-DD
+  useEdate: string // YYYY-MM-DD
+  useStime: string | null
+  useEtime: string | null
+  useDesc: string
+  useTimeTypeName?: string
+}
 
 type VacationStore = {
   // 상태
@@ -32,16 +45,16 @@ export const useVacationStore = create<VacationStore>((set) => ({
     set({ currentYear: year, currentMonth: month })
   },
 
-  // 휴가 데이터 조회
+  // 휴가 데이터 조회 (Supabase 직접 호출)
   fetchVacations: async (year: number, month: number) => {
     set({ isLoading: true, error: null })
 
     try {
-      const response = await api.vacation.getByMonth(year.toString(), month.toString().padStart(2, '0'))
+      const response = await window.api.getVacations(year.toString(), month.toString())
 
       if (response.success && response.data) {
         set({
-          vacations: response.data,
+          vacations: response.data as VacationDto[],
           currentYear: year,
           currentMonth: month,
           isLoading: false
