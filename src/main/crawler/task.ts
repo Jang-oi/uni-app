@@ -1,166 +1,97 @@
-/**
- * 업무 크롤러
- * 업무 관리 사이트에서 팀원별 업무 정보 조회
- */
-
-import { config } from '../config'
 import { loadCredentials } from '../store'
-import { crawlerBrowser } from './browser'
+import {BrowserWindow} from "electron";
+import {executeInBrowser, waitForSelector} from "./browserUtil";
 
-interface TaskData {
-  taskId: string
-  title: string
-  assignee: string
-  status: string
-  priority: string
-  dueDate: string
-  description: string
-}
-
-class TaskCrawler {
-  /**
-   * 업무 데이터 크롤링 (모든 팀원)
-   */
-  async crawl(): Promise<TaskData[]> {
-    console.log('[TaskCrawler] 크롤링 시작')
-
-    try {
-      // 브라우저 초기화
-      await crawlerBrowser.init()
-
-      // 자격증명 로드
-      const credentials = loadCredentials()
-      const siteUrl = credentials.taskSite.url
-      if (!siteUrl) {
-        throw new Error('업무 사이트 URL이 설정되지 않았습니다')
-      }
-
-      await crawlerBrowser.navigateTo(siteUrl)
-
-      // 로그인 확인
-      const isLoggedIn = await crawlerBrowser.checkLogin()
-      if (!isLoggedIn) {
-        console.warn('[TaskCrawler] 로그인 필요 - 크롤링 중단')
-        return []
-      }
-
-      // 팀원 목록
-      const teamMembers = credentials.teamMembers
-      if (teamMembers.length === 0) {
-        console.warn('[TaskCrawler] 팀 멤버가 설정되지 않았습니다')
-        return []
-      }
-
-      // 각 팀원의 업무 크롤링
-      const allTasks: TaskData[] = []
-      for (const member of teamMembers) {
-        const tasks = await this.crawlMemberTasks(member)
-        allTasks.push(...tasks)
-      }
-
-      console.log(`[TaskCrawler] 크롤링 완료: ${allTasks.length}개 업무`)
-
-      // 서버로 전송
-      await this.syncToServer(allTasks)
-
-      return allTasks
-    } catch (error) {
-      console.error('[TaskCrawler] 크롤링 오류:', error)
-      return []
+const createTaskBrowser = async (show = false): Promise<BrowserWindow> => {
+  return new BrowserWindow({
+    width: 1280,
+    height: 800,
+    show: show,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
     }
-  }
-
-  /**
-   * 특정 팀원의 업무 크롤링
-   */
-  private async crawlMemberTasks(memberName: string): Promise<TaskData[]> {
-    console.log(`[TaskCrawler] ${memberName} 업무 조회 중...`)
-
-    try {
-      // 담당자 필터 적용 (실제 사이트 구조에 맞게 수정 필요)
-      await crawlerBrowser.executeScript(`
-        (function() {
-          const assigneeFilter = document.querySelector('#assignee-filter');
-          if (assigneeFilter) {
-            assigneeFilter.value = '${memberName}';
-            assigneeFilter.dispatchEvent(new Event('change'));
-          }
-        })()
-      `)
-
-      // 업무 목록 로드 대기
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // 업무 데이터 파싱
-      const tasks = await this.parseTasks(memberName)
-
-      console.log(`[TaskCrawler] ${memberName}: ${tasks.length}개 업무 발견`)
-
-      return tasks
-    } catch (error) {
-      console.error(`[TaskCrawler] ${memberName} 크롤링 오류:`, error)
-      return []
-    }
-  }
-
-  /**
-   * 업무 데이터 파싱
-   */
-  private async parseTasks(assignee: string): Promise<TaskData[]> {
-    const tasks = await crawlerBrowser.executeScript<TaskData[]>(`
-      (function() {
-        // 실제 사이트 구조에 맞게 수정 필요
-        const items = Array.from(document.querySelectorAll('.task-item'));
-
-        return items.map(item => {
-          const taskIdElement = item.querySelector('.task-id');
-          const titleElement = item.querySelector('.task-title');
-          const statusElement = item.querySelector('.task-status');
-          const priorityElement = item.querySelector('.task-priority');
-          const dueDateElement = item.querySelector('.due-date');
-          const descElement = item.querySelector('.task-description');
-
-          return {
-            taskId: taskIdElement?.textContent?.trim() || '',
-            title: titleElement?.textContent?.trim() || '',
-            assignee: '${assignee}',
-            status: statusElement?.textContent?.trim() || '',
-            priority: priorityElement?.textContent?.trim() || 'medium',
-            dueDate: dueDateElement?.textContent?.trim() || '',
-            description: descElement?.textContent?.trim() || ''
-          };
-        }).filter(t => t.taskId); // 빈 항목 제외
-      })()
-    `)
-
-    return tasks
-  }
-
-  /**
-   * 서버로 데이터 동기화
-   */
-  private async syncToServer(tasks: TaskData[]): Promise<void> {
-    try {
-      const response = await fetch(`${config.serverUrl}/api/tasks/sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ tasks })
-      })
-
-      if (!response.ok) {
-        throw new Error(`서버 응답 오류: ${response.status}`)
-      }
-
-      console.log('[TaskCrawler] 서버 동기화 완료')
-    } catch (error) {
-      console.error('[TaskCrawler] 서버 동기화 오류:', error)
-    }
-  }
+  })
 }
 
 /**
- * 싱글톤 인스턴스
+ * 업무 사이트 로그인 수행
  */
-export const taskCrawler = new TaskCrawler()
+const performTaskLogin = async (win: any, id: string, pw: string) => {
+  console.log('[Task] 로그인 시도 중...')
+  await executeInBrowser(win, `
+    (function() {
+      const idInput = document.getElementById('login_id');
+      const pwInput = document.getElementById('password');
+      const loginBtn = document.getElementsByClassName('btn-login')[0];
+      if (idInput && pwInput && loginBtn) {
+        idInput.value = '${id}';
+        pwInput.value = '${pw}';
+        loginBtn.click();
+      }
+    })()
+  `)
+}
+
+/**
+ * 업무 데이터 조회 API 호출 (POST)
+ */
+const fetchTaskData = async (win: any) => {
+  // 사용자가 요청했던 POST 데이터 구조 적용
+  const requestBody = {
+    coRegno: "1048621562",
+    deptId: "000909",
+    // 업무 크롤링에 필요한 다른 파라미터가 있다면 여기 수정
+    userStatus: "10",
+    procSts: "S"
+  }
+
+  return await executeInBrowser(win, `
+    fetch('/api/task/list/url', { // 업무용 실제 API 엔드포인트로 수정 필요
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(${JSON.stringify(requestBody)})
+    }).then(res => res.json())
+  `)
+}
+
+/**
+ * 메인 업무 크롤링 실행 함수
+ */
+export const runTaskCrawler = async () => {
+  let browser: any = null
+
+  try {
+    const credentials = loadCredentials()
+    const { url, id, password } = credentials.taskSite
+
+    // 1. 브라우저 시작
+    browser = await createTaskBrowser(true)
+    await browser.loadURL(url)
+
+    // 2. 로그인 수행
+    await performTaskLogin(browser, id, password)
+
+    // 3. 로그인 후 특정 엘리먼트(예: 메뉴 버튼) 대기
+    const menuReady = await waitForSelector(browser, 'a.id-svcLink[svcid="TASK"]') // svcid는 실제 업무 서비스 코드로 변경
+    if (!menuReady) throw new Error('업무 사이트 로그인 확인 실패')
+
+    // 4. 업무 메뉴 클릭 (필요 시)
+    await executeInBrowser(browser, `document.querySelector('a.id-svcLink[svcid="TASK"]').click()`)
+
+    // 5. 페이지 이동 및 대시보드 로딩 대기
+    const dashboardReady = await waitForSelector(browser, 'div.dashboard')
+    if (!dashboardReady) throw new Error('업무 대시보드 로딩 실패')
+
+    // 6. API 호출 및 결과 반환
+    const result = await fetchTaskData(browser)
+    console.log('[Task] 데이터 수집 완료:', result)
+
+    return result
+  } catch (error) {
+    console.error('[Task] 크롤링 오류:', error)
+    return null // TS7030 방지
+  } finally {
+    // if (browser) browser.destroy()
+  }
+}

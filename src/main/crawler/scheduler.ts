@@ -4,8 +4,8 @@
  */
 
 import cron, { ScheduledTask } from 'node-cron'
-import { taskCrawler } from './task'
-import { vacationCrawler } from './vacation'
+// import { taskCrawler } from './task'
+// import { vacationCrawler } from './vacation'
 
 class CrawlerScheduler {
   private vacationJob: ScheduledTask | null = null
@@ -20,13 +20,13 @@ class CrawlerScheduler {
     // 휴가 크롤링: 09시, 12시, 18시
     this.vacationJob = cron.schedule('0 9,12,18 * * *', async () => {
       console.log('[CrawlerScheduler] 휴가 크롤링 실행 (정기)')
-      await vacationCrawler.crawl()
+      // await vacationCrawler.crawl()
     })
 
     // 업무 크롤링: 매 1분 (운영 환경에서는 5분 또는 10분으로 조정 권장)
     this.taskJob = cron.schedule('*/1 * * * *', async () => {
       console.log('[CrawlerScheduler] 업무 크롤링 실행 (정기)')
-      await taskCrawler.crawl()
+      // await taskCrawler.crawl()
     })
 
     // 시작 시 즉시 1회 실행
@@ -44,10 +44,10 @@ class CrawlerScheduler {
 
     try {
       // 휴가 크롤링
-      await vacationCrawler.crawl()
+      // await vacationCrawler.crawl()
 
       // 업무 크롤링
-      await taskCrawler.crawl()
+      // await taskCrawler.crawl()
 
       console.log('[CrawlerScheduler] 초기 크롤링 완료')
     } catch (error) {
@@ -60,7 +60,7 @@ class CrawlerScheduler {
    */
   async runVacationCrawler(): Promise<void> {
     console.log('[CrawlerScheduler] 휴가 크롤링 수동 실행')
-    await vacationCrawler.crawl()
+    // await vacationCrawler.crawl()
   }
 
   /**
@@ -68,7 +68,7 @@ class CrawlerScheduler {
    */
   async runTaskCrawler(): Promise<void> {
     console.log('[CrawlerScheduler] 업무 크롤링 수동 실행')
-    await taskCrawler.crawl()
+    // await taskCrawler.crawl()
   }
 
   /**
@@ -97,12 +97,12 @@ class CrawlerScheduler {
     if (type === 'vacation' && this.vacationJob) {
       this.vacationJob.stop()
       this.vacationJob = cron.schedule(cronExpression, async () => {
-        await vacationCrawler.crawl()
+        // await vacationCrawler.crawl()
       })
     } else if (type === 'task' && this.taskJob) {
       this.taskJob.stop()
       this.taskJob = cron.schedule(cronExpression, async () => {
-        await taskCrawler.crawl()
+        // await taskCrawler.crawl()
       })
     }
   }

@@ -1,11 +1,11 @@
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { config, disableMasterMode, enableMasterMode, isMasterMode, validateConfig } from './config'
-import { crawlerBrowser } from './crawler/browser'
+import { config, disableMasterMode, enableMasterMode, isMasterMode } from './config'
 import { crawlerScheduler } from './crawler/scheduler'
 import { socketClient } from './socket/client'
 import { hasValidCredentials, loadCredentials, saveCredentials } from './store'
+import {runVacationCrawler} from "./crawler/vacation";
 
 let mainWindow: BrowserWindow | null = null
 
@@ -14,12 +14,6 @@ export const uniIcon = is.dev
   : join(process.resourcesPath, 'unicorn3.ico') // 빌드된 앱(프로덕션) 경로
 
 function createWindow(): void {
-  // 설정 유효성 검사
-  const validation = validateConfig()
-  if (!validation.valid) {
-    console.error('[Config] 설정 오류:')
-    validation.errors.forEach((error) => console.error('  -', error))
-  }
 
   // 브라우저 윈도우 생성
   mainWindow = new BrowserWindow({
@@ -85,7 +79,6 @@ app.whenReady().then(() => {
     return { success: isValid }
   })
 
-  // ==================== 자격증명 관리 ====================
 
   /**
    * 저장된 자격증명 로드
@@ -153,7 +146,6 @@ app.whenReady().then(() => {
     }
 
     crawlerScheduler.stop()
-    crawlerBrowser.destroy()
     disableMasterMode()
 
     // Socket.io로 Master 권한 반납
@@ -171,7 +163,7 @@ app.whenReady().then(() => {
       return { success: false, message: '자격증명을 먼저 설정하세요' }
     }
 
-    await crawlerScheduler.runVacationCrawler()
+    await runVacationCrawler();
     return { success: true }
   })
 
@@ -226,7 +218,6 @@ app.on('window-all-closed', () => {
   // 크롤러 정지 (실행 중이었다면)
   if (isMasterMode()) {
     crawlerScheduler.stop()
-    crawlerBrowser.destroy()
   }
 
   // TODO: HyperV 모니터 정지
