@@ -17,7 +17,7 @@ const createVacationBrowser = async (show = false): Promise<BrowserWindow> => {
 /**
  * 로그인 처리를 수행하는 함수
  */
-const performLogin = async (win: BrowserWindow, id: string, pw: string) => {
+const performLogin = async (win: BrowserWindow, id: string, pw: string): Promise<void> => {
   console.log('[Vacation] 로그인 시도 중...')
   await executeInBrowser(win, `
     (function() {
@@ -37,7 +37,7 @@ const performLogin = async (win: BrowserWindow, id: string, pw: string) => {
 /**
  * API를 통해 데이터를 조회하는 함수
  */
-const fetchVacationData = async (win: BrowserWindow) => {
+const fetchVacationData = async (win: BrowserWindow): Promise<unknown> => {
   const requestBody = {
     coRegno: "1048621562",
     deptId: "000909",
@@ -66,7 +66,7 @@ const fetchVacationData = async (win: BrowserWindow) => {
 /**
  * 메인 크롤링 실행 함수 (외부에서 호출)
  */
-export const runVacationCrawler = async () => {
+export const runVacationCrawler = async (): Promise<unknown> => {
   let browser: BrowserWindow | null = null
 
   try {

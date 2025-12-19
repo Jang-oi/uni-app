@@ -17,7 +17,7 @@ const createTaskBrowser = async (show = false): Promise<BrowserWindow> => {
 /**
  * 업무 사이트 로그인 수행
  */
-const performTaskLogin = async (win: any, id: string, pw: string) => {
+const performTaskLogin = async (win: BrowserWindow, id: string, pw: string): Promise<void> => {
   console.log('[Task] 로그인 시도 중...')
   await executeInBrowser(win, `
     (function() {
@@ -36,7 +36,7 @@ const performTaskLogin = async (win: any, id: string, pw: string) => {
 /**
  * 업무 데이터 조회 API 호출 (POST)
  */
-const fetchTaskData = async (win: any) => {
+const fetchTaskData = async (win: BrowserWindow): Promise<unknown> => {
   // 사용자가 요청했던 POST 데이터 구조 적용
   const requestBody = {
     coRegno: "1048621562",
@@ -58,8 +58,8 @@ const fetchTaskData = async (win: any) => {
 /**
  * 메인 업무 크롤링 실행 함수
  */
-export const runTaskCrawler = async () => {
-  let browser: any = null
+export const runTaskCrawler = async (): Promise<unknown> => {
+  let browser: BrowserWindow | null = null
 
   try {
     const credentials = loadCredentials()

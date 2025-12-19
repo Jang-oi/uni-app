@@ -1,11 +1,16 @@
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { config, disableMasterMode, enableMasterMode, isMasterMode } from './config'
-import { crawlerScheduler } from './crawler/scheduler'
+import { appConfig } from './config'
+import {
+  startScheduler,
+  stopScheduler,
+  runVacationCrawlerManually,
+  runTaskCrawlerManually,
+  getSchedulerStatus
+} from './crawler/scheduler'
 import { socketClient } from './socket/client'
 import { hasValidCredentials, loadCredentials, saveCredentials } from './store'
-import {runVacationCrawler} from "./crawler/vacation";
 
 let mainWindow: BrowserWindow | null = null
 
@@ -74,7 +79,7 @@ app.whenReady().then(() => {
    * 관리자 비밀번호 확인
    */
   ipcMain.handle('admin:verify-password', async (_event, password: string) => {
-    const isValid = password === config.adminPassword
+    const isValid = password === appConfig.adminPassword
     console.log('[Admin] 비밀번호 인증:', isValid ? '성공' : '실패')
     return { success: isValid }
   })
@@ -112,7 +117,8 @@ app.whenReady().then(() => {
    * 크롤러 스케줄러 시작 (Master 모드 활성화)
    */
   ipcMain.handle('crawler:start-scheduler', async () => {
-    if (isMasterMode()) {
+    const status = getSchedulerStatus()
+    if (status.isRunning) {
       console.log('[Crawler] 이미 실행 중입니다')
       return { success: false, message: '이미 실행 중입니다' }
     }
@@ -129,8 +135,7 @@ app.whenReady().then(() => {
       return { success: false, message: '다른 PC에서 이미 크롤러가 실행 중입니다' }
     }
 
-    enableMasterMode()
-    crawlerScheduler.start()
+    await startScheduler()
     console.log('[Crawler] 스케줄러 시작됨')
 
     return { success: true }
@@ -140,13 +145,13 @@ app.whenReady().then(() => {
    * 크롤러 스케줄러 정지 (Master 모드 비활성화)
    */
   ipcMain.handle('crawler:stop-scheduler', async () => {
-    if (!isMasterMode()) {
+    const status = getSchedulerStatus()
+    if (!status.isRunning) {
       console.log('[Crawler] 실행 중이 아닙니다')
       return { success: false, message: '실행 중이 아닙니다' }
     }
 
-    crawlerScheduler.stop()
-    disableMasterMode()
+    stopScheduler()
 
     // Socket.io로 Master 권한 반납
     socketClient.releaseMaster()
@@ -163,7 +168,7 @@ app.whenReady().then(() => {
       return { success: false, message: '자격증명을 먼저 설정하세요' }
     }
 
-    await runVacationCrawler();
+    await runVacationCrawlerManually()
     return { success: true }
   })
 
@@ -175,7 +180,7 @@ app.whenReady().then(() => {
       return { success: false, message: '자격증명을 먼저 설정하세요' }
     }
 
-    await crawlerScheduler.runTaskCrawler()
+    await runTaskCrawlerManually()
     return { success: true }
   })
 
@@ -183,9 +188,10 @@ app.whenReady().then(() => {
    * 크롤러 상태 확인
    */
   ipcMain.handle('crawler:status', async () => {
+    const status = getSchedulerStatus()
     return {
       success: true,
-      isRunning: isMasterMode()
+      isRunning: status.isRunning
     }
   })
 

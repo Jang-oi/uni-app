@@ -78,8 +78,11 @@ export function CalendarPage() {
     vacationData.forEach((vacation) => {
       if (processedVacations.has(vacation.useId)) return
 
-      const vacStartDate = new Date(vacation.useSdate)
-      const vacEndDate = new Date(vacation.useEdate)
+      // 날짜 문자열을 로컬 타임존으로 파싱 (YYYY-MM-DD 형식)
+      const [startYear, startMonth, startDay] = vacation.useSdate.split('-').map(Number)
+      const [endYear, endMonth, endDay] = vacation.useEdate.split('-').map(Number)
+      const vacStartDate = new Date(startYear, startMonth - 1, startDay)
+      const vacEndDate = new Date(endYear, endMonth - 1, endDay)
 
       // 시작 날짜의 문자열 키
       const startDateKey = vacation.useSdate
@@ -150,11 +153,11 @@ export function CalendarPage() {
   }
 
   const getVacationColor = (itemName: string) => {
-    if (itemName.includes("연차")) return "bg-blue-200 text-blue-900 border-blue-300"
-    if (itemName.includes("대체")) return "bg-green-200 text-green-900 border-green-300"
+    if (itemName.includes("연차")) return "bg-blue-500/90 text-white border-blue-600 shadow-sm"
+    if (itemName.includes("대체")) return "bg-emerald-500/90 text-white border-emerald-600 shadow-sm"
     if (itemName.includes("반차") || itemName.includes("오후") || itemName.includes("오전"))
-      return "bg-yellow-100 text-yellow-900 border-yellow-300"
-    return "bg-slate-200 text-slate-900 border-slate-300"
+      return "bg-amber-400/90 text-amber-900 border-amber-500 shadow-sm"
+    return "bg-slate-500/90 text-white border-slate-600 shadow-sm"
   }
 
   return (
@@ -212,7 +215,7 @@ export function CalendarPage() {
             return (
               <div
                 key={weekIndex}
-                className="flex-1 grid grid-cols-7 border-b border-slate-200 last:border-b-0 relative min-h-[100px]"
+                className="flex-1 grid grid-cols-7 border-b border-slate-200 last:border-b-0 relative min-h-[120px]"
               >
                 {week.map((date, dayIndex) => {
                   if (!date) return <div key={dayIndex} className="border-r border-slate-200 last:border-r-0" />
@@ -226,9 +229,17 @@ export function CalendarPage() {
 
                   // 이 날짜에 있는 모든 휴가 (툴팁용)
                   const allVacationsToday = vacationData.filter((v) => {
-                    const vStart = new Date(v.useSdate)
-                    const vEnd = new Date(v.useEdate)
-                    return date >= vStart && date <= vEnd
+                    const [sYear, sMonth, sDay] = v.useSdate.split('-').map(Number)
+                    const [eYear, eMonth, eDay] = v.useEdate.split('-').map(Number)
+                    const vStart = new Date(sYear, sMonth - 1, sDay)
+                    const vEnd = new Date(eYear, eMonth - 1, eDay)
+
+                    // 시간 요소를 제거한 날짜만 비교
+                    const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+                    const vStartDateOnly = new Date(vStart.getFullYear(), vStart.getMonth(), vStart.getDate())
+                    const vEndDateOnly = new Date(vEnd.getFullYear(), vEnd.getMonth(), vEnd.getDate())
+
+                    return currentDateOnly >= vStartDateOnly && currentDateOnly <= vEndDateOnly
                   })
 
                   const MAX_VISIBLE = 2
@@ -244,9 +255,9 @@ export function CalendarPage() {
                       {/* 날짜 숫자 */}
                       <div className="flex items-start justify-between mb-1">
                         <div
-                          className={`text-xs font-medium w-5 h-5 flex items-center justify-center rounded-full ${
+                          className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
                             isToday
-                              ? "bg-blue-600 text-white"
+                              ? "bg-blue-600 text-white ring-2 ring-blue-300"
                               : !isCurrentMonth
                                 ? "text-slate-400"
                                 : date.getDay() === 0
@@ -301,18 +312,40 @@ export function CalendarPage() {
                         const topOffset = 28 + rowPosition * 22
 
                         return (
-                          <div
-                            key={bar.vacation.useId}
-                            className={`absolute text-[10px] px-2 py-0.5 rounded font-medium truncate border ${getVacationColor(bar.vacation.itemName)}`}
-                            style={{
-                              left: "4px",
-                              width: `calc(${bar.span * 100}% - 8px)`,
-                              top: `${topOffset}px`,
-                              zIndex: 10 - barIndex,
-                            }}
-                          >
-                            {bar.displayText}
-                          </div>
+                          <TooltipProvider key={bar.vacation.useId}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className={`absolute text-[10px] px-2 py-1 rounded font-semibold truncate border cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md ${getVacationColor(bar.vacation.itemName)}`}
+                                  style={{
+                                    left: "4px",
+                                    width: `calc(${bar.span * 100}% - 8px)`,
+                                    top: `${topOffset}px`,
+                                    zIndex: 10 - barIndex,
+                                  }}
+                                >
+                                  {bar.displayText}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                <div className="space-y-1">
+                                  <div className="font-semibold text-sm">{bar.vacation.usName}</div>
+                                  <div className="text-xs text-slate-600">{bar.vacation.deptName} - {bar.vacation.itemName}</div>
+                                  <div className="text-xs text-slate-600">
+                                    {bar.vacation.useSdate} ~ {bar.vacation.useEdate}
+                                  </div>
+                                  {bar.vacation.useStime && bar.vacation.useEtime && (
+                                    <div className="text-xs text-slate-600">
+                                      {bar.vacation.useStime}시 ~ {bar.vacation.useEtime}시
+                                    </div>
+                                  )}
+                                  {bar.vacation.useDesc && (
+                                    <div className="text-xs text-slate-500 mt-1 pt-1 border-t">{bar.vacation.useDesc}</div>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )
                       })}
                     </div>

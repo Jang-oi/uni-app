@@ -1,6 +1,6 @@
 /**
- * 환경 설정 로드 및 관리
- * 런타임 관리자 모드 지원
+ * 환경 설정 로드 및 관리 (함수형 프로그래밍)
+ * 필수 환경 변수만 관리하며, Master 모드는 스케줄러가 직접 제어
  */
 
 import { config as dotenvConfig } from 'dotenv'
@@ -13,19 +13,20 @@ if (process.env.NODE_ENV !== 'production') {
   console.log('[Config] .env.development 로드됨:', envPath)
 }
 
+/**
+ * 앱 설정 타입
+ */
 export interface AppConfig {
   serverUrl: string
-  adminPassword: string // 관리자 메뉴 접근 비밀번호
+  adminPassword: string // 관리자 메뉴 접근 비밀번호 (화면 입력과 비교용)
 }
 
 /**
  * 환경 변수에서 설정 로드
  */
-export function loadConfig(): AppConfig {
+export const loadConfig = (): AppConfig => {
   const serverUrl = process.env.SERVER_URL || 'http://localhost:3000'
   const adminPassword = process.env.ADMIN_PASSWORD || 'admin123' // 기본값 (운영 시 반드시 변경)
-
-  console.log('[Config] ADMIN_PASSWORD:', adminPassword)
 
   return {
     serverUrl,
@@ -34,42 +35,9 @@ export function loadConfig(): AppConfig {
 }
 
 /**
- * 전역 설정 객체
- */
-export const config = loadConfig()
-
-/**
- * 런타임 Master 모드 상태
- */
-let isMasterModeActive = false
-
-/**
- * Master 모드 활성화
- */
-export function enableMasterMode(): void {
-  isMasterModeActive = true
-  console.log('[Config] Master 모드 활성화됨')
-}
-
-/**
- * Master 모드 비활성화
- */
-export function disableMasterMode(): void {
-  isMasterModeActive = false
-  console.log('[Config] Master 모드 비활성화됨')
-}
-
-/**
- * Master 모드 여부 확인
- */
-export function isMasterMode(): boolean {
-  return isMasterModeActive
-}
-
-/**
  * 설정 유효성 검사
  */
-export function validateConfig(): { valid: boolean; errors: string[] } {
+export const validateConfig = (config: AppConfig): { valid: boolean; errors: string[] } => {
   const errors: string[] = []
 
   if (!config.serverUrl) {
@@ -85,3 +53,8 @@ export function validateConfig(): { valid: boolean; errors: string[] } {
     errors
   }
 }
+
+/**
+ * 전역 설정 객체 (싱글톤)
+ */
+export const appConfig = loadConfig()
