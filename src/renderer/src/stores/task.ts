@@ -34,18 +34,3 @@ export const useTaskStore = create<TaskStore>((set) => ({
   addAlert: (alert) => set((state) => ({ alerts: [...state.alerts, alert] })),
   clearAlerts: () => set({ alerts: [] })
 }))
-
-// Socket 리스너 설정
-if (typeof window !== 'undefined' && window.api) {
-  window.api.onTaskUpdated((data) => {
-    useTaskStore.getState().setTasks(data.tasks || [])
-  })
-
-  window.api.onTaskAlert((data) => {
-    useTaskStore.getState().addAlert({
-      type: data.type,
-      task: data.task,
-      timestamp: new Date().toISOString()
-    })
-  })
-}

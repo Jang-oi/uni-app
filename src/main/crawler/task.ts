@@ -1,15 +1,29 @@
+import { BrowserWindow } from 'electron'
 import { loadCredentials } from '../store'
-import {BrowserWindow} from "electron";
-import {executeInBrowser, waitForSelector} from "./browserUtil";
+import { syncTasksToSupabase } from '../supabase/task'
+import type { TaskRawData } from '../supabase/types'
+import { executeInBrowser } from './browserUtil'
 
-const createTaskBrowser = async (show = false): Promise<BrowserWindow> => {
+// 브라우저 인스턴스를 전역으로 관리하여 1분마다 재사용 (메모리 상주)
+let browsers: { b1: BrowserWindow; b2: BrowserWindow; b3: BrowserWindow } | null = null
+
+/**
+ * 강제 지연 함수 (안정성 확보용)
+ */
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * 브라우저 생성 함수
+ */
+const createTaskBrowser = async (show = true): Promise<BrowserWindow> => {
   return new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1400,
+    height: 900,
     show: show,
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true,
+      contextIsolation: true
+      // partition 설정 없음 -> 기본 세션 공유
     }
   })
 }
@@ -18,80 +32,181 @@ const createTaskBrowser = async (show = false): Promise<BrowserWindow> => {
  * 업무 사이트 로그인 수행
  */
 const performTaskLogin = async (win: BrowserWindow, id: string, pw: string): Promise<void> => {
-  console.log('[Task] 로그인 시도 중...')
-  await executeInBrowser(win, `
-    (function() {
-      const idInput = document.getElementById('login_id');
-      const pwInput = document.getElementById('password');
-      const loginBtn = document.getElementsByClassName('btn-login')[0];
-      if (idInput && pwInput && loginBtn) {
-        idInput.value = '${id}';
-        pwInput.value = '${pw}';
-        loginBtn.click();
+  console.log('[Task] 로그인 정보 입력 중...')
+  await executeInBrowser(
+    win,
+    `
+    (async function() {
+      const usernameField = document.querySelector("#userId");
+      const passwordField = document.querySelector("#password");
+      const loginButton = document.querySelector("body > div.wrap.login > div > div > div > div > form > fieldset > div.btn-area > button");
+
+      if (usernameField && passwordField && loginButton) {
+        usernameField.value = "${id}";
+        passwordField.value = "${pw}";
+        loginButton.click();
       }
     })()
-  `)
+  `
+  )
 }
 
 /**
- * 업무 데이터 조회 API 호출 (POST)
+ * 데이터 조회 및 추출 함수
  */
-const fetchTaskData = async (win: BrowserWindow): Promise<unknown> => {
-  // 사용자가 요청했던 POST 데이터 구조 적용
-  const requestBody = {
-    coRegno: "1048621562",
-    deptId: "000909",
-    // 업무 크롤링에 필요한 다른 파라미터가 있다면 여기 수정
-    userStatus: "10",
-    procSts: "S"
+const scrapeDataByCondition = async (win: BrowserWindow, type: 'A' | 'P', text: string = '') => {
+  return await executeInBrowser(
+    win,
+    `
+    (async function() {
+      try {
+        const li = document.querySelector('li[title="요청내역관리"], li[name="요청내역관리"]');
+        if (!li) throw new Error('탭 메뉴를 찾을 수 없습니다.');
+
+        const tabId = li.getAttribute('aria-controls');
+        const iframe = document.getElementById(tabId);
+        const iWin = iframe.contentWindow;
+        const iDoc = iframe.contentDocument || iWin.document;
+
+        if (!iWin.UNIUX) throw new Error('UNIUX 로드 대기 필요');
+
+        // 검색 조건 설정
+        iWin.UNIUX.SVC('PROGRESSION_TYPE', 'R,E,O,A,C,N,M');
+        iWin.UNIUX.SVC('RECEIPT_INFO_SEARCH_TYPE', '${type}');
+        iWin.UNIUX.SVC('RECEIPT_INFO_TEXT', '${text}');
+
+        const lastYear = new Date();
+        lastYear.setFullYear(lastYear.getFullYear() - 1);
+        iWin.UNIUX.SVC('START_DATE', lastYear.toISOString().split('T')[0]);
+
+        const searchBtn = iDoc.querySelector('#doSearch');
+        if (searchBtn) searchBtn.click();
+
+        // 로딩바가 사라질 때까지 대기
+        await new Promise((resolve) => {
+          const start = Date.now();
+          const check = () => {
+            const loading = iDoc.querySelector('.loading-area');
+            const isVisible = loading && window.getComputedStyle(loading).display !== 'none';
+            // 로딩바가 안보이고 최소 1.5초는 경과해야 데이터 렌더링 완료로 간주
+            if (!isVisible && (Date.now() - start > 1500)) resolve();
+            else if (Date.now() - start > 20000) resolve(); // 최대 20초 타임아웃
+            else setTimeout(check, 200);
+          };
+          check();
+        });
+
+        // 그리드 데이터 반환
+        return JSON.parse(JSON.stringify(iWin.grid.getAllRowValue()));
+      } catch (err) {
+        return { error: err.message };
+      }
+    })()
+  `
+  )
+}
+
+/**
+ * 개별 팀원 리스트 순차 크롤링
+ */
+const crawlMemberGroup = async (win: BrowserWindow, members: string[]) => {
+  const results: any = {}
+  for (const name of members) {
+    results[name] = await scrapeDataByCondition(win, 'P', name)
+    await sleep(1000) // 다음 멤버 검색 전 여유 시간
+  }
+  return results
+}
+
+/**
+ * 리더-팔로워 방식 브라우저 세션 초기화
+ */
+const prepareBrowsers = async (url: string, id: string, pw: string) => {
+  if (!browsers) {
+    console.log('[Task] 브라우저 신규 생성 중...')
+    browsers = {
+      b1: await createTaskBrowser(true),
+      b2: await createTaskBrowser(true),
+      b3: await createTaskBrowser(true)
+    }
   }
 
-  return await executeInBrowser(win, `
-    fetch('/api/task/list/url', { // 업무용 실제 API 엔드포인트로 수정 필요
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(${JSON.stringify(requestBody)})
-    }).then(res => res.json())
-  `)
+  const { b1, b2, b3 } = browsers
+
+  // 1. 리더(b1) 먼저 접속 및 로그인
+  console.log('[Task] 리더 브라우저(b1) 로딩 시작...')
+  await b1.loadURL(url)
+  await sleep(4000) // 완전한 페이지 로드 대기
+
+  const isLoginPage = await b1.webContents.executeJavaScript(`!!document.querySelector("#userId")`)
+  if (isLoginPage) {
+    console.log('[Task] 리더 브라우저 로그인 시도...')
+    await performTaskLogin(b1, id, pw)
+    await sleep(6000) // 로그인 후 세션이 쿠키에 구워질 때까지 충분히 대기
+  }
+
+  // 2. 팔로워(b2, b3) 순차 로딩 (리더의 세션을 활용)
+  console.log('[Task] 팔로워 브라우저(b2, b3) 동기화 시작...')
+
+  const setupFollower = async (win: BrowserWindow) => {
+    await win.loadURL(url)
+    await sleep(4000) // 접속 후 자동 로그인 상태 확인 대기
+  }
+
+  await Promise.all([setupFollower(b2), setupFollower(b3)])
 }
 
 /**
  * 메인 업무 크롤링 실행 함수
  */
 export const runTaskCrawler = async (): Promise<unknown> => {
-  let browser: BrowserWindow | null = null
-
   try {
-    const credentials = loadCredentials()
-    const { url, id, password } = credentials.taskSite
+    const { taskSite, teamMembers } = loadCredentials()
+    const { url, id, password } = taskSite
 
-    // 1. 브라우저 시작
-    browser = await createTaskBrowser(true)
-    await browser.loadURL(url)
+    // 1. 브라우저 세션 상태 및 페이지 로드 보장
+    await prepareBrowsers(url, id, password)
+    if (!browsers) throw new Error('브라우저 초기화 실패')
 
-    // 2. 로그인 수행
-    await performTaskLogin(browser, id, password)
+    // 2. 업무 분담 (팀원 8명 기준 예시)
+    const group1 = teamMembers.slice(0, 4)
+    const group2 = teamMembers.slice(4, 8)
 
-    // 3. 로그인 후 특정 엘리먼트(예: 메뉴 버튼) 대기
-    const menuReady = await waitForSelector(browser, 'a.id-svcLink[svcid="TASK"]') // svcid는 실제 업무 서비스 코드로 변경
-    if (!menuReady) throw new Error('업무 사이트 로그인 확인 실패')
+    console.log('[Task] 3개 브라우저 동시 수집 시작...')
 
-    // 4. 업무 메뉴 클릭 (필요 시)
-    await executeInBrowser(browser, `document.querySelector('a.id-svcLink[svcid="TASK"]').click()`)
+    // 3. 3개 브라우저 병렬 데이터 추출
+    const [teamTotal, g1Results, g2Results] = await Promise.all([
+      scrapeDataByCondition(browsers.b1, 'A'), // 리더: 팀 전체 데이터
+      crawlMemberGroup(browsers.b2, group1), // 팔로워1: 팀원 1~4
+      crawlMemberGroup(browsers.b3, group2) // 팔로워2: 팀원 5~8
+    ])
 
-    // 5. 페이지 이동 및 대시보드 로딩 대기
-    const dashboardReady = await waitForSelector(browser, 'div.dashboard')
-    if (!dashboardReady) throw new Error('업무 대시보드 로딩 실패')
+    console.log('[Task] 모든 데이터 수집 완료')
 
-    // 6. API 호출 및 결과 반환
-    const result = await fetchTaskData(browser)
-    console.log('[Task] 데이터 수집 완료:', result)
-
-    return result
+    // 4. Supabase에 저장 (teamTotal 데이터를 TaskRawData 형식으로 변환)
+    if (teamTotal && Array.isArray(teamTotal)) {
+      console.log(`[Task] ${teamTotal.length}건의 데이터를 Supabase에 저장 시작...`)
+      const syncResult = await syncTasksToSupabase(teamTotal as TaskRawData[])
+      console.log('[Task] Supabase 저장 완료:', syncResult)
+      return {
+        teamTotal: syncResult,
+        individualResults: { ...g1Results, ...g2Results },
+        updatedAt: new Date().toISOString()
+      }
+    } else {
+      console.warn('[Task] 저장할 데이터가 없습니다.')
+      return {
+        teamTotal: { inserted: 0, updated: 0, total: 0 },
+        individualResults: { ...g1Results, ...g2Results },
+        updatedAt: new Date().toISOString()
+      }
+    }
   } catch (error) {
-    console.error('[Task] 크롤링 오류:', error)
-    return null // TS7030 방지
-  } finally {
-    // if (browser) browser.destroy()
+    console.error('[Task] 크롤링 실행 중 오류 발생:', error)
+    return {
+      teamTotal: { inserted: 0, updated: 0, total: 0 },
+      individualResults: {},
+      updatedAt: new Date().toISOString()
+    }
   }
 }

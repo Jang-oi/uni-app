@@ -53,13 +53,6 @@ export function AdminPage() {
     }
   }, [isAuthenticated])
 
-  // ==================== Master 권한 박탈 알림 ====================
-  useEffect(() => {
-    window.api.onMasterRevoked((data) => {
-      alert(`Master 권한이 다른 PC(${data.newMasterHostname})로 넘어갔습니다.\n크롤러 스케줄러가 자동으로 중지되었습니다.`)
-      setIsSchedulerRunning(false)
-    })
-  }, [])
 
   // ==================== 관리자 인증 ====================
   const handleAdminLogin = async () => {

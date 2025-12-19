@@ -89,8 +89,7 @@ export const api = {
     /**
      * 월별 휴가 데이터 조회
      */
-    getByMonth: (year: string, month: string) =>
-      get<VacationDto[]>('/api/vacations', { year, month }),
+    getByMonth: (year: string, month: string) => get<VacationDto[]>('/api/vacations', { year, month }),
 
     /**
      * 휴가 데이터 동기화 (Master 전용)

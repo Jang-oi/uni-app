@@ -25,8 +25,8 @@ export const waitForSelector = async (win: BrowserWindow, selector: string, time
         }
       }, 200);
     })
-  `);
-};
+  `)
+}
 
 /**
  * 특정 엘리먼트를 클릭하는 함수
@@ -41,5 +41,5 @@ export const clickElement = async (win: BrowserWindow, selector: string): Promis
         console.error('클릭할 엘리먼트를 찾을 수 없음: ${selector}');
       }
     })()
-  `);
-};
+  `)
+}

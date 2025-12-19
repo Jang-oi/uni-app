@@ -4,8 +4,8 @@
  */
 
 import cron, { ScheduledTask } from 'node-cron'
-import { runVacationCrawler } from './vacation'
 import { runTaskCrawler } from './task'
+import { runVacationCrawler } from './vacation'
 
 /**
  * 스케줄러 상태 (불변성 유지)
@@ -149,10 +149,7 @@ export const runTaskCrawlerManually = async (): Promise<void> => {
 /**
  * 스케줄 변경 (런타임 중 조정 가능)
  */
-export const updateSchedule = (
-  type: 'vacation' | 'task',
-  cronExpression: string
-): void => {
+export const updateSchedule = (type: 'vacation' | 'task', cronExpression: string): void => {
   console.log(`[CrawlerScheduler] ${type} 스케줄 변경: ${cronExpression}`)
 
   if (!schedulerState.isRunning) {

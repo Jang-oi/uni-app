@@ -3,26 +3,6 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 // Custom APIs for renderer
 const api = {
-  // ==================== Socket.io 이벤트 리스너 ====================
-  onVacationUpdated: (callback: (data: any) => void) => {
-    ipcRenderer.on('vacation:updated', (_event, data) => callback(data))
-  },
-  onTaskUpdated: (callback: (data: any) => void) => {
-    ipcRenderer.on('task:updated', (_event, data) => callback(data))
-  },
-  onTaskAlert: (callback: (data: any) => void) => {
-    ipcRenderer.on('task:alert', (_event, data) => callback(data))
-  },
-  onHypervStatus: (callback: (data: any) => void) => {
-    ipcRenderer.on('hyperv:status', (_event, data) => callback(data))
-  },
-  onHypervRequest: (callback: (data: any) => void) => {
-    ipcRenderer.on('hyperv:request-received', (_event, data) => callback(data))
-  },
-  onMasterRevoked: (callback: (data: any) => void) => {
-    ipcRenderer.on('master:revoked', (_event, data) => callback(data))
-  },
-
   // ==================== 관리자 인증 ====================
   verifyAdminPassword: async (password: string) => {
     return await ipcRenderer.invoke('admin:verify-password', password)
@@ -54,6 +34,23 @@ const api = {
   },
   getCrawlerStatus: async () => {
     return await ipcRenderer.invoke('crawler:status')
+  },
+
+  // ==================== Supabase 데이터 조회 ====================
+  getVacations: async (year: string, month: string) => {
+    return await ipcRenderer.invoke('supabase:get-vacations', year, month)
+  },
+  getVacationsCount: async () => {
+    return await ipcRenderer.invoke('supabase:get-vacations-count')
+  },
+  getTasks: async () => {
+    return await ipcRenderer.invoke('supabase:get-tasks')
+  },
+  getTasksByUser: async (usId: string) => {
+    return await ipcRenderer.invoke('supabase:get-tasks-by-user', usId)
+  },
+  getTasksCount: async () => {
+    return await ipcRenderer.invoke('supabase:get-tasks-count')
   }
 }
 

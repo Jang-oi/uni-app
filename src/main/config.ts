@@ -3,8 +3,8 @@
  * 필수 환경 변수만 관리하며, Master 모드는 스케줄러가 직접 제어
  */
 
-import { config as dotenvConfig } from 'dotenv'
 import { resolve } from 'path'
+import { config as dotenvConfig } from 'dotenv'
 
 // 개발 환경에서 .env.development 로드
 if (process.env.NODE_ENV !== 'production') {

@@ -2,15 +2,10 @@ import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { appConfig } from './config'
-import {
-  startScheduler,
-  stopScheduler,
-  runVacationCrawlerManually,
-  runTaskCrawlerManually,
-  getSchedulerStatus
-} from './crawler/scheduler'
-import { socketClient } from './socket/client'
+import { getSchedulerStatus, runTaskCrawlerManually, runVacationCrawlerManually, startScheduler, stopScheduler } from './crawler/scheduler'
 import { hasValidCredentials, loadCredentials, saveCredentials } from './store'
+import { getAllTasks, getTasksByUser, getTasksCount } from './supabase/task'
+import { getVacationsByMonth, getVacationsCount } from './supabase/vacation'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -19,11 +14,10 @@ export const uniIcon = is.dev
   : join(process.resourcesPath, 'unicorn3.ico') // 빌드된 앱(프로덕션) 경로
 
 function createWindow(): void {
-
   // 브라우저 윈도우 생성
   mainWindow = new BrowserWindow({
     width: 800,
-    height: 860,
+    height: 920,
     show: false,
     title: 'Uni App',
     icon: uniIcon,
@@ -84,7 +78,6 @@ app.whenReady().then(() => {
     return { success: isValid }
   })
 
-
   /**
    * 저장된 자격증명 로드
    */
@@ -128,13 +121,6 @@ app.whenReady().then(() => {
       return { success: false, message: '자격증명을 먼저 설정하세요' }
     }
 
-    // Socket.io로 Master 권한 요청
-    const claimed = await socketClient.claimMaster()
-    if (!claimed) {
-      console.log('[Crawler] Master 권한 획득 실패 (다른 PC가 실행 중)')
-      return { success: false, message: '다른 PC에서 이미 크롤러가 실행 중입니다' }
-    }
-
     await startScheduler()
     console.log('[Crawler] 스케줄러 시작됨')
 
@@ -152,9 +138,6 @@ app.whenReady().then(() => {
     }
 
     stopScheduler()
-
-    // Socket.io로 Master 권한 반납
-    socketClient.releaseMaster()
 
     console.log('[Crawler] 스케줄러 정지됨')
     return { success: true }
@@ -195,14 +178,75 @@ app.whenReady().then(() => {
     }
   })
 
+  // ==================== Supabase 데이터 조회 ====================
+
+  /**
+   * 월별 휴가 데이터 조회
+   */
+  ipcMain.handle('supabase:get-vacations', async (_event, year: string, month: string) => {
+    try {
+      const data = await getVacationsByMonth(year, month)
+      return { success: true, data }
+    } catch (error) {
+      console.error('[Supabase] 휴가 조회 실패:', error)
+      return { success: false, error: (error as Error).message, data: [] }
+    }
+  })
+
+  /**
+   * 전체 휴가 개수 조회
+   */
+  ipcMain.handle('supabase:get-vacations-count', async () => {
+    try {
+      const count = await getVacationsCount()
+      return { success: true, count }
+    } catch (error) {
+      console.error('[Supabase] 휴가 카운트 조회 실패:', error)
+      return { success: false, error: (error as Error).message, count: 0 }
+    }
+  })
+
+  /**
+   * 전체 업무 데이터 조회
+   */
+  ipcMain.handle('supabase:get-tasks', async () => {
+    try {
+      const data = await getAllTasks()
+      return { success: true, data }
+    } catch (error) {
+      console.error('[Supabase] 업무 조회 실패:', error)
+      return { success: false, error: (error as Error).message, data: [] }
+    }
+  })
+
+  /**
+   * 사용자별 업무 조회
+   */
+  ipcMain.handle('supabase:get-tasks-by-user', async (_event, usId: string) => {
+    try {
+      const data = await getTasksByUser(usId)
+      return { success: true, data }
+    } catch (error) {
+      console.error('[Supabase] 사용자 업무 조회 실패:', error)
+      return { success: false, error: (error as Error).message, data: [] }
+    }
+  })
+
+  /**
+   * 전체 업무 개수 조회
+   */
+  ipcMain.handle('supabase:get-tasks-count', async () => {
+    try {
+      const count = await getTasksCount()
+      return { success: true, count }
+    } catch (error) {
+      console.error('[Supabase] 업무 카운트 조회 실패:', error)
+      return { success: false, error: (error as Error).message, count: 0 }
+    }
+  })
+
   // 메인 윈도우 생성
   createWindow()
-
-  // Socket.io 클라이언트 연결
-  if (mainWindow) {
-    socketClient.setMainWindow(mainWindow)
-    socketClient.connect()
-  }
 
   // TODO: HyperV 모니터 시작 (모든 앱)
   // hypervMonitor.start()
@@ -218,9 +262,6 @@ app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  // Socket 연결 해제
-  socketClient.disconnect()
-
   // 크롤러 정지 (실행 중이었다면)
   const status = getSchedulerStatus()
   if (status.isRunning) {

@@ -34,24 +34,3 @@ export const useHypervStore = create<HypervStore>((set) => ({
   addRequest: (request) => set((state) => ({ requests: [...state.requests, request] })),
   clearRequests: () => set({ requests: [] })
 }))
-
-// Socket 리스너 설정
-if (typeof window !== 'undefined' && window.api) {
-  window.api.onHypervStatus((data) => {
-    useHypervStore.getState().setVMs(
-      (Array.isArray(data) ? data : []).map((vm) => ({
-        ...vm,
-        lastUpdate: new Date().toISOString()
-      }))
-    )
-  })
-
-  window.api.onHypervRequest((data) => {
-    useHypervStore.getState().addRequest({
-      vmName: data.vmName,
-      requester: data.requester || 'Unknown',
-      requestTime: new Date().toISOString(),
-      status: 'pending'
-    })
-  })
-}

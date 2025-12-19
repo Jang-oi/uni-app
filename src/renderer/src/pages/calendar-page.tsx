@@ -1,12 +1,12 @@
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowLeft01Icon, ArrowRight01Icon, Calendar03Icon, Loading03Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { motion } from 'motion/react'
-import { useState, useMemo, useEffect } from 'react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useVacationStore } from '@/stores/vacationStore'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Calendar03Icon, ArrowLeft01Icon, ArrowRight01Icon, Loading03Icon } from '@hugeicons/core-free-icons'
 
 type VacationData = {
   useId: string
@@ -178,9 +178,7 @@ export function CalendarPage() {
         <div className="flex items-center gap-3">
           <HugeiconsIcon icon={Calendar03Icon} className="w-6 h-6 text-slate-700" />
           <h1 className="text-2xl font-semibold text-slate-900">일정/휴가</h1>
-          {isLoading && (
-            <HugeiconsIcon icon={Loading03Icon} className="w-5 h-5 text-blue-600 animate-spin" />
-          )}
+          {isLoading && <HugeiconsIcon icon={Loading03Icon} className="w-5 h-5 text-blue-600 animate-spin" />}
         </div>
 
         <div className="flex items-center gap-3">
@@ -188,18 +186,10 @@ export function CalendarPage() {
             오늘
           </Button>
           <div className="flex items-center gap-2 border border-slate-300 rounded-lg px-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={goToPreviousMonth}
-              disabled={isLoading}
-            >
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousMonth} disabled={isLoading}>
               <HugeiconsIcon icon={ArrowLeft01Icon} className="w-4 h-4" />
             </Button>
-            <div className="px-4 text-base font-semibold min-w-[140px] text-center text-slate-800">
-              {formatYearMonth(currentDate)}
-            </div>
+            <div className="px-4 text-base font-semibold min-w-[140px] text-center text-slate-800">{formatYearMonth(currentDate)}</div>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextMonth} disabled={isLoading}>
               <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4" />
             </Button>
@@ -246,9 +236,7 @@ export function CalendarPage() {
                   const isCurrentMonth = date.getMonth() === currentMonth
                   const today = new Date()
                   const isToday =
-                    today.getFullYear() === date.getFullYear() &&
-                    today.getMonth() === date.getMonth() &&
-                    today.getDate() === date.getDate()
+                    today.getFullYear() === date.getFullYear() && today.getMonth() === date.getMonth() && today.getDate() === date.getDate()
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6
                   const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
@@ -325,42 +313,36 @@ export function CalendarPage() {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[400px] pr-4">
-            {selectedDate && (() => {
-              const dateKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
-              const events = vacationsByDate[dateKey] || []
+            {selectedDate &&
+              (() => {
+                const dateKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
+                const events = vacationsByDate[dateKey] || []
 
-              return (
-                <div className="space-y-3">
-                  {events.map((event, index) => (
-                    <div
-                      key={event.vacation.useId + '-' + index}
-                      className="p-3 border border-slate-200 rounded-lg space-y-1.5"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="font-semibold text-slate-900">{event.vacation.usName}</div>
-                        <div
-                          className={`text-xs px-2 py-0.5 rounded border font-medium ${getVacationColor(event.vacation.itemName)}`}
-                        >
-                          {event.vacation.itemName}
+                return (
+                  <div className="space-y-3">
+                    {events.map((event, index) => (
+                      <div key={event.vacation.useId + '-' + index} className="p-3 border border-slate-200 rounded-lg space-y-1.5">
+                        <div className="flex items-start justify-between">
+                          <div className="font-semibold text-slate-900">{event.vacation.usName}</div>
+                          <div className={`text-xs px-2 py-0.5 rounded border font-medium ${getVacationColor(event.vacation.itemName)}`}>
+                            {event.vacation.itemName}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-sm text-slate-600">{event.vacation.deptName}</div>
-                      <div className="text-sm text-slate-600">
-                        {event.vacation.useSdate} ~ {event.vacation.useEdate}
-                      </div>
-                      {event.vacation.useStime && event.vacation.useEtime && (
+                        <div className="text-sm text-slate-600">{event.vacation.deptName}</div>
                         <div className="text-sm text-slate-600">
-                          {event.vacation.useStime}시 ~ {event.vacation.useEtime}시
+                          {event.vacation.useSdate} ~ {event.vacation.useEdate}
                         </div>
-                      )}
-                      {event.vacation.useDesc && (
-                        <div className="text-sm text-slate-500 pt-1.5 border-t">{event.vacation.useDesc}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )
-            })()}
+                        {event.vacation.useStime && event.vacation.useEtime && (
+                          <div className="text-sm text-slate-600">
+                            {event.vacation.useStime}시 ~ {event.vacation.useEtime}시
+                          </div>
+                        )}
+                        {event.vacation.useDesc && <div className="text-sm text-slate-500 pt-1.5 border-t">{event.vacation.useDesc}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
           </ScrollArea>
         </DialogContent>
       </Dialog>
