@@ -1,10 +1,11 @@
-import { motion } from "motion/react"
-import { useState, useMemo } from "react"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { vacationData } from "@/data/vacation-mockdata"
+import { motion } from 'motion/react'
+import { useState, useMemo } from 'react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { vacationData } from '@/data/vacation-mockdata'
 import { HugeiconsIcon } from '@hugeicons/react'
-import {Calendar03Icon, ArrowLeft01Icon, ArrowRight01Icon} from "@hugeicons/core-free-icons";
+import { Calendar03Icon, ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
 
 type VacationData = {
   useId: string
@@ -25,10 +26,21 @@ type VacationData = {
   useEtime: string | null
 }
 
-export function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 1)) // 2025년 12월
+type VacationEvent = {
+  vacation: VacationData
+  startDate: Date
+  endDate: Date
+  displayText: string
+  isMultiDay: boolean
+  daySpan: number
+}
 
-  const { weekRows, vacationBarsByDate } = useMemo(() => {
+export function CalendarPage() {
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 1))
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [showMoreDialog, setShowMoreDialog] = useState(false)
+
+  const { weekRows, vacationsByDate } = useMemo(() => {
     const year = currentDate.getFullYear()
     const month = currentDate.getMonth()
 
@@ -37,20 +49,19 @@ export function CalendarPage() {
     const startingDayOfWeek = firstDay.getDay()
     const daysInMonth = lastDay.getDate()
 
-    const dates: (Date | null)[] = []
+    const dates: Date[] = []
 
-    // 월 첫날 이전의 빈 칸 (이전 달 날짜로 채움)
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      const prevMonthDate = new Date(year, month, -(startingDayOfWeek - i - 1))
-      dates.push(prevMonthDate)
+    // 이전 달 날짜
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      dates.push(new Date(year, month, -i))
     }
 
-    // 해당 월의 모든 날짜
+    // 현재 달 날짜
     for (let day = 1; day <= daysInMonth; day++) {
       dates.push(new Date(year, month, day))
     }
 
-    // 마지막 주를 채우기 위한 다음 달 날짜
+    // 다음 달 날짜
     const remainingDays = 7 - (dates.length % 7)
     if (remainingDays < 7) {
       for (let i = 1; i <= remainingDays; i++) {
@@ -59,81 +70,62 @@ export function CalendarPage() {
     }
 
     // 주 단위로 분할
-    const weeks: (Date | null)[][] = []
+    const weeks: Date[][] = []
     for (let i = 0; i < dates.length; i += 7) {
       weeks.push(dates.slice(i, i + 7))
     }
 
-    const vacationBarsByDate: Record<
-      string,
-      Array<{
-        vacation: VacationData
-        displayText: string
-        span: number // 이 날짜부터 몇 칸 연속인지
-      }>
-    > = {}
-
-    const processedVacations = new Set<string>()
+    // 날짜별 휴가 이벤트 정리
+    const vacationsByDate: Record<string, VacationEvent[]> = {}
 
     vacationData.forEach((vacation) => {
-      if (processedVacations.has(vacation.useId)) return
-
-      // 날짜 문자열을 로컬 타임존으로 파싱 (YYYY-MM-DD 형식)
+      // YYYY-MM-DD 형식을 정확하게 로컬 날짜로 파싱
       const [startYear, startMonth, startDay] = vacation.useSdate.split('-').map(Number)
       const [endYear, endMonth, endDay] = vacation.useEdate.split('-').map(Number)
-      const vacStartDate = new Date(startYear, startMonth - 1, startDay)
-      const vacEndDate = new Date(endYear, endMonth - 1, endDay)
 
-      // 시작 날짜의 문자열 키
-      const startDateKey = vacation.useSdate
+      const startDate = new Date(startYear, startMonth - 1, startDay)
+      const endDate = new Date(endYear, endMonth - 1, endDay)
 
-      // 며칠간의 휴가인지 계산
-      const daysDiff = Math.floor((vacEndDate.getTime() - vacStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      // 휴가 기간의 각 날짜에 이벤트 추가
+      const currentLoopDate = new Date(startDate)
+      while (currentLoopDate <= endDate) {
+        const dateKey = `${currentLoopDate.getFullYear()}-${String(currentLoopDate.getMonth() + 1).padStart(2, '0')}-${String(currentLoopDate.getDate()).padStart(2, '0')}`
 
-      // 표시 텍스트 생성
-      let displayText = vacation.usName
-
-      // 시간 기반 휴가인 경우 (useStime, useEtime이 있는 경우)
-      if (vacation.useStime && vacation.useEtime) {
-        displayText += `(${vacation.useStime}~${vacation.useEtime})`
-      }
-      // 여러 날 휴가인 경우
-      else if (daysDiff > 1) {
-        displayText += `(${daysDiff}일)`
-      }
-
-      // 시작 날짜에 이 휴가 바를 등록
-      if (!vacationBarsByDate[startDateKey]) {
-        vacationBarsByDate[startDateKey] = []
-      }
-
-      // 이 주에서 몇 칸을 차지하는지 계산 (같은 주 내에서만)
-      let span = 0
-      const startWeekIndex = Math.floor(dates.findIndex((d) => d && d.toISOString().split("T")[0] === startDateKey) / 7)
-
-      for (let d = new Date(vacStartDate); d <= vacEndDate; d.setDate(d.getDate() + 1)) {
-        const dateKey = d.toISOString().split("T")[0]
-        const dateIndex = dates.findIndex((dt) => dt && dt.toISOString().split("T")[0] === dateKey)
-        if (dateIndex === -1) continue
-
-        const weekIndex = Math.floor(dateIndex / 7)
-        if (weekIndex === startWeekIndex) {
-          span++
-        } else {
-          break // 다음 주로 넘어가면 중단
+        if (!vacationsByDate[dateKey]) {
+          vacationsByDate[dateKey] = []
         }
+
+        // 표시 텍스트 생성
+        let displayText = vacation.usName
+
+        // 시간 기반 휴가
+        if (vacation.useStime && vacation.useEtime) {
+          displayText += ` (${vacation.useStime}~${vacation.useEtime})`
+        }
+        // 여러 날 휴가
+        else {
+          const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+          if (totalDays > 1) {
+            displayText += ` (${totalDays}일)`
+          }
+        }
+
+        const event: VacationEvent = {
+          vacation,
+          startDate,
+          endDate,
+          displayText,
+          isMultiDay: startDate.getTime() !== endDate.getTime(),
+          daySpan: Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+        }
+
+        vacationsByDate[dateKey].push(event)
+
+        currentLoopDate.setDate(currentLoopDate.getDate() + 1)
       }
-
-      vacationBarsByDate[startDateKey].push({
-        vacation,
-        displayText,
-        span,
-      })
-
-      processedVacations.add(vacation.useId)
     })
 
-    return { weekRows: weeks, vacationBarsByDate }
+    return { weekRows: weeks, vacationsByDate }
   }, [currentDate])
 
   const goToPreviousMonth = () => {
@@ -145,7 +137,8 @@ export function CalendarPage() {
   }
 
   const goToToday = () => {
-    setCurrentDate(new Date())
+    const today = new Date()
+    setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1))
   }
 
   const formatYearMonth = (date: Date) => {
@@ -153,12 +146,19 @@ export function CalendarPage() {
   }
 
   const getVacationColor = (itemName: string) => {
-    if (itemName.includes("연차")) return "bg-blue-500/90 text-white border-blue-600 shadow-sm"
-    if (itemName.includes("대체")) return "bg-emerald-500/90 text-white border-emerald-600 shadow-sm"
-    if (itemName.includes("반차") || itemName.includes("오후") || itemName.includes("오전"))
-      return "bg-amber-400/90 text-amber-900 border-amber-500 shadow-sm"
-    return "bg-slate-500/90 text-white border-slate-600 shadow-sm"
+    if (itemName.includes('연차')) return 'bg-blue-100 text-blue-800 border-blue-300'
+    if (itemName.includes('대체')) return 'bg-emerald-100 text-emerald-800 border-emerald-300'
+    if (itemName.includes('반차') || itemName.includes('오후') || itemName.includes('오전'))
+      return 'bg-amber-100 text-amber-800 border-amber-300'
+    return 'bg-slate-100 text-slate-800 border-slate-300'
   }
+
+  const handleMoreClick = (date: Date) => {
+    setSelectedDate(date)
+    setShowMoreDialog(true)
+  }
+
+  const MAX_EVENTS_PER_DAY = 3
 
   return (
     <motion.div
@@ -171,35 +171,37 @@ export function CalendarPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <HugeiconsIcon icon={Calendar03Icon}/>
-          <h1 className="text-xl font-semibold text-slate-900">일정/휴가</h1>
+          <HugeiconsIcon icon={Calendar03Icon} className="w-6 h-6 text-slate-700" />
+          <h1 className="text-2xl font-semibold text-slate-900">일정/휴가</h1>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={goToToday}>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={goToToday} className="font-medium">
             오늘
           </Button>
-          <div className="flex items-center border border-slate-200 rounded-md">
+          <div className="flex items-center gap-2 border border-slate-300 rounded-lg px-1">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousMonth}>
-              <HugeiconsIcon icon={ArrowLeft01Icon}/>
+              <HugeiconsIcon icon={ArrowLeft01Icon} className="w-4 h-4" />
             </Button>
-            <div className="px-3 text-sm font-medium min-w-[120px] text-center">{formatYearMonth(currentDate)}</div>
+            <div className="px-4 text-base font-semibold min-w-[140px] text-center text-slate-800">
+              {formatYearMonth(currentDate)}
+            </div>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextMonth}>
-              <HugeiconsIcon icon={ArrowRight01Icon}/>
+              <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </div>
 
       {/* 캘린더 */}
-      <div className="flex-1 bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+      <div className="flex-1 bg-white border border-slate-300 rounded-xl overflow-hidden flex flex-col shadow-sm">
         {/* 요일 헤더 */}
-        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
-          {["일", "월", "화", "수", "목", "금", "토"].map((day, index) => (
+        <div className="grid grid-cols-7 border-b border-slate-300 bg-slate-50">
+          {['일', '월', '화', '수', '목', '금', '토'].map((day, index) => (
             <div
               key={day}
-              className={`text-center text-sm font-medium py-2 border-r border-slate-200 last:border-r-0 ${
-                index === 0 ? "text-red-600" : index === 6 ? "text-blue-600" : "text-slate-700"
+              className={`text-center text-sm font-semibold py-3 border-r border-slate-200 last:border-r-0 ${
+                index === 0 ? 'text-red-600' : index === 6 ? 'text-blue-600' : 'text-slate-700'
               }`}
             >
               {day}
@@ -213,141 +215,68 @@ export function CalendarPage() {
             const currentMonth = currentDate.getMonth()
 
             return (
-              <div
-                key={weekIndex}
-                className="flex-1 grid grid-cols-7 border-b border-slate-200 last:border-b-0 relative min-h-[120px]"
-              >
+              <div key={weekIndex} className="flex-1 grid grid-cols-7 border-b border-slate-200 last:border-b-0">
                 {week.map((date, dayIndex) => {
-                  if (!date) return <div key={dayIndex} className="border-r border-slate-200 last:border-r-0" />
-
                   const isCurrentMonth = date.getMonth() === currentMonth
-                  const isToday = new Date().toDateString() === date.toDateString()
+                  const today = new Date()
+                  const isToday =
+                    today.getFullYear() === date.getFullYear() &&
+                    today.getMonth() === date.getMonth() &&
+                    today.getDate() === date.getDate()
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6
-                  const dateKey = date.toISOString().split("T")[0]
+                  const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
-                  const barsStartingToday = vacationBarsByDate[dateKey] || []
-
-                  // 이 날짜에 있는 모든 휴가 (툴팁용)
-                  const allVacationsToday = vacationData.filter((v) => {
-                    const [sYear, sMonth, sDay] = v.useSdate.split('-').map(Number)
-                    const [eYear, eMonth, eDay] = v.useEdate.split('-').map(Number)
-                    const vStart = new Date(sYear, sMonth - 1, sDay)
-                    const vEnd = new Date(eYear, eMonth - 1, eDay)
-
-                    // 시간 요소를 제거한 날짜만 비교
-                    const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-                    const vStartDateOnly = new Date(vStart.getFullYear(), vStart.getMonth(), vStart.getDate())
-                    const vEndDateOnly = new Date(vEnd.getFullYear(), vEnd.getMonth(), vEnd.getDate())
-
-                    return currentDateOnly >= vStartDateOnly && currentDateOnly <= vEndDateOnly
-                  })
-
-                  const MAX_VISIBLE = 2
-                  const hiddenCount = Math.max(0, allVacationsToday.length - MAX_VISIBLE)
+                  const events = vacationsByDate[dateKey] || []
+                  const visibleEvents = events.slice(0, MAX_EVENTS_PER_DAY)
+                  const hiddenCount = Math.max(0, events.length - MAX_EVENTS_PER_DAY)
 
                   return (
                     <div
                       key={dayIndex}
-                      className={`relative border-r border-slate-200 last:border-r-0 p-1.5 ${
-                        !isCurrentMonth ? "bg-slate-50" : isWeekend ? "bg-slate-50/50" : ""
+                      className={`border-r border-slate-200 last:border-r-0 p-2 min-h-[110px] ${
+                        !isCurrentMonth ? 'bg-slate-50/50' : isWeekend ? 'bg-blue-50/30' : 'bg-white'
                       }`}
                     >
                       {/* 날짜 숫자 */}
-                      <div className="flex items-start justify-between mb-1">
+                      <div className="flex items-center justify-between mb-1.5">
                         <div
-                          className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
+                          className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
                             isToday
-                              ? "bg-blue-600 text-white ring-2 ring-blue-300"
+                              ? 'bg-blue-600 text-white'
                               : !isCurrentMonth
-                                ? "text-slate-400"
+                                ? 'text-slate-400'
                                 : date.getDay() === 0
-                                  ? "text-red-600"
+                                  ? 'text-red-600'
                                   : date.getDay() === 6
-                                    ? "text-blue-600"
-                                    : "text-slate-700"
+                                    ? 'text-blue-600'
+                                    : 'text-slate-800'
                           }`}
                         >
                           {date.getDate()}
                         </div>
-
-                        {hiddenCount > 0 && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <button className="text-[10px] text-blue-600 hover:text-blue-800 font-medium">
-                                  +{hiddenCount}
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-xs">
-                                <div className="space-y-2">
-                                  {allVacationsToday.slice(MAX_VISIBLE).map((vac) => (
-                                    <div
-                                      key={vac.useId}
-                                      className="text-xs space-y-0.5 pb-2 border-b last:border-0 last:pb-0"
-                                    >
-                                      <div className="font-semibold">{vac.usName}</div>
-                                      <div className="text-slate-600">
-                                        {vac.deptName} - {vac.itemName}
-                                      </div>
-                                      <div className="text-slate-600">
-                                        {vac.useSdate} ~ {vac.useEdate}
-                                      </div>
-                                      {vac.useStime && vac.useEtime && (
-                                        <div className="text-slate-600">
-                                          {vac.useStime}시 ~ {vac.useEtime}시
-                                        </div>
-                                      )}
-                                      {vac.useDesc && <div className="text-slate-500">{vac.useDesc}</div>}
-                                    </div>
-                                  ))}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
                       </div>
 
-                      {barsStartingToday.slice(0, MAX_VISIBLE).map((bar, barIndex) => {
-                        const rowPosition = barIndex
-                        const topOffset = 28 + rowPosition * 22
+                      {/* 휴가 이벤트 */}
+                      <div className="space-y-1">
+                        {visibleEvents.map((event, index) => (
+                          <div
+                            key={event.vacation.useId + '-' + index}
+                            className={`text-[11px] px-2 py-0.5 rounded border font-medium truncate ${getVacationColor(event.vacation.itemName)}`}
+                            title={`${event.vacation.usName} - ${event.vacation.itemName}`}
+                          >
+                            {event.displayText}
+                          </div>
+                        ))}
 
-                        return (
-                          <TooltipProvider key={bar.vacation.useId}>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div
-                                  className={`absolute text-[10px] px-2 py-1 rounded font-semibold truncate border cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md ${getVacationColor(bar.vacation.itemName)}`}
-                                  style={{
-                                    left: "4px",
-                                    width: `calc(${bar.span * 100}% - 8px)`,
-                                    top: `${topOffset}px`,
-                                    zIndex: 10 - barIndex,
-                                  }}
-                                >
-                                  {bar.displayText}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-xs">
-                                <div className="space-y-1">
-                                  <div className="font-semibold text-sm">{bar.vacation.usName}</div>
-                                  <div className="text-xs text-slate-600">{bar.vacation.deptName} - {bar.vacation.itemName}</div>
-                                  <div className="text-xs text-slate-600">
-                                    {bar.vacation.useSdate} ~ {bar.vacation.useEdate}
-                                  </div>
-                                  {bar.vacation.useStime && bar.vacation.useEtime && (
-                                    <div className="text-xs text-slate-600">
-                                      {bar.vacation.useStime}시 ~ {bar.vacation.useEtime}시
-                                    </div>
-                                  )}
-                                  {bar.vacation.useDesc && (
-                                    <div className="text-xs text-slate-500 mt-1 pt-1 border-t">{bar.vacation.useDesc}</div>
-                                  )}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )
-                      })}
+                        {hiddenCount > 0 && (
+                          <button
+                            onClick={() => handleMoreClick(date)}
+                            className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold hover:underline w-full text-left px-2"
+                          >
+                            +{hiddenCount}개 더보기
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
@@ -356,6 +285,59 @@ export function CalendarPage() {
           })}
         </div>
       </div>
+
+      {/* 더보기 다이얼로그 */}
+      <Dialog open={showMoreDialog} onOpenChange={setShowMoreDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDate && (
+                <>
+                  {selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일 일정
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px] pr-4">
+            {selectedDate && (() => {
+              const dateKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
+              const events = vacationsByDate[dateKey] || []
+
+              return (
+                <div className="space-y-3">
+                  {events.map((event, index) => (
+                    <div
+                      key={event.vacation.useId + '-' + index}
+                      className="p-3 border border-slate-200 rounded-lg space-y-1.5"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="font-semibold text-slate-900">{event.vacation.usName}</div>
+                        <div
+                          className={`text-xs px-2 py-0.5 rounded border font-medium ${getVacationColor(event.vacation.itemName)}`}
+                        >
+                          {event.vacation.itemName}
+                        </div>
+                      </div>
+                      <div className="text-sm text-slate-600">{event.vacation.deptName}</div>
+                      <div className="text-sm text-slate-600">
+                        {event.vacation.useSdate} ~ {event.vacation.useEdate}
+                      </div>
+                      {event.vacation.useStime && event.vacation.useEtime && (
+                        <div className="text-sm text-slate-600">
+                          {event.vacation.useStime}시 ~ {event.vacation.useEtime}시
+                        </div>
+                      )}
+                      {event.vacation.useDesc && (
+                        <div className="text-sm text-slate-500 pt-1.5 border-t">{event.vacation.useDesc}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   )
 }
