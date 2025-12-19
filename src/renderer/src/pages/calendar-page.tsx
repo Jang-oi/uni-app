@@ -1,29 +1,24 @@
 import { motion } from 'motion/react'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { vacationData } from '@/data/vacation-mockdata'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useVacationStore } from '@/stores/vacationStore'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Calendar03Icon, ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import { Calendar03Icon, ArrowLeft01Icon, ArrowRight01Icon, Loading03Icon } from '@hugeicons/core-free-icons'
 
 type VacationData = {
   useId: string
-  usId: string
-  empNo: string
   usName: string
   itemName: string
   useSdate: string
   useEdate: string
-  useMin: string
-  useDayCnt: string
   deptName: string
-  useTimeType: string
-  useTimeTypeName: string
-  aprvDocStsName: string
   useDesc: string
   useStime: string | null
   useEtime: string | null
+  useTimeTypeName?: string
 }
 
 type VacationEvent = {
@@ -39,6 +34,16 @@ export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 1))
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showMoreDialog, setShowMoreDialog] = useState(false)
+
+  // Zustand 스토어
+  const { vacations, isLoading, error, fetchVacations, clearError } = useVacationStore()
+
+  // 컴포넌트 마운트 시 및 월 변경 시 데이터 가져오기
+  useEffect(() => {
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth() + 1
+    fetchVacations(year, month)
+  }, [currentDate, fetchVacations])
 
   const { weekRows, vacationsByDate } = useMemo(() => {
     const year = currentDate.getFullYear()
@@ -78,7 +83,7 @@ export function CalendarPage() {
     // 날짜별 휴가 이벤트 정리
     const vacationsByDate: Record<string, VacationEvent[]> = {}
 
-    vacationData.forEach((vacation) => {
+    vacations.forEach((vacation) => {
       // YYYY-MM-DD 형식을 정확하게 로컬 날짜로 파싱
       const [startYear, startMonth, startDay] = vacation.useSdate.split('-').map(Number)
       const [endYear, endMonth, endDay] = vacation.useEdate.split('-').map(Number)
@@ -126,7 +131,7 @@ export function CalendarPage() {
     })
 
     return { weekRows: weeks, vacationsByDate }
-  }, [currentDate])
+  }, [currentDate, vacations])
 
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
@@ -173,25 +178,46 @@ export function CalendarPage() {
         <div className="flex items-center gap-3">
           <HugeiconsIcon icon={Calendar03Icon} className="w-6 h-6 text-slate-700" />
           <h1 className="text-2xl font-semibold text-slate-900">일정/휴가</h1>
+          {isLoading && (
+            <HugeiconsIcon icon={Loading03Icon} className="w-5 h-5 text-blue-600 animate-spin" />
+          )}
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={goToToday} className="font-medium">
+          <Button variant="outline" size="sm" onClick={goToToday} className="font-medium" disabled={isLoading}>
             오늘
           </Button>
           <div className="flex items-center gap-2 border border-slate-300 rounded-lg px-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousMonth}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToPreviousMonth}
+              disabled={isLoading}
+            >
               <HugeiconsIcon icon={ArrowLeft01Icon} className="w-4 h-4" />
             </Button>
             <div className="px-4 text-base font-semibold min-w-[140px] text-center text-slate-800">
               {formatYearMonth(currentDate)}
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextMonth}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextMonth} disabled={isLoading}>
               <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </div>
+
+      {/* 에러 알림 */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button variant="ghost" size="sm" onClick={clearError}>
+              닫기
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* 캘린더 */}
       <div className="flex-1 bg-white border border-slate-300 rounded-xl overflow-hidden flex flex-col shadow-sm">
@@ -210,12 +236,12 @@ export function CalendarPage() {
         </div>
 
         {/* 주 단위 행 */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex flex-col">
           {weekRows.map((week, weekIndex) => {
             const currentMonth = currentDate.getMonth()
 
             return (
-              <div key={weekIndex} className="flex-1 grid grid-cols-7 border-b border-slate-200 last:border-b-0">
+              <div key={weekIndex} className="h-[140px] grid grid-cols-7 border-b border-slate-200 last:border-b-0">
                 {week.map((date, dayIndex) => {
                   const isCurrentMonth = date.getMonth() === currentMonth
                   const today = new Date()
@@ -233,12 +259,12 @@ export function CalendarPage() {
                   return (
                     <div
                       key={dayIndex}
-                      className={`border-r border-slate-200 last:border-r-0 p-2 min-h-[110px] ${
+                      className={`border-r border-slate-200 last:border-r-0 p-2 flex flex-col ${
                         !isCurrentMonth ? 'bg-slate-50/50' : isWeekend ? 'bg-blue-50/30' : 'bg-white'
                       }`}
                     >
                       {/* 날짜 숫자 */}
-                      <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
                         <div
                           className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
                             isToday
@@ -256,12 +282,12 @@ export function CalendarPage() {
                         </div>
                       </div>
 
-                      {/* 휴가 이벤트 */}
-                      <div className="space-y-1">
+                      {/* 휴가 이벤트 - 스크롤 가능 */}
+                      <div className="flex-1 overflow-y-auto space-y-1 pr-1">
                         {visibleEvents.map((event, index) => (
                           <div
                             key={event.vacation.useId + '-' + index}
-                            className={`text-[11px] px-2 py-0.5 rounded border font-medium truncate ${getVacationColor(event.vacation.itemName)}`}
+                            className={`text-[10px] px-1.5 py-0.5 rounded border font-medium truncate ${getVacationColor(event.vacation.itemName)}`}
                             title={`${event.vacation.usName} - ${event.vacation.itemName}`}
                           >
                             {event.displayText}
@@ -271,7 +297,7 @@ export function CalendarPage() {
                         {hiddenCount > 0 && (
                           <button
                             onClick={() => handleMoreClick(date)}
-                            className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold hover:underline w-full text-left px-2"
+                            className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold hover:underline w-full text-left px-1.5"
                           >
                             +{hiddenCount}개 더보기
                           </button>
