@@ -222,8 +222,9 @@ app.on('window-all-closed', () => {
   socketClient.disconnect()
 
   // 크롤러 정지 (실행 중이었다면)
-  if (isMasterMode()) {
-    crawlerScheduler.stop()
+  const status = getSchedulerStatus()
+  if (status.isRunning) {
+    stopScheduler()
   }
 
   // TODO: HyperV 모니터 정지

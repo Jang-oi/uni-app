@@ -314,7 +314,7 @@ export function CalendarPage() {
                         return (
                           <TooltipProvider key={bar.vacation.useId}>
                             <Tooltip>
-                              <TooltipTrigger asChild>
+                              <TooltipTrigger>
                                 <div
                                   className={`absolute text-[10px] px-2 py-1 rounded font-semibold truncate border cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md ${getVacationColor(bar.vacation.itemName)}`}
                                   style={{
