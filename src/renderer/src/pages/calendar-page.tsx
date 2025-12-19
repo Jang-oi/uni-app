@@ -171,7 +171,7 @@ export function CalendarPage() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="p-6 space-y-4 h-full flex flex-col"
+      className="p-6 space-y-4 h-full flex flex-col overflow-auto"
     >
       {/* 헤더 */}
       <div className="flex items-center justify-between">
@@ -210,13 +210,13 @@ export function CalendarPage() {
       )}
 
       {/* 캘린더 */}
-      <div className="flex-1 bg-white border border-slate-300 rounded-xl overflow-hidden flex flex-col shadow-sm">
+      <div className="bg-white border border-slate-300 rounded-xl overflow-hidden flex flex-col shadow-sm max-h-[700px]">
         {/* 요일 헤더 */}
         <div className="grid grid-cols-7 border-b border-slate-300 bg-slate-50">
           {['일', '월', '화', '수', '목', '금', '토'].map((day, index) => (
             <div
               key={day}
-              className={`text-center text-sm font-semibold py-3 border-r border-slate-200 last:border-r-0 ${
+              className={`text-center text-sm font-semibold py-2.5 border-r border-slate-200 last:border-r-0 ${
                 index === 0 ? 'text-red-600' : index === 6 ? 'text-blue-600' : 'text-slate-700'
               }`}
             >
@@ -231,7 +231,7 @@ export function CalendarPage() {
             const currentMonth = currentDate.getMonth()
 
             return (
-              <div key={weekIndex} className="h-[140px] grid grid-cols-7 border-b border-slate-200 last:border-b-0">
+              <div key={weekIndex} className="h-[110px] grid grid-cols-7 border-b border-slate-200 last:border-b-0">
                 {week.map((date, dayIndex) => {
                   const isCurrentMonth = date.getMonth() === currentMonth
                   const today = new Date()
@@ -283,12 +283,12 @@ export function CalendarPage() {
                         ))}
 
                         {hiddenCount > 0 && (
-                          <Button
+                          <button
                             onClick={() => handleMoreClick(date)}
-                            className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold hover:underline w-full text-left px-1.5"
+                            className="text-[10px] px-2 py-1 rounded bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300 font-semibold w-full text-center transition-colors"
                           >
                             +{hiddenCount}개 더보기
-                          </Button>
+                          </button>
                         )}
                       </div>
                     </div>
