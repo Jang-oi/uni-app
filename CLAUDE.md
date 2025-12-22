@@ -340,7 +340,6 @@ pnpm lint
 ## 참고 문서
 
 - [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md) - Phase별 구현 가이드
-- [4team_dashboard_system.txt](./4team_dashboard_system.txt) - 상세 기획서
 - [Electron 공식 문서](https://www.electronjs.org/docs)
 - [Electron-Vite 문서](https://electron-vite.org/)
 

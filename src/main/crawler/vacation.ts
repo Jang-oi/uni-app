@@ -1,7 +1,8 @@
 import { BrowserWindow } from 'electron'
 import { loadCredentials } from '../store'
-import type { VacationRawData } from '../supabase/types'
-import { syncVacationsToSupabase } from '../supabase/vacation'
+import type { VacationRawData } from '../types/data'
+// import { syncVacationsToServer } from '../api/vacation' // Express 서버 구현 후 주석 해제
+import { saveVacationsMockData } from '../mockdata/writer'
 import { clickElement, executeInBrowser, waitForSelector } from './browserUtil'
 
 const createVacationBrowser = async (show = false): Promise<BrowserWindow> => {
@@ -117,12 +118,19 @@ export const runVacationCrawler = async (): Promise<unknown> => {
     }
     console.log('[Vacation] 조회 결과 데이터:', result)
 
-    // 5. Supabase에 저장
+    // 5. 서버로 데이터 전송
     if (result && result.response && Array.isArray(result.response)) {
-      console.log(`[Vacation] ${result.response.length}건의 데이터를 Supabase에 저장 시작...`)
-      const syncResult = await syncVacationsToSupabase(result.response)
-      console.log('[Vacation] Supabase 저장 완료:', syncResult)
-      return syncResult
+      console.log(`[Vacation] ${result.response.length}건의 데이터 처리 시작...`)
+
+      // Express 서버 구현 후 주석 해제하여 사용
+      // const syncResult = await syncVacationsToServer(result.response)
+      // console.log('[Vacation] 서버 동기화 완료:', syncResult)
+      // return syncResult
+
+      // 임시: Mock 데이터로 저장 (서버 구현 전까지 사용)
+      saveVacationsMockData(result.response)
+      console.log('[Vacation] Mock 데이터 저장 완료')
+      return { inserted: result.response.length, updated: 0, total: result.response.length }
     } else {
       console.warn('[Vacation] 저장할 데이터가 없습니다.', result)
       return { inserted: 0, updated: 0, total: 0 }

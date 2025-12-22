@@ -1,7 +1,8 @@
 import { BrowserWindow } from 'electron'
+import { saveTasksMockData } from '../mockdata/writer'
 import { loadCredentials } from '../store'
-import { syncTasksToSupabase } from '../supabase/task'
-import type { TaskRawData } from '../supabase/types'
+// import { syncTasksToServer } from '../api/task' // Express 서버 구현 후 주석 해제
+import type { TaskRawData } from '../types/data'
 import { executeInBrowser } from './browserUtil'
 
 // 브라우저 인스턴스를 전역으로 관리하여 1분마다 재사용 (메모리 상주)
@@ -175,19 +176,37 @@ export const runTaskCrawler = async (): Promise<unknown> => {
     console.log('[Task] 3개 브라우저 동시 수집 시작...')
 
     // 3. 3개 브라우저 병렬 데이터 추출
+    // teamTotal: "팀" 데이터용 (A 타입)
+    // g1Results, g2Results: 개개인 데이터용 (P 타입)
     const [teamTotal, g1Results, g2Results] = await Promise.all([
-      scrapeDataByCondition(browsers.b1, 'A'), // 리더: 팀 전체 데이터
-      crawlMemberGroup(browsers.b2, group1), // 팔로워1: 팀원 1~4
-      crawlMemberGroup(browsers.b3, group2) // 팔로워2: 팀원 5~8
+      scrapeDataByCondition(browsers.b1, 'A'),
+      crawlMemberGroup(browsers.b2, group1),
+      crawlMemberGroup(browsers.b3, group2)
     ])
 
-    console.log('[Task] 모든 데이터 수집 완료')
+    // 4. 데이터 구조화 { "팀": [], "이름1": [], ... }
+    const structuredData: Record<string, any> = {
+      team: Array.isArray(teamTotal) ? teamTotal : []
+    }
 
-    // 4. Supabase에 저장 (teamTotal 데이터를 TaskRawData 형식으로 변환)
+    // 개별 팀원 결과 병합
+    Object.assign(structuredData, g1Results, g2Results)
+
+    console.log('[Task] 데이터 구조화 완료. 서버 전송 시작...')
+
+    // 4. 서버로 데이터 전송
     if (teamTotal && Array.isArray(teamTotal)) {
-      console.log(`[Task] ${teamTotal.length}건의 데이터를 Supabase에 저장 시작...`)
-      const syncResult = await syncTasksToSupabase(teamTotal as TaskRawData[])
-      console.log('[Task] Supabase 저장 완료:', syncResult)
+      console.log(`[Task] ${teamTotal.length}건의 데이터 처리 시작...`)
+
+      // Express 서버 구현 후 주석 해제하여 사용
+      // const syncResult = await syncTasksToServer(teamTotal as TaskRawData[])
+      // console.log('[Task] 서버 동기화 완료:', syncResult)
+
+      // 임시: Mock 데이터로 저장 (서버 구현 전까지 사용)
+      saveTasksMockData(teamTotal as TaskRawData[])
+      console.log('[Task] Mock 데이터 저장 완료')
+      const syncResult = { inserted: teamTotal.length, updated: 0, total: teamTotal.length }
+
       return {
         teamTotal: syncResult,
         individualResults: { ...g1Results, ...g2Results },

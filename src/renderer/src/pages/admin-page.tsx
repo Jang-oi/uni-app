@@ -13,6 +13,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { motion } from 'motion/react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -119,11 +120,11 @@ export function AdminPage() {
       const result = await window.api.saveCredentials(credentials)
 
       if (result.success) {
-        alert('자격증명이 저장되었습니다')
+        toast.success('자격증명이 저장되었습니다')
       }
     } catch (error) {
       console.error('[AdminPage] 자격증명 저장 오류:', error)
-      alert('자격증명 저장 중 오류가 발생했습니다')
+      toast.error('자격증명 저장 중 오류가 발생했습니다')
     } finally {
       setIsSavingCredentials(false)
     }
@@ -149,13 +150,13 @@ export function AdminPage() {
 
       if (result.success) {
         setIsSchedulerRunning(true)
-        alert('크롤러 스케줄러가 시작되었습니다')
+        toast.success('크롤러 스케줄러가 시작되었습니다')
       } else {
-        alert(result.message || '스케줄러 시작에 실패했습니다')
+        toast.error(result.message || '스케줄러 시작에 실패했습니다')
       }
     } catch (error) {
       console.error('[AdminPage] 스케줄러 시작 오류:', error)
-      alert('스케줄러 시작 중 오류가 발생했습니다')
+      toast.error('스케줄러 시작 중 오류가 발생했습니다')
     }
   }
 
@@ -166,13 +167,13 @@ export function AdminPage() {
 
       if (result.success) {
         setIsSchedulerRunning(false)
-        alert('크롤러 스케줄러가 정지되었습니다')
+        toast.success('크롤러 스케줄러가 정지되었습니다')
       } else {
-        alert(result.message || '스케줄러 정지에 실패했습니다')
+        toast.error(result.message || '스케줄러 정지에 실패했습니다')
       }
     } catch (error) {
       console.error('[AdminPage] 스케줄러 정지 오류:', error)
-      alert('스케줄러 정지 중 오류가 발생했습니다')
+      toast.error('스케줄러 정지 중 오류가 발생했습니다')
     }
   }
 
@@ -184,13 +185,13 @@ export function AdminPage() {
       const result = await window.api.runVacationCrawler()
 
       if (result.success) {
-        alert('휴가 크롤러가 실행되었습니다')
+        toast.success('휴가 크롤러가 실행되었습니다')
       } else {
-        alert(result.message || '휴가 크롤러 실행에 실패했습니다')
+        toast.error(result.message || '휴가 크롤러 실행에 실패했습니다')
       }
     } catch (error) {
       console.error('[AdminPage] 휴가 크롤러 실행 오류:', error)
-      alert('휴가 크롤러 실행 중 오류가 발생했습니다')
+      toast.error('휴가 크롤러 실행 중 오류가 발생했습니다')
     } finally {
       setIsManualRunning((prev) => ({ ...prev, vacation: false }))
     }
@@ -204,13 +205,13 @@ export function AdminPage() {
       const result = await window.api.runTaskCrawler()
 
       if (result.success) {
-        alert('업무 크롤러가 실행되었습니다')
+        toast.success('업무 크롤러가 실행되었습니다')
       } else {
-        alert(result.message || '업무 크롤러 실행에 실패했습니다')
+        toast.error(result.message || '업무 크롤러 실행에 실패했습니다')
       }
     } catch (error) {
       console.error('[AdminPage] 업무 크롤러 실행 오류:', error)
-      alert('업무 크롤러 실행 중 오류가 발생했습니다')
+      toast.error('업무 크롤러 실행 중 오류가 발생했습니다')
     } finally {
       setIsManualRunning((prev) => ({ ...prev, task: false }))
     }

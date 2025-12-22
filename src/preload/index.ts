@@ -51,6 +51,20 @@ const api = {
   },
   getTasksCount: async () => {
     return await ipcRenderer.invoke('supabase:get-tasks-count')
+  },
+
+  // ==================== HyperV 모니터 ====================
+  getHyperVStatus: async () => {
+    return await ipcRenderer.invoke('hyperv:get-status')
+  },
+  startHyperVMonitor: async () => {
+    return await ipcRenderer.invoke('hyperv:start')
+  },
+  stopHyperVMonitor: async () => {
+    return await ipcRenderer.invoke('hyperv:stop')
+  },
+  getHyperVList: async () => {
+    return await ipcRenderer.invoke('hyperv:get-list')
   }
 }
 

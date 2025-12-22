@@ -4,10 +4,24 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { appConfig } from './config'
 import { getSchedulerStatus, runTaskCrawlerManually, runVacationCrawlerManually, startScheduler, stopScheduler } from './crawler/scheduler'
 import { hasValidCredentials, loadCredentials, saveCredentials } from './store'
-import { getAllTasks, getTasksByUser, getTasksCount } from './supabase/task'
-import { getVacationsByMonth, getVacationsCount } from './supabase/vacation'
+import { createHyperVMonitor } from './hyperv/monitor'
+import { getHyperVStatusList, updateHyperVStatus } from './api/hyperv'
+// Express 서버 구현 후 주석 해제
+// import { getVacationsByMonthFromServer } from './api/vacation'
+// import { getAllTasksFromServer, getTasksByUserFromServer } from './api/task'
+// 임시: Mock 데이터 사용 (서버 구현 전까지)
+import { filterVacationsByMonth, getAllTasks, getTasksByUser } from './mockdata/loader'
 
 let mainWindow: BrowserWindow | null = null
+
+// HyperV 모니터 인스턴스 생성 (함수형)
+const hypervMonitor = createHyperVMonitor(async (vmName: string, userName: string | null) => {
+  try {
+    await updateHyperVStatus(vmName, userName)
+  } catch (error) {
+    console.error('[HyperV] 서버 업데이트 실패:', error)
+  }
+})
 
 export const uniIcon = is.dev
   ? join(__dirname, '../../build/unicorn3.ico') // 개발 환경 경로
@@ -178,17 +192,22 @@ app.whenReady().then(() => {
     }
   })
 
-  // ==================== Supabase 데이터 조회 ====================
+  // ==================== 데이터 조회 (Mock / 서버 전환 가능) ====================
 
   /**
    * 월별 휴가 데이터 조회
    */
   ipcMain.handle('supabase:get-vacations', async (_event, year: string, month: string) => {
     try {
-      const data = await getVacationsByMonth(year, month)
+      // Express 서버 구현 후 주석 해제
+      // const data = await getVacationsByMonthFromServer(year, month)
+
+      // 임시: Mock 데이터 사용
+      const data = filterVacationsByMonth(year, month)
+
       return { success: true, data }
     } catch (error) {
-      console.error('[Supabase] 휴가 조회 실패:', error)
+      console.error('[Data] 휴가 조회 실패:', error)
       return { success: false, error: (error as Error).message, data: [] }
     }
   })
@@ -198,10 +217,10 @@ app.whenReady().then(() => {
    */
   ipcMain.handle('supabase:get-vacations-count', async () => {
     try {
-      const count = await getVacationsCount()
-      return { success: true, count }
+      // Mock 데이터에서는 카운트 조회 불필요 (임시로 0 반환)
+      return { success: true, count: 0 }
     } catch (error) {
-      console.error('[Supabase] 휴가 카운트 조회 실패:', error)
+      console.error('[Data] 휴가 카운트 조회 실패:', error)
       return { success: false, error: (error as Error).message, count: 0 }
     }
   })
@@ -211,10 +230,15 @@ app.whenReady().then(() => {
    */
   ipcMain.handle('supabase:get-tasks', async () => {
     try {
-      const data = await getAllTasks()
+      // Express 서버 구현 후 주석 해제
+      // const data = await getAllTasksFromServer()
+
+      // 임시: Mock 데이터 사용
+      const data = getAllTasks()
+
       return { success: true, data }
     } catch (error) {
-      console.error('[Supabase] 업무 조회 실패:', error)
+      console.error('[Data] 업무 조회 실패:', error)
       return { success: false, error: (error as Error).message, data: [] }
     }
   })
@@ -224,10 +248,15 @@ app.whenReady().then(() => {
    */
   ipcMain.handle('supabase:get-tasks-by-user', async (_event, usId: string) => {
     try {
-      const data = await getTasksByUser(usId)
+      // Express 서버 구현 후 주석 해제
+      // const data = await getTasksByUserFromServer(usId)
+
+      // 임시: Mock 데이터 사용
+      const data = getTasksByUser(usId)
+
       return { success: true, data }
     } catch (error) {
-      console.error('[Supabase] 사용자 업무 조회 실패:', error)
+      console.error('[Data] 사용자 업무 조회 실패:', error)
       return { success: false, error: (error as Error).message, data: [] }
     }
   })
@@ -237,19 +266,74 @@ app.whenReady().then(() => {
    */
   ipcMain.handle('supabase:get-tasks-count', async () => {
     try {
-      const count = await getTasksCount()
-      return { success: true, count }
+      // Mock 데이터에서는 카운트 조회 불필요 (임시로 0 반환)
+      return { success: true, count: 0 }
     } catch (error) {
-      console.error('[Supabase] 업무 카운트 조회 실패:', error)
+      console.error('[Data] 업무 카운트 조회 실패:', error)
       return { success: false, error: (error as Error).message, count: 0 }
+    }
+  })
+
+  // ==================== HyperV 모니터 제어 ====================
+
+  /**
+   * HyperV 모니터 상태 조회
+   */
+  ipcMain.handle('hyperv:get-status', async () => {
+    try {
+      const status = hypervMonitor.getStatus()
+      return { success: true, data: status }
+    } catch (error) {
+      console.error('[HyperV] 상태 조회 실패:', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  /**
+   * HyperV 모니터 시작
+   */
+  ipcMain.handle('hyperv:start', async () => {
+    try {
+      hypervMonitor.start()
+      return { success: true }
+    } catch (error) {
+      console.error('[HyperV] 시작 실패:', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  /**
+   * HyperV 모니터 정지
+   */
+  ipcMain.handle('hyperv:stop', async () => {
+    try {
+      hypervMonitor.stop()
+      return { success: true }
+    } catch (error) {
+      console.error('[HyperV] 정지 실패:', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  /**
+   * 서버에서 HyperV 상태 목록 조회
+   */
+  ipcMain.handle('hyperv:get-list', async () => {
+    try {
+      const data = await getHyperVStatusList()
+      return { success: true, data }
+    } catch (error) {
+      console.error('[HyperV] 목록 조회 실패:', error)
+      return { success: false, error: (error as Error).message, data: [] }
     }
   })
 
   // 메인 윈도우 생성
   createWindow()
 
-  // TODO: HyperV 모니터 시작 (모든 앱)
-  // hypervMonitor.start()
+  // HyperV 모니터 시작 (모든 앱)
+  hypervMonitor.start()
+  console.log('[App] HyperV 모니터링 백그라운드 서비스 시작')
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -268,8 +352,9 @@ app.on('window-all-closed', () => {
     stopScheduler()
   }
 
-  // TODO: HyperV 모니터 정지
-  // hypervMonitor.stop()
+  // HyperV 모니터 정지
+  hypervMonitor.stop()
+  console.log('[App] HyperV 모니터링 백그라운드 서비스 종료')
 
   if (process.platform !== 'darwin') {
     app.quit()

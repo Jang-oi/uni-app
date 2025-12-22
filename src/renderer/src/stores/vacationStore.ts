@@ -16,6 +16,7 @@ export type VacationDto = {
   useEtime: string | null
   useDesc: string
   useTimeTypeName?: string
+  useDayCnt?: string
 }
 
 type VacationStore = {

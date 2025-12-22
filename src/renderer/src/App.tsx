@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { Header } from '@/components/header'
+import { Toaster } from '@/components/ui/sonner'
 import { AdminPage } from '@/pages/admin-page'
 import { CalendarPage } from '@/pages/calendar-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
@@ -36,6 +37,7 @@ export default function App() {
       <main className="flex-1 overflow-auto">
         <AnimatePresence mode="wait">{renderPage()}</AnimatePresence>
       </main>
+      <Toaster position="top-right" richColors />
     </div>
   )
 }
