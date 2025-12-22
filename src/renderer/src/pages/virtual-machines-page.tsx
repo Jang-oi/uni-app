@@ -1,18 +1,7 @@
 import * as React from 'react'
 import { ArrowUpDownIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type ColumnDef,
-  type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState
-} from '@tanstack/react-table'
+import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from '@tanstack/react-table'
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -22,47 +11,13 @@ import { ScrollArea } from '../components/ui/scroll-area'
 import { useHypervStore, type HypervVM } from '../stores/hyperv'
 
 export function VirtualMachinesPage() {
-  // Zustand 스토어에서 실시간 VM 데이터 가져오기
-  const vms = useHypervStore((state) => state.vms)
-  const setVMs = useHypervStore((state) => state.setVMs)
+  const { vms, initSocket } = useHypervStore()
+
+  React.useEffect(() => {
+    initSocket() // 소켓 연결 및 리스너 가동
+  }, [])
 
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [isLoading, setIsLoading] = React.useState(false)
-
-  // 서버에서 HyperV 목록 조회
-  const fetchHyperVList = React.useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const result = await window.api.getHyperVList()
-      if (result.success && result.data) {
-        // 서버 응답 데이터를 Zustand 스토어 형식으로 변환
-        const transformedData: HypervVM[] = result.data.map((item: any) => ({
-          vmName: item.vmName || item.name,
-          currentUser: item.userName || item.currentUser || null,
-          userHostname: item.userHostname || item.hostname || null,
-          isConnected: item.isConnected !== undefined ? item.isConnected : item.userName !== null,
-          lastUpdate: new Date().toISOString()
-        }))
-        setVMs(transformedData)
-      }
-    } catch (error) {
-      console.error('[HyperV] 목록 조회 실패:', error)
-      toast.error('HyperV 목록 조회에 실패했습니다.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [setVMs])
-
-  // 컴포넌트 마운트 시 초기 로드 및 5초마다 폴링
-  React.useEffect(() => {
-    fetchHyperVList() // 초기 로드
-
-    const intervalId = setInterval(fetchHyperVList, 5000) // 5초마다 갱신
-
-    return () => clearInterval(intervalId)
-  }, [fetchHyperVList])
 
   const columns: ColumnDef<HypervVM>[] = [
     {
@@ -76,14 +31,6 @@ export function VirtualMachinesPage() {
       cell: ({ row }) => {
         const user = row.getValue('currentUser') as string | null
         return user ? <div className="text-slate-700">{user}</div> : <div className="text-slate-400 text-sm">-</div>
-      }
-    },
-    {
-      accessorKey: 'userHostname',
-      header: '사용 PC',
-      cell: ({ row }) => {
-        const hostname = row.getValue('userHostname') as string | null
-        return hostname ? <div className="text-slate-600">{hostname}</div> : <div className="text-slate-400 text-sm">-</div>
       }
     },
     {
@@ -102,7 +49,6 @@ export function VirtualMachinesPage() {
       }
     },
     {
-      id: 'actions',
       header: '사용요청',
       cell: ({ row }) => {
         const vm = row.original
@@ -111,9 +57,9 @@ export function VirtualMachinesPage() {
         return (
           <Button
             size="sm"
-            disabled={hasUser}
+            disabled={!hasUser}
             onClick={() => {
-              if (!hasUser) {
+              if (hasUser) {
                 console.log('[VM Request]:', vm.vmName)
                 toast.success(`${vm.vmName} 사용 요청이 전송되었습니다.`)
               }
@@ -130,17 +76,9 @@ export function VirtualMachinesPage() {
     data: vms,
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility
-    }
+    state: { sorting }
   })
 
   return (
@@ -162,17 +100,6 @@ export function VirtualMachinesPage() {
           onChange={(event) => table.getColumn('vmName')?.setFilterValue(event.target.value)}
           className="max-w-sm"
         />
-        <div className="ml-auto flex items-center gap-3">
-          {isLoading && (
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <div className="w-3 h-3 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
-              <span>갱신 중...</span>
-            </div>
-          )}
-          <div className="text-xs text-slate-500">
-            총 {vms.length}개 VM • 활성: {vms.filter((vm) => vm.isConnected).length}개
-          </div>
-        </div>
       </div>
 
       <ScrollArea className="h-[calc(64vh-80px)]">

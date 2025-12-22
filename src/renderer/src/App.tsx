@@ -10,7 +10,7 @@ import { TeamTasksPage } from './pages/team-tasks-page'
 import { VersionPage } from './pages/version-page'
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('일정')
+  const [activeTab, setActiveTab] = useState('가상머신')
 
   const renderPage = () => {
     switch (activeTab) {
@@ -27,7 +27,7 @@ export default function App() {
       case '관리자':
         return <AdminPage key="admin" />
       default:
-        return <CalendarPage key="calendar" />
+        return <VirtualMachinesPage key="vm" />
     }
   }
 

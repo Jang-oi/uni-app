@@ -3,7 +3,7 @@
  * 서버와의 HTTP 통신을 담당
  */
 
-const API_BASE_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
+export const API_BASE_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 
 type ApiResponse<T> = {
   success: boolean

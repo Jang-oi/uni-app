@@ -16,7 +16,6 @@ import {
 import { motion } from 'motion/react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollArea } from '../components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
@@ -146,15 +145,6 @@ export function PersonalTasksPage() {
       <div>
         <h1 className="text-3xl font-semibold text-slate-900 mb-2">개인 업무</h1>
         <p className="text-slate-600">{}님의 업무를 확인하세요.</p>
-      </div>
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="제목으로 검색..."
-          value={(table.getColumn('title')?.getFilterValue() as string) ?? ''}
-          onChange={(event) => table.getColumn('title')?.setFilterValue(event.target.value)}
-          className="max-w-sm"
-        />
-        <div className="ml-auto text-xs text-slate-500">{tasks.length}개 업무</div>
       </div>
 
       <ScrollArea className="h-[calc(64vh-80px)]">

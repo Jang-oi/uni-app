@@ -1,36 +1,38 @@
-/**
- * HyperV 현황 Zustand 스토어
- */
-
+import { io, Socket } from 'socket.io-client'
 import { create } from 'zustand'
+import { API_BASE_URL } from '../lib/api'
 
 export interface HypervVM {
   vmName: string
   currentUser: string | null
-  userHostname: string | null
   isConnected: boolean
   lastUpdate: string
 }
 
-export interface HypervRequest {
-  vmName: string
-  requester: string
-  requestTime: string
-  status: 'pending' | 'approved' | 'rejected'
-}
-
 interface HypervStore {
   vms: HypervVM[]
-  requests: HypervRequest[]
+  socket: Socket | null
+  initSocket: () => void
   setVMs: (vms: HypervVM[]) => void
-  addRequest: (request: HypervRequest) => void
-  clearRequests: () => void
 }
 
-export const useHypervStore = create<HypervStore>((set) => ({
+export const useHypervStore = create<HypervStore>((set, get) => ({
   vms: [],
-  requests: [],
+  socket: null,
+
   setVMs: (vms) => set({ vms }),
-  addRequest: (request) => set((state) => ({ requests: [...state.requests, request] })),
-  clearRequests: () => set({ requests: [] })
+
+  initSocket: () => {
+    // 이미 연결되어 있다면 재연결 방지
+    if (get().socket) return
+
+    const newSocket = io(API_BASE_URL)
+
+    // 서버가 쏴주는 'hyperv:status_changed' 이벤트를 상시 감시
+    newSocket.on('hyperv:status_changed', (updatedVms: HypervVM[]) => {
+      set({ vms: updatedVms })
+    })
+
+    set({ socket: newSocket })
+  }
 }))

@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 const tabs = [
-  { id: '일정', label: '일정' },
+  { id: '가상머신', label: '가상 머신' },
   {
     id: '업무',
     label: '업무',
@@ -19,7 +19,7 @@ const tabs = [
       { id: '개인업무', label: '개인 업무' }
     ]
   },
-  { id: '가상머신', label: '가상 머신' },
+  { id: '일정', label: '일정' },
   { id: '버전관리', label: '버전관리' },
   { id: '관리자', label: '관리자' }
 ]
@@ -46,26 +46,36 @@ export function Header({ activeTab, setActiveTab }: HeaderProps) {
         {tabs.map((tab) => {
           if (tab.subMenus) {
             return (
+              // DropdownMenuTrigger에 직접 Button 스타일을 적용합니다.
               <DropdownMenu key={tab.id}>
-                <DropdownMenuTrigger>
-                  <Button variant="ghost" size="sm" className="relative px-4 py-2 text-sm font-medium flex items-center gap-1">
-                    <span className={isTabActive(tab.id, tab.subMenus) ? 'text-slate-900' : 'text-slate-600'}>{tab.label}</span>
-                    <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3" />
-                    {isTabActive(tab.id, tab.subMenus) && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      />
-                    )}
-                  </Button>
+                <DropdownMenuTrigger
+                  // Button 컴포넌트 대신 직접 버튼 스타일 클래스를 넣습니다.
+                  className="relative px-4 py-2 text-sm font-medium flex items-center gap-1.5 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                >
+                  <span className={isTabActive(tab.id, tab.subMenus) ? 'text-slate-900' : 'text-slate-600'}>{tab.label}</span>
+                  <HugeiconsIcon
+                    icon={ArrowDown01Icon}
+                    size={16}
+                    className={isTabActive(tab.id, tab.subMenus) ? 'text-slate-900' : 'text-slate-400'}
+                  />
+                  {/* 활성 탭 표시줄 */}
+                  {isTabActive(tab.id, tab.subMenus) && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    />
+                  )}
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-40">
+
+                <DropdownMenuContent align="center" className="w-40 bg-white border border-slate-200 shadow-lg rounded-md p-1">
                   {tab.subMenus.map((subMenu) => (
                     <DropdownMenuItem
                       key={subMenu.id}
                       onClick={() => setActiveTab(subMenu.id)}
-                      className={activeTab === subMenu.id ? 'bg-slate-100' : ''}
+                      className={`px-2 py-1.5 text-sm cursor-pointer rounded-sm ${
+                        activeTab === subMenu.id ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
                     >
                       {subMenu.label}
                     </DropdownMenuItem>
