@@ -1,6 +1,4 @@
-import * as React from 'react'
-import { ArrowUpDownIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
+import { useEffect, useState } from 'react'
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from '@tanstack/react-table'
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
@@ -13,11 +11,11 @@ import { useHypervStore, type HypervVM } from '../stores/hyperv'
 export function VirtualMachinesPage() {
   const { vms, initSocket } = useHypervStore()
 
-  React.useEffect(() => {
+  useEffect(() => {
     initSocket() // 소켓 연결 및 리스너 가동
   }, [])
 
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>([])
 
   const columns: ColumnDef<HypervVM>[] = [
     {
@@ -35,14 +33,7 @@ export function VirtualMachinesPage() {
     },
     {
       accessorKey: 'isConnected',
-      header: ({ column }) => {
-        return (
-          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-            상태
-            <HugeiconsIcon icon={ArrowUpDownIcon} className="ml-2 h-4 w-4" />
-          </Button>
-        )
-      },
+      header: '상태',
       cell: ({ row }) => {
         const isConnected = row.getValue('isConnected') as boolean
         return <div className={`font-medium ${isConnected ? 'text-green-600' : 'text-slate-400'}`}>{isConnected ? '활성' : '대기'}</div>
@@ -102,7 +93,7 @@ export function VirtualMachinesPage() {
         />
       </div>
 
-      <ScrollArea className="h-[calc(64vh-80px)]">
+      <ScrollArea className="h-[calc(68vh-80px)]">
         <Table className="w-full border border-slate-200" style={{ tableLayout: 'fixed' }}>
           <TableHeader className="bg-slate-50 border-b border-slate-200">
             {table.getHeaderGroups().map((headerGroup) => (

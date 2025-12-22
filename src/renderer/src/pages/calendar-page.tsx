@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft01Icon, ArrowRight01Icon, Calendar03Icon, Loading03Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, ArrowRight01Icon, Calendar03Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { motion } from 'motion/react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -171,14 +171,13 @@ export function CalendarPage() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="p-6 space-y-4 h-full flex flex-col overflow-auto"
+      className="p-8 space-y-6"
     >
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <HugeiconsIcon icon={Calendar03Icon} className="w-6 h-6 text-slate-700" />
           <h1 className="text-2xl font-semibold text-slate-900">일정/휴가</h1>
-          {isLoading && <HugeiconsIcon icon={Loading03Icon} className="w-5 h-5 text-blue-600 animate-spin" />}
         </div>
 
         <div className="flex items-center gap-3">

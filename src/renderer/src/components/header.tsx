@@ -68,7 +68,7 @@ export function Header({ activeTab, setActiveTab }: HeaderProps) {
                   )}
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="center" className="w-40 bg-white border border-slate-200 shadow-lg rounded-md p-1">
+                <DropdownMenuContent align="center" className="w-40 bg-white border border-slate-200 shadow-lg p-1">
                   {tab.subMenus.map((subMenu) => (
                     <DropdownMenuItem
                       key={subMenu.id}

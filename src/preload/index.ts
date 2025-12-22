@@ -40,31 +40,11 @@ const api = {
   getVacations: async (year: string, month: string) => {
     return await ipcRenderer.invoke('supabase:get-vacations', year, month)
   },
-  getVacationsCount: async () => {
-    return await ipcRenderer.invoke('supabase:get-vacations-count')
-  },
   getTasks: async () => {
     return await ipcRenderer.invoke('supabase:get-tasks')
   },
   getTasksByUser: async (usId: string) => {
     return await ipcRenderer.invoke('supabase:get-tasks-by-user', usId)
-  },
-  getTasksCount: async () => {
-    return await ipcRenderer.invoke('supabase:get-tasks-count')
-  },
-
-  // ==================== HyperV 모니터 ====================
-  getHyperVStatus: async () => {
-    return await ipcRenderer.invoke('hyperv:get-status')
-  },
-  startHyperVMonitor: async () => {
-    return await ipcRenderer.invoke('hyperv:start')
-  },
-  stopHyperVMonitor: async () => {
-    return await ipcRenderer.invoke('hyperv:stop')
-  },
-  getHyperVList: async () => {
-    return await ipcRenderer.invoke('hyperv:get-list')
   }
 }
 

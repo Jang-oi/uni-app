@@ -1,16 +1,16 @@
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { updateHyperVStatus } from './api/hyperv'
 import { appConfig } from './config'
 import { getSchedulerStatus, runTaskCrawlerManually, runVacationCrawlerManually, startScheduler, stopScheduler } from './crawler/scheduler'
-import { hasValidCredentials, loadCredentials, saveCredentials } from './store'
 import { createHyperVMonitor } from './hyperv/monitor'
-import { getHyperVStatusList, updateHyperVStatus } from './api/hyperv'
 // Express 서버 구현 후 주석 해제
 // import { getVacationsByMonthFromServer } from './api/vacation'
 // import { getAllTasksFromServer, getTasksByUserFromServer } from './api/task'
 // 임시: Mock 데이터 사용 (서버 구현 전까지)
 import { filterVacationsByMonth, getAllTasks, getTasksByUser } from './mockdata/loader'
+import { hasValidCredentials, loadCredentials, saveCredentials } from './store'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -213,19 +213,6 @@ app.whenReady().then(() => {
   })
 
   /**
-   * 전체 휴가 개수 조회
-   */
-  ipcMain.handle('supabase:get-vacations-count', async () => {
-    try {
-      // Mock 데이터에서는 카운트 조회 불필요 (임시로 0 반환)
-      return { success: true, count: 0 }
-    } catch (error) {
-      console.error('[Data] 휴가 카운트 조회 실패:', error)
-      return { success: false, error: (error as Error).message, count: 0 }
-    }
-  })
-
-  /**
    * 전체 업무 데이터 조회
    */
   ipcMain.handle('supabase:get-tasks', async () => {
@@ -257,73 +244,6 @@ app.whenReady().then(() => {
       return { success: true, data }
     } catch (error) {
       console.error('[Data] 사용자 업무 조회 실패:', error)
-      return { success: false, error: (error as Error).message, data: [] }
-    }
-  })
-
-  /**
-   * 전체 업무 개수 조회
-   */
-  ipcMain.handle('supabase:get-tasks-count', async () => {
-    try {
-      // Mock 데이터에서는 카운트 조회 불필요 (임시로 0 반환)
-      return { success: true, count: 0 }
-    } catch (error) {
-      console.error('[Data] 업무 카운트 조회 실패:', error)
-      return { success: false, error: (error as Error).message, count: 0 }
-    }
-  })
-
-  // ==================== HyperV 모니터 제어 ====================
-
-  /**
-   * HyperV 모니터 상태 조회
-   */
-  ipcMain.handle('hyperv:get-status', async () => {
-    try {
-      const status = hypervMonitor.getStatus()
-      return { success: true, data: status }
-    } catch (error) {
-      console.error('[HyperV] 상태 조회 실패:', error)
-      return { success: false, error: (error as Error).message }
-    }
-  })
-
-  /**
-   * HyperV 모니터 시작
-   */
-  ipcMain.handle('hyperv:start', async () => {
-    try {
-      hypervMonitor.start()
-      return { success: true }
-    } catch (error) {
-      console.error('[HyperV] 시작 실패:', error)
-      return { success: false, error: (error as Error).message }
-    }
-  })
-
-  /**
-   * HyperV 모니터 정지
-   */
-  ipcMain.handle('hyperv:stop', async () => {
-    try {
-      hypervMonitor.stop()
-      return { success: true }
-    } catch (error) {
-      console.error('[HyperV] 정지 실패:', error)
-      return { success: false, error: (error as Error).message }
-    }
-  })
-
-  /**
-   * 서버에서 HyperV 상태 목록 조회
-   */
-  ipcMain.handle('hyperv:get-list', async () => {
-    try {
-      const data = await getHyperVStatusList()
-      return { success: true, data }
-    } catch (error) {
-      console.error('[HyperV] 목록 조회 실패:', error)
       return { success: false, error: (error as Error).message, data: [] }
     }
   })
