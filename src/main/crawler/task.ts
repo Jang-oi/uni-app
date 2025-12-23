@@ -1,8 +1,8 @@
+// import { syncTasksToServer } from '../api/task' // Express 서버 구현 후 주석 해제
+import type { TaskRawData } from '@shared/types/data'
 import { BrowserWindow } from 'electron'
 import { syncTasksToServer } from '../api/task'
 import { loadCredentials } from '../store'
-// import { syncTasksToServer } from '../api/task' // Express 서버 구현 후 주석 해제
-import type { TaskRawData } from '../types/data'
 import { executeInBrowser } from './browserUtil'
 
 // 브라우저 인스턴스를 전역으로 관리하여 1분마다 재사용 (메모리 상주)

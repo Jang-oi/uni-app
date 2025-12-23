@@ -1,6 +1,6 @@
+import { BASE_URL } from '@shared/api/client'
 import { io, Socket } from 'socket.io-client'
 import { create } from 'zustand'
-import { API_BASE_URL } from '../lib/api'
 
 export interface HypervVM {
   vmName: string
@@ -26,7 +26,7 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
     // 이미 연결되어 있다면 재연결 방지
     if (get().socket) return
 
-    const newSocket = io(API_BASE_URL)
+    const newSocket = io(BASE_URL)
 
     // 서버가 쏴주는 'hyperv:status_changed' 이벤트를 상시 감시
     newSocket.on('hyperv:status_changed', (updatedVms: HypervVM[]) => {

@@ -46,3 +46,23 @@ export interface TaskRawData {
   priority?: string | null
   dueDate?: string | null
 }
+
+/**
+ * 달력용 휴가 데이터 (날짜별 그룹화)
+ */
+export interface VacationCalendarData {
+  /** YYYY-MM-DD 형식의 날짜 */
+  date: string
+  /** 해당 날짜의 휴가 목록 */
+  vacations: VacationRawData[]
+}
+
+/**
+ * 달력 API 응답
+ */
+export interface VacationCalendarResponse {
+  year: number
+  month: number
+  /** 날짜별 휴가 데이터 맵 { "2025-12-25": [...], ... } */
+  vacationsByDate: Record<string, VacationRawData[]>
+}

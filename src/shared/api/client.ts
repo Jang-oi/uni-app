@@ -5,14 +5,13 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 
+export const BASE_URL = import.meta.env.VITE_SERVER_URL || 'http://192.168.10.30:3001'
 /**
  * Axios 인스턴스 생성
  */
 const createApiClient = (): AxiosInstance => {
-  const baseURL = process.env.SERVER_URL || 'http://192.168.10.30:3001'
-
   const instance = axios.create({
-    baseURL,
+    baseURL: BASE_URL,
     timeout: 10000, // 10초 타임아웃
     headers: {
       'Content-Type': 'application/json'

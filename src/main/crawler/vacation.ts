@@ -1,7 +1,7 @@
+import type { VacationRawData } from '@shared/types/data'
 import { BrowserWindow } from 'electron'
 import { syncVacationsToServer } from '../api/vacation'
 import { loadCredentials } from '../store'
-import type { VacationRawData } from '../types/data'
 import { clickElement, executeInBrowser, waitForSelector } from './browserUtil'
 
 const createVacationBrowser = async (show = false): Promise<BrowserWindow> => {

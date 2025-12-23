@@ -1,87 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { api, ApiResponse } from '@shared/api/client'
+import { VacationRawData } from '@shared/types/data'
 import { motion } from 'motion/react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { useVacationStore, type Vacation } from '@/stores/vacationStore'
-
-// Mock 데이터
-const MOCK_VACATIONS: Vacation[] = [
-  {
-    useId: '1',
-    usName: '홍길동',
-    deptName: '구독4팀',
-    itemName: '연차',
-    useSdate: '2025-12-25',
-    useEdate: '2025-12-26',
-    useStime: null,
-    useEtime: null,
-    useDesc: '크리스마스 휴가',
-    useTimeTypeName: '종일'
-  },
-  {
-    useId: '2',
-    usName: '김철수',
-    deptName: '구독4팀',
-    itemName: '반차',
-    useSdate: '2025-12-27',
-    useEdate: '2025-12-27',
-    useStime: '09:00',
-    useEtime: '13:00',
-    useDesc: '오전 반차',
-    useTimeTypeName: '오전반차'
-  },
-  {
-    useId: '3',
-    usName: '이영희',
-    deptName: '구독4팀',
-    itemName: '연차',
-    useSdate: '2025-12-27',
-    useEdate: '2025-12-30',
-    useStime: null,
-    useEtime: null,
-    useDesc: '연말 휴가',
-    useTimeTypeName: '종일'
-  },
-  {
-    useId: '4',
-    usName: '박민수',
-    deptName: '구독4팀',
-    itemName: '연차',
-    useSdate: '2025-12-27',
-    useEdate: '2025-12-27',
-    useStime: null,
-    useEtime: null,
-    useDesc: '개인 사유',
-    useTimeTypeName: '종일'
-  },
-  {
-    useId: '5',
-    usName: '최지원',
-    deptName: '구독4팀',
-    itemName: '연차',
-    useSdate: '2025-12-27',
-    useEdate: '2025-12-27',
-    useStime: null,
-    useEtime: null,
-    useDesc: '연말 정리',
-    useTimeTypeName: '종일'
-  },
-  {
-    useId: '6',
-    usName: '정다희',
-    deptName: '구독4팀',
-    itemName: '연차',
-    useSdate: '2025-12-27',
-    useEdate: '2025-12-27',
-    useStime: null,
-    useEtime: null,
-    useDesc: '가족 행사',
-    useTimeTypeName: '종일'
-  }
-]
+import { useVacationStore } from '@/stores/vacation'
 
 // 날짜 유틸리티
 const getDaysInMonth = (year: number, month: number) => {
@@ -99,32 +25,14 @@ const formatDate = (date: Date) => {
   return `${year}-${month}-${day}`
 }
 
-// 휴가가 특정 날짜에 포함되는지 확인
-const isVacationOnDate = (vacation: Vacation, dateStr: string) => {
-  return dateStr >= vacation.useSdate && dateStr <= vacation.useEdate
-}
-
-// 날짜별로 휴가 그룹화
-const groupVacationsByDate = (vacations: Vacation[], year: number, month: number) => {
-  const daysInMonth = getDaysInMonth(year, month)
-  const result: Record<string, Vacation[]> = {}
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = formatDate(new Date(year, month, day))
-    result[dateStr] = vacations.filter((v) => isVacationOnDate(v, dateStr))
-  }
-
-  return result
-}
-
 // 휴가 아이템 컴포넌트
-function VacationItem({ vacation, isStart }: { vacation: Vacation; isStart: boolean }) {
+function VacationItem({ vacation, isStart }: { vacation: VacationRawData; isStart: boolean }) {
   const isMultiDay = vacation.useSdate !== vacation.useEdate
 
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
+        <TooltipTrigger>
           <div
             className={cn(
               'text-[10px] px-2 py-0.5 mb-0.5 truncate cursor-pointer transition-all hover:opacity-80',
@@ -143,6 +51,7 @@ function VacationItem({ vacation, isStart }: { vacation: Vacation; isStart: bool
             <p className="text-xs">
               {vacation.useSdate === vacation.useEdate ? vacation.useSdate : `${vacation.useSdate} ~ ${vacation.useEdate}`}
             </p>
+            {vacation.useTimeTypeName && <p className="text-xs text-slate-500">{vacation.useTimeTypeName}</p>}
             {vacation.useDesc && <p className="text-xs text-slate-500">{vacation.useDesc}</p>}
           </div>
         </TooltipContent>
@@ -152,7 +61,7 @@ function VacationItem({ vacation, isStart }: { vacation: Vacation; isStart: bool
 }
 
 // 날짜 셀 컴포넌트
-function DayCell({ date, vacations }: { date: Date; vacations: Vacation[] }) {
+function DayCell({ date, vacations }: { date: Date; vacations: VacationRawData[] }) {
   const dateStr = formatDate(date)
   const isToday = dateStr === formatDate(new Date())
   const maxVisible = 3
@@ -172,7 +81,7 @@ function DayCell({ date, vacations }: { date: Date; vacations: Vacation[] }) {
         {hiddenCount > 0 && (
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <button className="text-[10px] text-slate-600 hover:text-blue-600 px-1.5 py-0.5 bg-slate-100 rounded hover:bg-blue-100 transition-colors">
                   +{hiddenCount}개
                 </button>
@@ -202,33 +111,28 @@ function DayCell({ date, vacations }: { date: Date; vacations: Vacation[] }) {
 
 export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
-  const vacations = useVacationStore((state) => state.vacations)
-  const setVacations = useVacationStore((state) => state.setVacations)
+  const vacationsByDate = useVacationStore((state) => state.vacationsByDate)
+  const setVacationsByDate = useVacationStore((state) => state.setVacationsByDate)
 
-  // Mock 데이터 로드 (컴포넌트 마운트 시 1회)
-  useState(() => {
-    setVacations(MOCK_VACATIONS)
-  })
+  // 서버에서 데이터 조회
+  useEffect(() => {
+    const fetchVacations = async () => {
+      const year = currentDate.getFullYear()
+      const month = currentDate.getMonth() + 1
+      const response = await api.get<ApiResponse>(`/api/vacations/calendar/${year}/${month}`)
 
-  // 서버에서 데이터 조회 (향후 활성화)
-  // useEffect(() => {
-  //   const fetchVacations = async () => {
-  //     const year = currentDate.getFullYear()
-  //     const month = currentDate.getMonth() + 1
-  //     const response = await api.vacation.getByMonth(String(year), String(month))
-  //     if (response.success && response.data) {
-  //       setVacations(response.data)
-  //     }
-  //   }
-  //   fetchVacations()
-  // }, [currentDate, setVacations])
+      if (response.data.success && response.data.data) {
+        const data = response.data.data as { vacationsByDate: Record<string, VacationRawData[]> }
+        setVacationsByDate(data.vacationsByDate)
+      }
+    }
+    fetchVacations()
+  }, [currentDate, setVacationsByDate])
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
   const daysInMonth = getDaysInMonth(year, month)
   const firstDay = getFirstDayOfMonth(year, month)
-
-  const vacationsByDate = groupVacationsByDate(vacations, year, month)
 
   // 이전 달
   const goToPrevMonth = () => {
@@ -267,14 +171,18 @@ export function CalendarPage() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="p-8 h-full flex flex-col"
+      className="p-8 space-y-6"
     >
-      {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
+      <div>
+        <h1 className="text-3xl font-semibold text-slate-900 mb-2">
+          {year}년 {monthNames[month]}
+        </h1>
+        <p className="text-slate-600">4팀 휴가 일정을 확인하세요.</p>
+      </div>
+
+      {/* 달력 컨트롤 */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-semibold text-slate-900">
-            {year}년 {monthNames[month]}
-          </h1>
           <Button variant="outline" size="sm" onClick={goToToday}>
             오늘
           </Button>
@@ -290,7 +198,7 @@ export function CalendarPage() {
       </div>
 
       {/* 달력 */}
-      <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden bg-white">
+      <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
         {/* 요일 헤더 */}
         <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200">
           {weekDays.map((day, i) => (

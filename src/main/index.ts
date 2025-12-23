@@ -188,36 +188,6 @@ app.whenReady().then(() => {
     }
   })
 
-  // ==================== 데이터 조회 ====================
-  // Renderer에서 Express 서버로 직접 HTTP 요청하므로 IPC 핸들러 불필요
-  // 아래 핸들러들은 향후 제거 예정
-
-  // /**
-  //  * 전체 업무 데이터 조회 (사용 안 함 - Renderer가 직접 서버 호출)
-  //  */
-  // ipcMain.handle('supabase:get-tasks', async () => {
-  //   try {
-  //     const data = await getAllTasksFromServer()
-  //     return { success: true, data }
-  //   } catch (error) {
-  //     console.error('[Data] 업무 조회 실패:', error)
-  //     return { success: false, error: (error as Error).message, data: [] }
-  //   }
-  // })
-
-  // /**
-  //  * 사용자별 업무 조회 (사용 안 함 - Renderer가 직접 서버 호출)
-  //  */
-  // ipcMain.handle('supabase:get-tasks-by-user', async (_event, usId: string) => {
-  //   try {
-  //     const data = await getTasksByUserFromServer(usId)
-  //     return { success: true, data }
-  //   } catch (error) {
-  //     console.error('[Data] 사용자 업무 조회 실패:', error)
-  //     return { success: false, error: (error as Error).message, data: [] }
-  //   }
-  // })
-
   // 메인 윈도우 생성
   createWindow()
 

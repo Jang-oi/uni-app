@@ -1,5 +1,4 @@
-import { api } from './client'
-import type { ApiResponse } from './client'
+import { api, ApiResponse } from '@shared/api/client'
 
 /**
  * 서버에 HyperV 상태 업데이트 전송

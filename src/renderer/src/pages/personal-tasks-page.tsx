@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AlertCircleIcon, ArrowUpDownIcon, CircleIcon, Clock01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { api, ApiResponse } from '@shared/api/client'
 import {
   flexRender,
   getCoreRowModel,
@@ -16,11 +17,10 @@ import {
 import { motion } from 'motion/react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ScrollArea } from '../components/ui/scroll-area'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
-import { api } from '../lib/api'
-import { useTaskStore, type Task } from '../stores/task'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useTaskStore, type Task } from '@/stores/task'
 
 const priorityConfig = {
   high: { icon: AlertCircleIcon, color: 'text-red-600', label: '높음' },
@@ -50,10 +50,10 @@ export function PersonalTasksPage() {
   // 서버에서 업무 데이터 조회 (개인 업무 필터링)
   useEffect(() => {
     const fetchTasks = async () => {
-      const response = await api.task.getAll()
-      if (response.success && response.data) {
+      const response = await api.get<ApiResponse>('/api/tasks')
+      if (response.data.success && response.data.data) {
         // TODO: 개인 업무 필터링 로직 추가 (현재 사용자 기준)
-        setTasks(response.data as Task[])
+        setTasks(response.data.data as Task[])
       }
     }
     fetchTasks()

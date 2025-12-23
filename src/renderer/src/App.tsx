@@ -3,7 +3,7 @@ import { AnimatePresence } from 'motion/react'
 import { Header } from '@/components/header'
 import { Toaster } from '@/components/ui/sonner'
 import { AdminPage } from '@/pages/admin-page'
-// import { CalendarPage } from '@/pages/calendar-page'
+import { CalendarPage } from '@/pages/calendar-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
 import { PersonalTasksPage } from './pages/personal-tasks-page'
 import { TeamTasksPage } from './pages/team-tasks-page'
@@ -14,8 +14,8 @@ export default function App() {
 
   const renderPage = () => {
     switch (activeTab) {
-      // case '일정':
-      //   return <CalendarPage key="calendar" />
+      case '일정':
+        return <CalendarPage key="calendar" />
       case '팀업무':
         return <TeamTasksPage key="team-tasks" />
       case '개인업무':

@@ -2,8 +2,8 @@
  * 휴가 데이터 서버 API 연동 모듈
  */
 
-import type { VacationRawData } from '../types/data'
-import { api, ApiResponse } from './client'
+import { api, ApiResponse } from '@shared/api/client'
+import type { VacationRawData } from '@shared/types/data'
 
 /**
  * 크롤링한 휴가 데이터를 서버로 전송 (UPSERT)

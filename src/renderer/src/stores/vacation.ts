@@ -2,22 +2,19 @@
  * 휴가 데이터 Zustand 스토어
  */
 
+import { VacationRawData } from '@shared/types/data'
 import { create } from 'zustand'
 
-export interface Vacation {
-  id: number
-  employeeName: string
-  startDate: string
-  endDate: string
-  type: string
-}
-
 interface VacationStore {
-  vacations: Vacation[]
-  setVacations: (vacations: Vacation[]) => void
+  vacations: VacationRawData[]
+  vacationsByDate: Record<string, VacationRawData[]>
+  setVacations: (vacations: VacationRawData[]) => void
+  setVacationsByDate: (vacationsByDate: Record<string, VacationRawData[]>) => void
 }
 
 export const useVacationStore = create<VacationStore>((set) => ({
   vacations: [],
-  setVacations: (vacations) => set({ vacations })
+  vacationsByDate: {},
+  setVacations: (vacations) => set({ vacations }),
+  setVacationsByDate: (vacationsByDate) => set({ vacationsByDate })
 }))
