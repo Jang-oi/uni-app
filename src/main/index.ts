@@ -1,14 +1,15 @@
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, Menu, shell, Tray } from 'electron'
 import { updateHyperVStatus } from './api/hyperv'
-// import { getAllTasksFromServer, getTasksByUserFromServer } from './api/task' // 사용 안 함 (Renderer가 직접 서버 호출)
-import { appConfig } from './config'
-import { getSchedulerStatus, runTaskCrawlerManually, runVacationCrawlerManually, startScheduler, stopScheduler } from './crawler/scheduler'
+import { getSchedulerStatus, stopScheduler } from './crawler/scheduler'
+import { registerAllHandlers } from './handlers'
 import { createHyperVMonitor } from './hyperv/monitor'
-import { hasValidCredentials, loadCredentials, saveCredentials } from './store'
+import { initAutoUpdater } from './updater'
 
 let mainWindow: BrowserWindow | null = null
+let tray: Tray
+let isQuiting = false
 
 // HyperV 모니터 인스턴스 생성 (함수형)
 const hypervMonitor = createHyperVMonitor(async (vmName: string, userName: string | null) => {
@@ -46,6 +47,14 @@ function createWindow(): void {
     console.log('[App] 일반 모드로 실행 (관리자 기능은 인증 후 사용 가능)')
   })
 
+  // 4. 창이 닫힐 때 종료되는 대신 트레이로 최소화되도록 설정
+  mainWindow.on('close', (event) => {
+    if (!isQuiting) {
+      event.preventDefault()
+      mainWindow?.minimize() // 대신 창 숨김
+    }
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -74,124 +83,12 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  // 모든 IPC 핸들러 등록
+  registerAllHandlers()
 
-  // ==================== 관리자 인증 ====================
-
-  /**
-   * 관리자 비밀번호 확인
-   */
-  ipcMain.handle('admin:verify-password', async (_event, password: string) => {
-    const isValid = password === appConfig.adminPassword
-    console.log('[Admin] 비밀번호 인증:', isValid ? '성공' : '실패')
-    return { success: isValid }
-  })
-
-  /**
-   * 저장된 자격증명 로드
-   */
-  ipcMain.handle('credentials:load', async () => {
-    const creds = loadCredentials()
-    console.log('[Credentials] 자격증명 로드')
-    return { success: true, data: creds }
-  })
-
-  /**
-   * 자격증명 저장
-   */
-  ipcMain.handle('credentials:save', async (_event, credentials) => {
-    saveCredentials(credentials)
-    console.log('[Credentials] 자격증명 저장됨')
-    return { success: true }
-  })
-
-  /**
-   * 자격증명 유효성 확인
-   */
-  ipcMain.handle('credentials:validate', async () => {
-    const isValid = hasValidCredentials()
-    return { success: true, isValid }
-  })
-
-  // ==================== 크롤러 제어 ====================
-
-  /**
-   * 크롤러 스케줄러 시작 (Master 모드 활성화)
-   */
-  ipcMain.handle('crawler:start-scheduler', async () => {
-    const status = getSchedulerStatus()
-    if (status.isRunning) {
-      console.log('[Crawler] 이미 실행 중입니다')
-      return { success: false, message: '이미 실행 중입니다' }
-    }
-
-    if (!hasValidCredentials()) {
-      console.log('[Crawler] 자격증명이 설정되지 않았습니다')
-      return { success: false, message: '자격증명을 먼저 설정하세요' }
-    }
-
-    await startScheduler()
-    console.log('[Crawler] 스케줄러 시작됨')
-
-    return { success: true }
-  })
-
-  /**
-   * 크롤러 스케줄러 정지 (Master 모드 비활성화)
-   */
-  ipcMain.handle('crawler:stop-scheduler', async () => {
-    const status = getSchedulerStatus()
-    if (!status.isRunning) {
-      console.log('[Crawler] 실행 중이 아닙니다')
-      return { success: false, message: '실행 중이 아닙니다' }
-    }
-
-    stopScheduler()
-
-    console.log('[Crawler] 스케줄러 정지됨')
-    return { success: true }
-  })
-
-  /**
-   * 휴가 크롤러 수동 실행
-   */
-  ipcMain.handle('crawler:run-vacation', async () => {
-    if (!hasValidCredentials()) {
-      return { success: false, message: '자격증명을 먼저 설정하세요' }
-    }
-
-    await runVacationCrawlerManually()
-    return { success: true }
-  })
-
-  /**
-   * 업무 크롤러 수동 실행
-   */
-  ipcMain.handle('crawler:run-task', async () => {
-    if (!hasValidCredentials()) {
-      return { success: false, message: '자격증명을 먼저 설정하세요' }
-    }
-
-    await runTaskCrawlerManually()
-    return { success: true }
-  })
-
-  /**
-   * 크롤러 상태 확인
-   */
-  ipcMain.handle('crawler:status', async () => {
-    const status = getSchedulerStatus()
-    return {
-      success: true,
-      isRunning: status.isRunning
-    }
-  })
-
-  // 메인 윈도우 생성
+  createTray()
   createWindow()
-
-  // HyperV 모니터 시작 (모든 앱)
+  initAutoUpdater(mainWindow)
   hypervMonitor.start()
   console.log('[App] HyperV 모니터링 백그라운드 서비스 시작')
 
@@ -201,6 +98,26 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+const createTray = () => {
+  tray = new Tray(uniIcon)
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '종료',
+      click: () => {
+        isQuiting = true // 실제 종료를 위한 플래그 설정
+        app.quit()
+      }
+    }
+  ])
+
+  tray.setToolTip('Uni-App')
+  tray.setContextMenu(contextMenu)
+
+  tray.on('click', () => {
+    mainWindow?.show()
+  })
+}
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

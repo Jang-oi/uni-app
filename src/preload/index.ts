@@ -34,6 +34,37 @@ const api = {
   },
   getCrawlerStatus: async () => {
     return await ipcRenderer.invoke('crawler:status')
+  },
+
+  getVersion: () => ipcRenderer.invoke('updater:get-version'),
+  checkForUpdates: () => ipcRenderer.invoke('updater:check'),
+  downloadUpdate: () => ipcRenderer.invoke('updater:download'),
+  installUpdate: () => ipcRenderer.invoke('updater:install'),
+
+  // 업데이트 이벤트 리스너
+  onChecking: (callback: () => void) => {
+    ipcRenderer.on('updater:checking', callback)
+    return () => ipcRenderer.removeListener('updater:checking', callback)
+  },
+  onUpdateAvailable: (callback: (info: { version: string; releaseDate: string; releaseNotes: any }) => void) => {
+    ipcRenderer.on('updater:available', (_event, info) => callback(info))
+    return () => ipcRenderer.removeAllListeners('updater:available')
+  },
+  onUpdateNotAvailable: (callback: (info: { version: string }) => void) => {
+    ipcRenderer.on('updater:not-available', (_event, info) => callback(info))
+    return () => ipcRenderer.removeAllListeners('updater:not-available')
+  },
+  onDownloadProgress: (callback: (progress: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => void) => {
+    ipcRenderer.on('updater:progress', (_event, progress) => callback(progress))
+    return () => ipcRenderer.removeAllListeners('updater:progress')
+  },
+  onUpdateDownloaded: (callback: (info: { version: string }) => void) => {
+    ipcRenderer.on('updater:downloaded', (_event, info) => callback(info))
+    return () => ipcRenderer.removeAllListeners('updater:downloaded')
+  },
+  onError: (callback: (error: { message: string }) => void) => {
+    ipcRenderer.on('updater:error', (_event, error) => callback(error))
+    return () => ipcRenderer.removeAllListeners('updater:error')
   }
 }
 

@@ -1,17 +1,147 @@
-import { useState } from 'react'
+'use client'
+
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 export function VersionPage() {
+  const [currentVersion, setCurrentVersion] = useState('1.0.0')
+  const [latestVersion, setLatestVersion] = useState('')
   const [isChecking, setIsChecking] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [updateAvailable, setUpdateAvailable] = useState(true)
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false)
+  const [isDownloaded, setIsDownloaded] = useState(false)
+  const [downloadProgress, setDownloadProgress] = useState(0)
 
-  const currentVersion = '1.2.3'
-  const latestVersion = '1.3.0'
+  // 컴포넌트 마운트 시 현재 버전 가져오기
+  useEffect(() => {
+    const loadVersion = async () => {
+      try {
+        const result = await window.api.getVersion()
+        if (result.success) {
+          setCurrentVersion(result.version)
+        }
+      } catch (error) {
+        console.error('버전 정보 로드 실패:', error)
+      }
+    }
+
+    loadVersion()
+
+    const cleanupChecking = window.api.onChecking(() => {
+      console.log('[UI] 업데이트 확인 중...')
+      setIsChecking(true)
+    })
+
+    const cleanupAvailable = window.api.onUpdateAvailable((info) => {
+      console.log('[UI] 업데이트 사용 가능:', info)
+      setIsChecking(false)
+      setIsUpdateAvailable(true)
+      setLatestVersion(info.version)
+      toast.info('업데이트 사용 가능', {
+        description: `새 버전 ${info.version}을 다운로드할 수 있습니다.`
+      })
+    })
+
+    const cleanupNotAvailable = window.api.onUpdateNotAvailable((info) => {
+      console.log('[UI] 최신 버전입니다:', info)
+      setIsChecking(false)
+      setIsUpdateAvailable(false)
+      setLatestVersion(info.version)
+      toast.success('최신 버전', {
+        description: '이미 최신 버전을 사용 중입니다.'
+      })
+    })
+
+    const cleanupProgress = window.api.onDownloadProgress((progress) => {
+      console.log('[UI] 다운로드 진행:', progress.percent)
+      setDownloadProgress(Math.round(progress.percent))
+    })
+
+    const cleanupDownloaded = window.api.onUpdateDownloaded((info) => {
+      console.log('[UI] 다운로드 완료:', info)
+      setIsDownloading(false)
+      setIsDownloaded(true)
+      setDownloadProgress(100)
+      toast.success('다운로드 완료', {
+        description: '업데이트를 설치하려면 앱을 재시작하세요.'
+      })
+    })
+
+    const cleanupError = window.api.onError((error) => {
+      console.error('[UI] 업데이트 에러:', error)
+      setIsChecking(false)
+      setIsDownloading(false)
+      toast.error('업데이트 오류', {
+        description: error.message
+      })
+    })
+
+    // Cleanup listeners on unmount
+    return () => {
+      cleanupChecking()
+      cleanupAvailable()
+      cleanupNotAvailable()
+      cleanupProgress()
+      cleanupDownloaded()
+      cleanupError()
+    }
+  }, [])
+
+  const handleCheckUpdate = async () => {
+    setIsChecking(true)
+    try {
+      const result = await window.api.checkForUpdates()
+      if (!result.success) {
+        toast.error('업데이트 확인 실패', {
+          description: result.message || '알 수 없는 오류가 발생했습니다.'
+        })
+        setIsChecking(false)
+      }
+    } catch (error) {
+      console.error('업데이트 확인 실패:', error)
+      setIsChecking(false)
+      toast.error('업데이트 확인 실패', {
+        description: '업데이트를 확인하는 중 오류가 발생했습니다.'
+      })
+    }
+  }
+
+  const handleDownloadUpdate = async () => {
+    setIsDownloading(true)
+    setDownloadProgress(0)
+    try {
+      const result = await window.api.downloadUpdate()
+      if (!result.success) {
+        toast.error('다운로드 실패', {
+          description: result.message || '알 수 없는 오류가 발생했습니다.'
+        })
+        setIsDownloading(false)
+      }
+    } catch (error) {
+      console.error('다운로드 실패:', error)
+      setIsDownloading(false)
+      toast.error('다운로드 실패', {
+        description: '업데이트를 다운로드하는 중 오류가 발생했습니다.'
+      })
+    }
+  }
+
+  const handleInstallUpdate = async () => {
+    try {
+      await window.api.installUpdate()
+    } catch (error) {
+      console.error('설치 실패:', error)
+      toast.error('설치 실패', {
+        description: '업데이트를 설치하는 중 오류가 발생했습니다.'
+      })
+    }
+  }
 
   const changelogs = [
     {
@@ -63,24 +193,6 @@ export function VersionPage() {
       changes: ['구독4팀 대시보드 시스템 최초 릴리즈', '기본 대시보드 기능', '일정 관리 기능', '설정 페이지']
     }
   ]
-
-  const handleCheckUpdate = () => {
-    setIsChecking(true)
-    // TODO: 실제 버전 확인 로직
-    setTimeout(() => {
-      setIsChecking(false)
-      setUpdateAvailable(true)
-    }, 1500)
-  }
-
-  const handleUpdate = () => {
-    setIsUpdating(true)
-    // TODO: 실제 업데이트 로직
-    setTimeout(() => {
-      setIsUpdating(false)
-      setUpdateAvailable(false)
-    }, 3000)
-  }
 
   const getVersionBadgeColor = (type: string) => {
     switch (type) {
@@ -149,9 +261,6 @@ export function VersionPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-slate-900">{currentVersion}</div>
-              <Badge variant="secondary" className="mt-2">
-                안정화 버전
-              </Badge>
             </CardContent>
           </Card>
         </motion.div>
@@ -182,10 +291,15 @@ export function VersionPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900">{latestVersion}</div>
-              {updateAvailable && (
+              <div className="text-3xl font-bold text-slate-900">{latestVersion || currentVersion}</div>
+              {isUpdateAvailable && (
                 <Badge variant="default" className="mt-2 bg-green-600">
                   업데이트 가능
+                </Badge>
+              )}
+              {!isUpdateAvailable && latestVersion && (
+                <Badge variant="secondary" className="mt-2">
+                  최신 버전
                 </Badge>
               )}
             </CardContent>
@@ -219,7 +333,12 @@ export function VersionPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button onClick={handleCheckUpdate} disabled={isChecking} variant="outline" className="w-full bg-transparent">
+              <Button
+                onClick={handleCheckUpdate}
+                disabled={isChecking || isDownloading}
+                variant="outline"
+                className="w-full bg-transparent"
+              >
                 {isChecking ? (
                   <>
                     <svg
@@ -254,45 +373,85 @@ export function VersionPage() {
                   </>
                 )}
               </Button>
-              <Button onClick={handleUpdate} disabled={!updateAvailable || isUpdating} className="w-full bg-purple-600 hover:bg-purple-700">
-                {isUpdating ? (
-                  <>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-4 h-4 mr-2 animate-spin"
-                    >
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
-                    업데이트 중...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-4 h-4 mr-2"
-                    >
-                      <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
-                    </svg>
-                    버전 업데이트
-                  </>
-                )}
-              </Button>
+
+              {isUpdateAvailable && !isDownloaded && (
+                <Button onClick={handleDownloadUpdate} disabled={isDownloading} className="w-full bg-blue-600 hover:bg-blue-700">
+                  {isDownloading ? (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-4 h-4 mr-2 animate-spin"
+                      >
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                      다운로드 중... {downloadProgress}%
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-4 h-4 mr-2"
+                      >
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      다운로드
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {isDownloaded && (
+                <Button onClick={handleInstallUpdate} className="w-full bg-purple-600 hover:bg-purple-700">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-4 h-4 mr-2"
+                  >
+                    <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
+                  </svg>
+                  지금 설치하고 재시작
+                </Button>
+              )}
             </CardContent>
           </Card>
         </motion.div>
       </div>
+
+      {isDownloading && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">다운로드 진행 상황</CardTitle>
+              <CardDescription>업데이트 파일을 다운로드하는 중입니다...</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Progress value={downloadProgress} className="h-2" />
+                <p className="text-sm text-slate-600 text-center">{downloadProgress}%</p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Changelog Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
@@ -334,7 +493,6 @@ export function VersionPage() {
                     transition={{ delay: 0.3 + index * 0.05 }}
                     className="relative pl-8 pb-6 border-l-2 border-slate-200 last:border-l-0 last:pb-0"
                   >
-                    {/* Content */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 flex-wrap">
                         <h3 className="text-lg font-bold text-slate-900">v{log.version}</h3>
