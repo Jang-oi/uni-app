@@ -2,14 +2,10 @@ import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { updateHyperVStatus } from './api/hyperv'
+// import { getAllTasksFromServer, getTasksByUserFromServer } from './api/task' // 사용 안 함 (Renderer가 직접 서버 호출)
 import { appConfig } from './config'
 import { getSchedulerStatus, runTaskCrawlerManually, runVacationCrawlerManually, startScheduler, stopScheduler } from './crawler/scheduler'
 import { createHyperVMonitor } from './hyperv/monitor'
-// Express 서버 구현 후 주석 해제
-// import { getVacationsByMonthFromServer } from './api/vacation'
-// import { getAllTasksFromServer, getTasksByUserFromServer } from './api/task'
-// 임시: Mock 데이터 사용 (서버 구현 전까지)
-import { filterVacationsByMonth, getAllTasks, getTasksByUser } from './mockdata/loader'
 import { hasValidCredentials, loadCredentials, saveCredentials } from './store'
 
 let mainWindow: BrowserWindow | null = null
@@ -192,61 +188,35 @@ app.whenReady().then(() => {
     }
   })
 
-  // ==================== 데이터 조회 (Mock / 서버 전환 가능) ====================
+  // ==================== 데이터 조회 ====================
+  // Renderer에서 Express 서버로 직접 HTTP 요청하므로 IPC 핸들러 불필요
+  // 아래 핸들러들은 향후 제거 예정
 
-  /**
-   * 월별 휴가 데이터 조회
-   */
-  ipcMain.handle('supabase:get-vacations', async (_event, year: string, month: string) => {
-    try {
-      // Express 서버 구현 후 주석 해제
-      // const data = await getVacationsByMonthFromServer(year, month)
+  // /**
+  //  * 전체 업무 데이터 조회 (사용 안 함 - Renderer가 직접 서버 호출)
+  //  */
+  // ipcMain.handle('supabase:get-tasks', async () => {
+  //   try {
+  //     const data = await getAllTasksFromServer()
+  //     return { success: true, data }
+  //   } catch (error) {
+  //     console.error('[Data] 업무 조회 실패:', error)
+  //     return { success: false, error: (error as Error).message, data: [] }
+  //   }
+  // })
 
-      // 임시: Mock 데이터 사용
-      const data = filterVacationsByMonth(year, month)
-
-      return { success: true, data }
-    } catch (error) {
-      console.error('[Data] 휴가 조회 실패:', error)
-      return { success: false, error: (error as Error).message, data: [] }
-    }
-  })
-
-  /**
-   * 전체 업무 데이터 조회
-   */
-  ipcMain.handle('supabase:get-tasks', async () => {
-    try {
-      // Express 서버 구현 후 주석 해제
-      // const data = await getAllTasksFromServer()
-
-      // 임시: Mock 데이터 사용
-      const data = getAllTasks()
-
-      return { success: true, data }
-    } catch (error) {
-      console.error('[Data] 업무 조회 실패:', error)
-      return { success: false, error: (error as Error).message, data: [] }
-    }
-  })
-
-  /**
-   * 사용자별 업무 조회
-   */
-  ipcMain.handle('supabase:get-tasks-by-user', async (_event, usId: string) => {
-    try {
-      // Express 서버 구현 후 주석 해제
-      // const data = await getTasksByUserFromServer(usId)
-
-      // 임시: Mock 데이터 사용
-      const data = getTasksByUser(usId)
-
-      return { success: true, data }
-    } catch (error) {
-      console.error('[Data] 사용자 업무 조회 실패:', error)
-      return { success: false, error: (error as Error).message, data: [] }
-    }
-  })
+  // /**
+  //  * 사용자별 업무 조회 (사용 안 함 - Renderer가 직접 서버 호출)
+  //  */
+  // ipcMain.handle('supabase:get-tasks-by-user', async (_event, usId: string) => {
+  //   try {
+  //     const data = await getTasksByUserFromServer(usId)
+  //     return { success: true, data }
+  //   } catch (error) {
+  //     console.error('[Data] 사용자 업무 조회 실패:', error)
+  //     return { success: false, error: (error as Error).message, data: [] }
+  //   }
+  // })
 
   // 메인 윈도우 생성
   createWindow()

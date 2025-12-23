@@ -34,18 +34,16 @@ const api = {
   },
   getCrawlerStatus: async () => {
     return await ipcRenderer.invoke('crawler:status')
-  },
-
-  // ==================== Supabase 데이터 조회 ====================
-  getVacations: async (year: string, month: string) => {
-    return await ipcRenderer.invoke('supabase:get-vacations', year, month)
-  },
-  getTasks: async () => {
-    return await ipcRenderer.invoke('supabase:get-tasks')
-  },
-  getTasksByUser: async (usId: string) => {
-    return await ipcRenderer.invoke('supabase:get-tasks-by-user', usId)
   }
+
+  // ==================== 데이터 조회 ====================
+  // Renderer에서 Express 서버로 직접 HTTP 요청하므로 불필요 (향후 제거 예정)
+  // getTasks: async () => {
+  //   return await ipcRenderer.invoke('supabase:get-tasks')
+  // },
+  // getTasksByUser: async (usId: string) => {
+  //   return await ipcRenderer.invoke('supabase:get-tasks-by-user', usId)
+  // }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -2,8 +2,8 @@
  * 업무 데이터 서버 API 연동 모듈
  */
 
-import { api, ApiResponse } from './client'
 import type { TaskRawData } from '../types/data'
+import { api, ApiResponse } from './client'
 
 /**
  * 크롤링한 업무 데이터를 서버로 전송 (UPSERT)

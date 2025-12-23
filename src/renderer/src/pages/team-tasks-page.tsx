@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useEffect, useState } from 'react'
 import { AlertCircleIcon, ArrowUpDownIcon, CircleIcon, Clock01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollArea } from '../components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
+import { api } from '../lib/api'
 import { useTaskStore, type Task } from '../stores/task'
 
 const priorityConfig = {
@@ -40,10 +41,22 @@ function truncateText(text: string, maxLength: number) {
 
 export function TeamTasksPage() {
   const tasks = useTaskStore((state) => state.tasks)
+  const setTasks = useTaskStore((state) => state.setTasks)
 
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+
+  // 서버에서 업무 데이터 조회
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const response = await api.task.getAll()
+      if (response.success && response.data) {
+        setTasks(response.data as Task[])
+      }
+    }
+    fetchTasks()
+  }, [setTasks])
 
   const columns: ColumnDef<Task>[] = [
     {

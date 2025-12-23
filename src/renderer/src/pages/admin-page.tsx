@@ -54,7 +54,6 @@ export function AdminPage() {
     }
   }, [isAuthenticated])
 
-
   // ==================== 관리자 인증 ====================
   const handleAdminLogin = async () => {
     setAuthError('')

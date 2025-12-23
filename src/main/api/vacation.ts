@@ -2,8 +2,8 @@
  * 휴가 데이터 서버 API 연동 모듈
  */
 
-import { api, ApiResponse } from './client'
 import type { VacationRawData } from '../types/data'
+import { api, ApiResponse } from './client'
 
 /**
  * 크롤링한 휴가 데이터를 서버로 전송 (UPSERT)
@@ -27,28 +27,5 @@ export async function syncVacationsToServer(rawData: VacationRawData[]): Promise
   } catch (error) {
     console.error('[API:Vacation] 서버 전송 중 오류:', error)
     return { inserted: 0, updated: 0, total: 0 }
-  }
-}
-
-/**
- * 월별 휴가 데이터 조회 (서버에서)
- * Express 서버 구현 후 주석 해제하여 사용
- */
-export async function getVacationsByMonthFromServer(year: string, month: string) {
-  try {
-    console.log(`[API:Vacation] ${year}년 ${month}월 데이터 서버에서 조회...`)
-
-    const response = await api.get<ApiResponse>(`/api/vacations/${year}/${month}`)
-
-    if (response.data.success && response.data.data) {
-      console.log(`[API:Vacation] ${response.data.data.length}건 조회 완료`)
-      return response.data.data
-    } else {
-      console.error('[API:Vacation] 서버 응답 오류:', response.data.error)
-      return []
-    }
-  } catch (error) {
-    console.error('[API:Vacation] 서버 조회 중 오류:', error)
-    return []
   }
 }

@@ -11,6 +11,10 @@ export interface Task {
   STATUS: string
   WRITER: string
   REQ_DATE_ALL: string
+  priority?: 'high' | 'medium' | 'low' // UI용 추가 필드
+  assignee?: string // UI용 담당자
+  status?: 'pending' | 'in-progress' | 'completed' // UI용 상태
+  dueDate?: string // UI용 마감일
 }
 
 export interface TaskAlert {

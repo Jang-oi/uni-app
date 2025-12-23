@@ -1,8 +1,7 @@
 import { BrowserWindow } from 'electron'
+import { syncVacationsToServer } from '../api/vacation'
 import { loadCredentials } from '../store'
 import type { VacationRawData } from '../types/data'
-// import { syncVacationsToServer } from '../api/vacation' // Express 서버 구현 후 주석 해제
-import { saveVacationsMockData } from '../mockdata/writer'
 import { clickElement, executeInBrowser, waitForSelector } from './browserUtil'
 
 const createVacationBrowser = async (show = false): Promise<BrowserWindow> => {
@@ -122,13 +121,9 @@ export const runVacationCrawler = async (): Promise<unknown> => {
     if (result && result.response && Array.isArray(result.response)) {
       console.log(`[Vacation] ${result.response.length}건의 데이터 처리 시작...`)
 
-      // Express 서버 구현 후 주석 해제하여 사용
-      // const syncResult = await syncVacationsToServer(result.response)
-      // console.log('[Vacation] 서버 동기화 완료:', syncResult)
-      // return syncResult
+      const syncResult = await syncVacationsToServer(result.response)
+      console.log('[Vacation] 서버 동기화 완료:', syncResult)
 
-      // 임시: Mock 데이터로 저장 (서버 구현 전까지 사용)
-      saveVacationsMockData(result.response)
       console.log('[Vacation] Mock 데이터 저장 완료')
       return { inserted: result.response.length, updated: 0, total: result.response.length }
     } else {

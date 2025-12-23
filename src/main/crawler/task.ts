@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { saveTasksMockData } from '../mockdata/writer'
+import { syncTasksToServer } from '../api/task'
 import { loadCredentials } from '../store'
 // import { syncTasksToServer } from '../api/task' // Express 서버 구현 후 주석 해제
 import type { TaskRawData } from '../types/data'
@@ -198,14 +198,8 @@ export const runTaskCrawler = async (): Promise<unknown> => {
     if (teamTotal && Array.isArray(teamTotal)) {
       console.log(`[Task] ${teamTotal.length}건의 데이터 처리 시작...`)
 
-      // Express 서버 구현 후 주석 해제하여 사용
-      // const syncResult = await syncTasksToServer(teamTotal as TaskRawData[])
-      // console.log('[Task] 서버 동기화 완료:', syncResult)
-
-      // 임시: Mock 데이터로 저장 (서버 구현 전까지 사용)
-      saveTasksMockData(teamTotal as TaskRawData[])
-      console.log('[Task] Mock 데이터 저장 완료')
-      const syncResult = { inserted: teamTotal.length, updated: 0, total: teamTotal.length }
+      const syncResult = await syncTasksToServer(teamTotal as TaskRawData[])
+      console.log('[Task] 서버 동기화 완료:', syncResult)
 
       return {
         teamTotal: syncResult,
