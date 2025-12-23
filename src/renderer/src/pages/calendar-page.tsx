@@ -25,9 +25,59 @@ const formatDate = (date: Date) => {
   return `${year}-${month}-${day}`
 }
 
-// 휴가 아이템 컴포넌트
-function VacationItem({ vacation, isStart }: { vacation: VacationRawData; isStart: boolean }) {
+// 휴가 기간 계산 (일 수)
+const getVacationDays = (vacation: VacationRawData) => {
+  const start = new Date(vacation.useSdate)
+  const end = new Date(vacation.useEdate)
+  const diffTime = Math.abs(end.getTime() - start.getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+  return diffDays
+}
+
+// 휴가 타입별 색상 설정
+const getVacationColor = (itemName: string, timeTypeName?: string | null) => {
+  // 반차/반반차
+  if (itemName.includes('반차') || timeTypeName?.includes('반차')) {
+    return {
+      bg: 'bg-green-100',
+      text: 'text-green-800',
+      border: 'border-green-300'
+    }
+  }
+  // 연차 (종일)
+  if (itemName.includes('연차')) {
+    return {
+      bg: 'bg-blue-100',
+      text: 'text-blue-800',
+      border: 'border-blue-300'
+    }
+  }
+  // 기타 (경조사, 공가 등)
+  return {
+    bg: 'bg-purple-100',
+    text: 'text-purple-800',
+    border: 'border-purple-300'
+  }
+}
+
+// 휴가 아이템 컴포넌트 (Bar 형태)
+function VacationItem({ vacation, dateStr }: { vacation: VacationRawData; dateStr: string }) {
+  const isStart = vacation.useSdate === dateStr
+  const isEnd = vacation.useEdate === dateStr
   const isMultiDay = vacation.useSdate !== vacation.useEdate
+  const days = getVacationDays(vacation)
+  const colors = getVacationColor(vacation.itemName, vacation.useTimeTypeName)
+
+  // 시간 정보 포맷팅
+  const getTimeInfo = () => {
+    if (vacation.useTimeTypeName) {
+      return vacation.useTimeTypeName
+    }
+    if (vacation.useStime && vacation.useEtime) {
+      return `${vacation.useStime} ~ ${vacation.useEtime}`
+    }
+    return '종일'
+  }
 
   return (
     <TooltipProvider>
@@ -35,24 +85,39 @@ function VacationItem({ vacation, isStart }: { vacation: VacationRawData; isStar
         <TooltipTrigger>
           <div
             className={cn(
-              'text-[10px] px-2 py-0.5 mb-0.5 truncate cursor-pointer transition-all hover:opacity-80',
-              isMultiDay ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-800',
-              isStart || !isMultiDay ? 'rounded-l' : '',
-              isMultiDay ? 'rounded-r-none' : 'rounded'
+              'text-[11px] px-2 py-1 mb-1 cursor-pointer transition-all hover:opacity-80 border',
+              colors.bg,
+              colors.text,
+              colors.border,
+              // Bar 모양 처리
+              isMultiDay ? (isStart ? 'rounded-l rounded-r-none' : isEnd ? 'rounded-r rounded-l-none' : 'rounded-none') : 'rounded',
+              // 내용 표시
+              'truncate font-medium'
             )}
           >
-            {isStart || !isMultiDay ? vacation.usName : ''}
+            {/* 시작일에만 이름 + 기간 표시 */}
+            {isStart || !isMultiDay ? (
+              <span className="flex items-center gap-1">
+                <span>{vacation.usName}</span>
+                {isMultiDay && <span className="text-[10px] opacity-70">({days}일)</span>}
+              </span>
+            ) : (
+              // 중간/끝일은 빈 공간
+              <span className="opacity-0">.</span>
+            )}
           </div>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
-          <div className="space-y-1">
-            <p className="font-semibold">{vacation.usName}</p>
-            <p className="text-xs text-slate-600">{vacation.itemName}</p>
-            <p className="text-xs">
-              {vacation.useSdate === vacation.useEdate ? vacation.useSdate : `${vacation.useSdate} ~ ${vacation.useEdate}`}
-            </p>
-            {vacation.useTimeTypeName && <p className="text-xs text-slate-500">{vacation.useTimeTypeName}</p>}
-            {vacation.useDesc && <p className="text-xs text-slate-500">{vacation.useDesc}</p>}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-semibold text-sm">{vacation.usName}</p>
+              <span className={cn('text-xs px-2 py-0.5 rounded', colors.bg, colors.text)}>{vacation.itemName}</span>
+            </div>
+            <div className="text-xs text-slate-600 space-y-0.5">
+              <p>📅 {vacation.useSdate === vacation.useEdate ? vacation.useSdate : `${vacation.useSdate} ~ ${vacation.useEdate}`}</p>
+              <p>⏰ {getTimeInfo()}</p>
+              {vacation.useDesc && <p className="text-slate-500 mt-1">💬 {vacation.useDesc}</p>}
+            </div>
           </div>
         </TooltipContent>
       </Tooltip>
@@ -63,35 +128,51 @@ function VacationItem({ vacation, isStart }: { vacation: VacationRawData; isStar
 // 날짜 셀 컴포넌트
 function DayCell({ date, vacations }: { date: Date; vacations: VacationRawData[] }) {
   const dateStr = formatDate(date)
-  const isToday = dateStr === formatDate(new Date())
-  const maxVisible = 3
-  const hiddenCount = Math.max(0, vacations.length - maxVisible)
+  const today = formatDate(new Date())
+  const isToday = dateStr === today
+  const dayOfWeek = date.getDay()
+  const isSunday = dayOfWeek === 0
+  const isSaturday = dayOfWeek === 6
+
+  // 휴가가 3개 이상일 때 처리
+  const maxVisible = 4
   const visibleVacations = vacations.slice(0, maxVisible)
-  const hiddenVacations = vacations.slice(maxVisible)
+  const hiddenCount = Math.max(0, vacations.length - maxVisible)
 
   return (
     <div
       className={cn(
-        'min-h-[100px] border-r border-b border-slate-200 p-1 bg-white hover:bg-slate-50 transition-colors',
-        isToday && 'bg-blue-50'
+        'min-h-[110px] border-r border-b border-slate-200 p-2 transition-colors',
+        isToday ? 'bg-blue-50/50' : 'bg-white hover:bg-slate-50'
       )}
     >
-      <div className={cn('text-sm font-medium mb-1 flex items-center justify-between', isToday && 'text-blue-600')}>
-        <span>{date.getDate()}</span>
+      {/* 날짜 표시 */}
+      <div className="flex items-center justify-between mb-2">
+        <span
+          className={cn(
+            'text-sm font-semibold',
+            isToday && 'text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full',
+            !isToday && isSunday && 'text-red-600',
+            !isToday && isSaturday && 'text-blue-600',
+            !isToday && !isSunday && !isSaturday && 'text-slate-700'
+          )}
+        >
+          {date.getDate()}
+        </span>
         {hiddenCount > 0 && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
                 <button className="text-[10px] text-slate-600 hover:text-blue-600 px-1.5 py-0.5 bg-slate-100 rounded hover:bg-blue-100 transition-colors">
-                  +{hiddenCount}개
+                  +{hiddenCount}
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs">
-                <div className="space-y-2">
-                  {hiddenVacations.map((vacation) => (
+                <div className="space-y-1.5">
+                  <p className="font-semibold text-xs">추가 휴가 ({hiddenCount}건)</p>
+                  {vacations.slice(maxVisible).map((vacation) => (
                     <div key={vacation.useId} className="text-xs">
-                      <p className="font-semibold">{vacation.usName}</p>
-                      <p className="text-slate-600">{vacation.itemName}</p>
+                      <span className="font-medium">{vacation.usName}</span> - {vacation.itemName}
                     </div>
                   ))}
                 </div>
@@ -100,9 +181,11 @@ function DayCell({ date, vacations }: { date: Date; vacations: VacationRawData[]
           </TooltipProvider>
         )}
       </div>
-      <div className="space-y-0.5">
+
+      {/* 휴가 목록 */}
+      <div className="space-y-1">
         {visibleVacations.map((vacation) => (
-          <VacationItem key={vacation.useId} vacation={vacation} isStart={vacation.useSdate === dateStr} />
+          <VacationItem key={`${vacation.useId}-${dateStr}`} vacation={vacation} dateStr={dateStr} />
         ))}
       </div>
     </div>
@@ -163,7 +246,6 @@ export function CalendarPage() {
   }
 
   const weekDays = ['일', '월', '화', '수', '목', '금', '토']
-  const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
   return (
     <motion.div
@@ -173,39 +255,41 @@ export function CalendarPage() {
       transition={{ duration: 0.3 }}
       className="p-8 space-y-6"
     >
+      {/* 페이지 헤더 */}
       <div>
-        <h1 className="text-3xl font-semibold text-slate-900 mb-2">
-          {year}년 {monthNames[month]}
-        </h1>
+        <h1 className="text-3xl font-semibold text-slate-900 mb-2">휴가 일정</h1>
         <p className="text-slate-600">4팀 휴가 일정을 확인하세요.</p>
       </div>
 
-      {/* 달력 컨트롤 */}
+      {/* 달력 네비게이션 */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={goToToday}>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-slate-900">
+            {year}년 {month + 1}월
+          </h2>
+          <Button variant="outline" size="sm" onClick={goToToday} className="text-xs">
             오늘
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={goToPrevMonth}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={goToPrevMonth}>
+            <HugeiconsIcon icon={ArrowLeft01Icon} className="w-5 h-5" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={goToNextMonth}>
-            <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={goToNextMonth}>
+            <HugeiconsIcon icon={ArrowRight01Icon} className="w-5 h-5" />
           </Button>
         </div>
       </div>
 
       {/* 달력 */}
-      <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+      <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
         {/* 요일 헤더 */}
         <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200">
           {weekDays.map((day, i) => (
             <div
               key={i}
               className={cn(
-                'py-3 text-center text-sm font-semibold border-r border-slate-200 last:border-r-0',
+                'py-3 text-center text-sm font-bold border-r border-slate-200 last:border-r-0',
                 i === 0 ? 'text-red-600' : i === 6 ? 'text-blue-600' : 'text-slate-700'
               )}
             >
@@ -215,10 +299,10 @@ export function CalendarPage() {
         </div>
 
         {/* 날짜 그리드 */}
-        <div className="grid grid-cols-7" style={{ gridAutoRows: '1fr' }}>
+        <div className="grid grid-cols-7">
           {calendarDays.map((date, i) => {
             if (!date) {
-              return <div key={i} className="border-r border-b border-slate-200 bg-slate-50" />
+              return <div key={i} className="min-h-[110px] border-r border-b border-slate-200 bg-slate-50/30" />
             }
 
             const dateStr = formatDate(date)
@@ -226,6 +310,22 @@ export function CalendarPage() {
 
             return <DayCell key={i} date={date} vacations={dayVacations} />
           })}
+        </div>
+      </div>
+
+      {/* 범례 */}
+      <div className="flex items-center gap-6 text-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+          <span className="text-slate-600">연차</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+          <span className="text-slate-600">반차</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-purple-100 border border-purple-300 rounded"></div>
+          <span className="text-slate-600">기타</span>
         </div>
       </div>
     </motion.div>
