@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { ChangelogItem } from '@shared/types/github'
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { convertToChangelogs, fetchGitHubReleases } from '@/lib/github'
 
 export function VersionPage() {
   const [currentVersion, setCurrentVersion] = useState('1.0.0')
@@ -17,8 +19,10 @@ export function VersionPage() {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false)
   const [isDownloaded, setIsDownloaded] = useState(false)
   const [downloadProgress, setDownloadProgress] = useState(0)
+  const [changelogs, setChangelogs] = useState<ChangelogItem[]>([])
+  const [isLoadingChangelogs, setIsLoadingChangelogs] = useState(true)
 
-  // 컴포넌트 마운트 시 현재 버전 가져오기
+  // 컴포넌트 마운트 시 현재 버전 및 changelog 가져오기
   useEffect(() => {
     const loadVersion = async () => {
       try {
@@ -31,7 +35,21 @@ export function VersionPage() {
       }
     }
 
+    const loadChangelogs = async () => {
+      try {
+        setIsLoadingChangelogs(true)
+        const releases = await fetchGitHubReleases()
+        const logs = convertToChangelogs(releases)
+        setChangelogs(logs)
+      } catch (error) {
+        console.error('Changelog 로드 실패:', error)
+      } finally {
+        setIsLoadingChangelogs(false)
+      }
+    }
+
     loadVersion()
+    loadChangelogs()
 
     const cleanupChecking = window.api.onChecking(() => {
       console.log('[UI] 업데이트 확인 중...')
@@ -142,57 +160,6 @@ export function VersionPage() {
       })
     }
   }
-
-  const changelogs = [
-    {
-      version: '1.3.0',
-      date: '2024-01-20',
-      type: 'major',
-      changes: ['새로운 대시보드 위젯 추가', '가상머신 관리 UI 개선', '크롤러 성능 최적화 (30% 향상)', '다크모드 지원 추가']
-    },
-    {
-      version: '1.2.3',
-      date: '2024-01-15',
-      type: 'patch',
-      changes: ['업무 테이블 필터링 버그 수정', '일정 페이지 로딩 속도 개선', '보안 패치 적용']
-    },
-    {
-      version: '1.2.2',
-      date: '2024-01-10',
-      type: 'patch',
-      changes: ['가상머신 상태 표시 오류 수정', '관리자 메뉴 권한 체크 강화']
-    },
-    {
-      version: '1.2.0',
-      date: '2024-01-05',
-      type: 'minor',
-      changes: ['업무 사이트 크롤러 추가', '휴가 사이트 크롤러 추가', '관리자 메뉴 신규 추가', '자동 크롤링 스케줄러 구현']
-    },
-    {
-      version: '1.1.5',
-      date: '2023-12-28',
-      type: 'patch',
-      changes: ['데이터 테이블 정렬 기능 개선', '메모리 누수 문제 해결']
-    },
-    {
-      version: '1.1.0',
-      date: '2023-12-20',
-      type: 'minor',
-      changes: ['가상머신 페이지 추가', '업무 관리 기능 강화', '알림 시스템 구현']
-    },
-    {
-      version: '1.0.5',
-      date: '2023-12-15',
-      type: 'patch',
-      changes: ['UI 반응성 개선', '일정 동기화 버그 수정']
-    },
-    {
-      version: '1.0.0',
-      date: '2023-12-01',
-      type: 'major',
-      changes: ['구독4팀 대시보드 시스템 최초 릴리즈', '기본 대시보드 기능', '일정 관리 기능', '설정 페이지']
-    }
-  ]
 
   const getVersionBadgeColor = (type: string) => {
     switch (type) {
@@ -484,46 +451,65 @@ export function VersionPage() {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[calc(46vh-50px)]">
-              <div className="space-y-6">
-                {changelogs.map((log, index) => (
-                  <motion.div
-                    key={log.version}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + index * 0.05 }}
-                    className="relative pl-8 pb-6 border-l-2 border-slate-200 last:border-l-0 last:pb-0"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="text-lg font-bold text-slate-900">v{log.version}</h3>
-                        <Badge className={`text-xs ${getVersionBadgeColor(log.type)}`}>{getVersionLabel(log.type)}</Badge>
-                        <span className="text-sm text-slate-500">{log.date}</span>
-                      </div>
+              {isLoadingChangelogs ? (
+                <div className="flex items-center justify-center h-40">
+                  <div className="text-center space-y-2">
+                    <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
+                    <p className="text-sm text-slate-500">변경 로그 불러오는 중...</p>
+                  </div>
+                </div>
+              ) : changelogs.length === 0 ? (
+                <div className="flex items-center justify-center h-40">
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-slate-500">변경 로그가 없습니다</p>
+                    <p className="text-xs text-slate-400">GitHub Releases에서 릴리즈를 생성하세요</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {changelogs.map((log, index) => (
+                    <motion.div
+                      key={log.version}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 + index * 0.05 }}
+                      className="relative pl-8 pb-6 border-l-2 border-slate-200 last:border-l-0 last:pb-0"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="text-lg font-bold text-slate-900">v{log.version}</h3>
+                          <Badge className={`text-xs ${getVersionBadgeColor(log.type)}`}>{getVersionLabel(log.type)}</Badge>
+                          <span className="text-sm text-slate-500">{log.date}</span>
+                          <a href={log.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                            GitHub에서 보기 →
+                          </a>
+                        </div>
 
-                      <ul className="space-y-2">
-                        {log.changes.map((change, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="w-4 h-4 mt-0.5 text-blue-500 flex-shrink-0"
-                            >
-                              <polyline points="9 11 12 14 22 4" />
-                              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                            </svg>
-                            <span>{change}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                        <ul className="space-y-2">
+                          {log.changes.map((change, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="w-4 h-4 mt-0.5 text-blue-500 flex-shrink-0"
+                              >
+                                <polyline points="9 11 12 14 22 4" />
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                              </svg>
+                              <span>{change}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </ScrollArea>
           </CardContent>
         </Card>
