@@ -2,7 +2,6 @@ import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, Menu, shell, Tray } from 'electron'
 import { sendHyperVHeartbeat } from './api/hyperv'
-import { getSchedulerStatus, stopScheduler } from './crawler/scheduler'
 import { registerAllHandlers } from './handlers'
 import { createHyperVMonitor } from './hyperv/monitor'
 import { initAutoUpdater } from './updater'
@@ -123,13 +122,6 @@ const createTray = () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  // 크롤러 정지 (실행 중이었다면)
-  const status = getSchedulerStatus()
-  if (status.isRunning) {
-    stopScheduler()
-  }
-
-  // HyperV 모니터 정지
   hypervMonitor.stop()
   console.log('[App] HyperV 모니터링 백그라운드 서비스 종료')
 

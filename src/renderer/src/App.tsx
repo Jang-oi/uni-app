@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { Header } from '@/components/header'
 import { Toaster } from '@/components/ui/sonner'
-import { AdminPage } from '@/pages/admin-page'
 import { CalendarPage } from '@/pages/calendar-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
 import { PersonalTasksPage } from './pages/personal-tasks-page'
@@ -24,8 +23,6 @@ export default function App() {
         return <VirtualMachinesPage key="vm" />
       case '버전관리':
         return <VersionPage key="version" />
-      case '관리자':
-        return <AdminPage key="admin" />
       default:
         return <VirtualMachinesPage key="vm" />
     }
