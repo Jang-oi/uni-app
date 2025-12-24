@@ -312,22 +312,6 @@ export function CalendarPage() {
           })}
         </div>
       </div>
-
-      {/* 범례 */}
-      <div className="flex items-center gap-6 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
-          <span className="text-slate-600">연차</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
-          <span className="text-slate-600">반차</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-100 border border-purple-300 rounded"></div>
-          <span className="text-slate-600">기타</span>
-        </div>
-      </div>
     </motion.div>
   )
 }

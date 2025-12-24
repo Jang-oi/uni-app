@@ -1,4 +1,4 @@
-appId: com.electron.app
+appId: com.company.unipost.uni.app
 productName: uni-app
 directories:
   buildResources: build
@@ -14,6 +14,7 @@ asarUnpack:
 win:
   icon: build/unicorn3.ico
   executableName: uni-app
+  requestedExecutionLevel: requireAdministrator
 extraResources:
   - from: build/unicorn3.ico
     to: unicorn3.ico
@@ -43,7 +44,8 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: generic
-  url: https://example.com/auto-updates
+  provider: github
+  owner: Jang-oi
+  repo: uni-app
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

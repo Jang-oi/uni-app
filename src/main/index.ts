@@ -1,7 +1,7 @@
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, Menu, shell, Tray } from 'electron'
-import { updateHyperVStatus } from './api/hyperv'
+import { sendHyperVHeartbeat } from './api/hyperv'
 import { getSchedulerStatus, stopScheduler } from './crawler/scheduler'
 import { registerAllHandlers } from './handlers'
 import { createHyperVMonitor } from './hyperv/monitor'
@@ -12,11 +12,11 @@ let tray: Tray
 let isQuiting = false
 
 // HyperV 모니터 인스턴스 생성 (함수형)
-const hypervMonitor = createHyperVMonitor(async (vmName: string, userName: string | null) => {
+const hypervMonitor = createHyperVMonitor(async (activeVMs: string[], userName: string) => {
   try {
-    await updateHyperVStatus(vmName, userName)
+    await sendHyperVHeartbeat(activeVMs, userName)
   } catch (error) {
-    console.error('[HyperV] 서버 업데이트 실패:', error)
+    console.error('[HyperV] Heartbeat 전송 실패:', error)
   }
 })
 

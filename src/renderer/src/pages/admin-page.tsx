@@ -23,19 +23,14 @@ import { Label } from '@/components/ui/label'
 export function AdminPage() {
   // ==================== 인증 상태 ====================
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [adminPassword, setAdminPassword] = useState(import.meta.env.VITE_DEV_ADMIN_PASSWORD || '')
+  const [adminPassword, setAdminPassword] = useState('')
   const [authError, setAuthError] = useState('')
   const [showAdminPassword, setShowAdminPassword] = useState(false)
 
-  // ==================== 자격증명 상태 ====================
-  const [vacationSiteUrl, setVacationSiteUrl] = useState('')
-  const [vacationSiteId, setVacationSiteId] = useState('')
-  const [vacationSitePassword, setVacationSitePassword] = useState('')
   const [taskSiteUrl, setTaskSiteUrl] = useState('')
   const [taskSiteId, setTaskSiteId] = useState('')
   const [taskSitePassword, setTaskSitePassword] = useState('')
   const [teamMembers, setTeamMembers] = useState('')
-  const [showVacationPassword, setShowVacationPassword] = useState(false)
   const [showTaskPassword, setShowTaskPassword] = useState(false)
 
   // ==================== 크롤러 상태 ====================
@@ -79,11 +74,8 @@ export function AdminPage() {
       const result = await window.api.loadCredentials()
 
       if (result.success && result.data) {
-        const { vacationSite, taskSite, teamMembers: members } = result.data
+        const { taskSite, teamMembers: members } = result.data
 
-        setVacationSiteUrl(vacationSite.url || '')
-        setVacationSiteId(vacationSite.id || '')
-        setVacationSitePassword(vacationSite.password || '')
         setTaskSiteUrl(taskSite.url || '')
         setTaskSiteId(taskSite.id || '')
         setTaskSitePassword(taskSite.password || '')
@@ -100,11 +92,6 @@ export function AdminPage() {
 
     try {
       const credentials = {
-        vacationSite: {
-          url: vacationSiteUrl,
-          id: vacationSiteId,
-          password: vacationSitePassword
-        },
         taskSite: {
           url: taskSiteUrl,
           id: taskSiteId,
@@ -173,26 +160,6 @@ export function AdminPage() {
     } catch (error) {
       console.error('[AdminPage] 스케줄러 정지 오류:', error)
       toast.error('스케줄러 정지 중 오류가 발생했습니다')
-    }
-  }
-
-  // ==================== 휴가 크롤러 수동 실행 ====================
-  const handleRunVacationCrawler = async () => {
-    setIsManualRunning((prev) => ({ ...prev, vacation: true }))
-
-    try {
-      const result = await window.api.runVacationCrawler()
-
-      if (result.success) {
-        toast.success('휴가 크롤러가 실행되었습니다')
-      } else {
-        toast.error(result.message || '휴가 크롤러 실행에 실패했습니다')
-      }
-    } catch (error) {
-      console.error('[AdminPage] 휴가 크롤러 실행 오류:', error)
-      toast.error('휴가 크롤러 실행 중 오류가 발생했습니다')
-    } finally {
-      setIsManualRunning((prev) => ({ ...prev, vacation: false }))
     }
   }
 
@@ -297,73 +264,6 @@ export function AdminPage() {
         <h2 className="text-xl font-semibold text-slate-900">크롤링 자격증명</h2>
 
         <div className="grid grid-cols-2 gap-6">
-          {/* 휴가 사이트 자격증명 */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-                    <HugeiconsIcon icon={GlobeIcon} className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <CardTitle>휴가 사이트</CardTitle>
-                    <CardDescription>휴가 조회 시스템</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="vacation-url">사이트 URL</Label>
-                  <Input
-                    id="vacation-url"
-                    type="text"
-                    value={vacationSiteUrl}
-                    onChange={(e) => setVacationSiteUrl(e.target.value)}
-                    placeholder="https://vacation.company.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="vacation-id">아이디</Label>
-                  <Input
-                    id="vacation-id"
-                    type="text"
-                    value={vacationSiteId}
-                    onChange={(e) => setVacationSiteId(e.target.value)}
-                    placeholder="사용자 아이디"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="vacation-password">패스워드</Label>
-                  <div className="relative">
-                    <Input
-                      id="vacation-password"
-                      type={showVacationPassword ? 'text' : 'password'}
-                      value={vacationSitePassword}
-                      onChange={(e) => setVacationSitePassword(e.target.value)}
-                      placeholder="패스워드"
-                      className="pr-12"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowVacationPassword(!showVacationPassword)}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    >
-                      {showVacationPassword ? (
-                        <HugeiconsIcon icon={ViewOffIcon} className="w-4 h-4" />
-                      ) : (
-                        <HugeiconsIcon icon={ViewIcon} className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
           {/* 업무 사이트 자격증명 */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             <Card>
@@ -522,42 +422,6 @@ export function AdminPage() {
         <h2 className="text-xl font-semibold text-slate-900">수동 크롤러 실행</h2>
 
         <div className="grid grid-cols-2 gap-6">
-          {/* 휴가 크롤러 수동 실행 */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
-                    <HugeiconsIcon icon={ActivityIcon} className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <CardTitle>휴가 크롤러</CardTitle>
-                    <CardDescription>즉시 휴가 데이터 수집</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  onClick={handleRunVacationCrawler}
-                  disabled={isManualRunning.vacation}
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                >
-                  {isManualRunning.vacation ? (
-                    <>
-                      <HugeiconsIcon icon={StopCircleIcon} className="w-4 h-4 mr-2" />
-                      실행 중...
-                    </>
-                  ) : (
-                    <>
-                      <HugeiconsIcon icon={PlayCircleIcon} className="w-4 h-4 mr-2" />
-                      수동 실행
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-
           {/* 업무 크롤러 수동 실행 */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <Card>

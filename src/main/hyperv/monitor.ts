@@ -3,12 +3,12 @@ import os from 'os'
 
 export interface HyperVMonitorState {
   isRunning: boolean
-  activeVMs: Set<string> // 단일 string 대신 Set 사용
+  activeVMs: Set<string> // 현재 접속 중인 VM 목록
   userName: string
   intervalId: NodeJS.Timeout | null
 }
 
-export type OnStatusChangeCallback = (vmName: string, userName: string | null) => void
+export type OnStatusChangeCallback = (activeVMs: string[], userName: string) => void
 
 export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
   let state: HyperVMonitorState = {
@@ -47,7 +47,6 @@ export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
     child.on('close', () => {
       const output = stdoutData.trim()
       let fetchedVMs: string[] = []
-
       try {
         if (output && output !== '[]') {
           const parsed = JSON.parse(output)
@@ -57,32 +56,24 @@ export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
         console.error('JSON 파싱 에러:', e)
       }
 
-      const currentVMSet = new Set(fetchedVMs)
+      state.activeVMs = new Set(fetchedVMs)
 
-      // 1. 제거된 VM 찾기 (기존에 있었는데 현재 결과에는 없는 것)
-      state.activeVMs.forEach((vm) => {
-        if (!currentVMSet.has(vm)) {
-          console.log(`[HyperV Monitor] 연결 종료 감지: ${vm}`)
-          onStatusChange(vm, null) // 서버에 종료 알림
-          state.activeVMs.delete(vm)
-        }
-      })
+      // 3초마다 무조건 전체 상태 전송 (서버가 판단)
+      const vmList = Array.from(state.activeVMs)
+      if (vmList.length > 0) {
+        console.log(`[HyperV Monitor] 💓 Heartbeat: ${vmList.length}개 사용 중 →`, vmList)
+      } else {
+        console.log(`[HyperV Monitor] 💤 Heartbeat: 사용 중인 VM 없음`)
+      }
 
-      // 2. 새로 추가된 VM 찾기 (현재 결과에는 있는데 기존 목록에는 없는 것)
-      currentVMSet.forEach((vm) => {
-        if (!state.activeVMs.has(vm)) {
-          console.log(`[HyperV Monitor] 새 연결 감지: ${vm}`)
-          onStatusChange(vm, state.userName) // 서버에 사용 시작 알림
-          state.activeVMs.add(vm)
-        }
-      })
+      onStatusChange(vmList, state.userName)
     })
   }
 
   const start = (): void => {
     if (state.isRunning) return
     state.isRunning = true
-    console.log('[HyperV Monitor] 다중 모니터링 시작')
+    console.log('[HyperV Monitor] 모니터링 시작 (3초마다 현재 상태 전송)')
     checkHyperVStatus()
     state.intervalId = setInterval(checkHyperVStatus, CHECK_INTERVAL_MS)
   }
@@ -90,12 +81,8 @@ export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
   const stop = (): void => {
     state.isRunning = false
     if (state.intervalId) clearInterval(state.intervalId)
-
-    // 종료 시 모든 활성 VM 연결 해제 보고
-    state.activeVMs.forEach((vm) => {
-      onStatusChange(vm, null)
-    })
     state.activeVMs.clear()
+    console.log('[HyperV Monitor] 모니터링 종료')
   }
 
   return { start, stop }

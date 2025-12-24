@@ -1,17 +1,19 @@
 import { api, ApiResponse } from '@shared/api/client'
 
 /**
- * 서버에 HyperV 상태 업데이트 전송
+ * 서버에 HyperV 전체 상태 전송 (Heartbeat)
  */
-export async function updateHyperVStatus(vmName: string, userName: string | null): Promise<void> {
+export async function sendHyperVHeartbeat(activeVMs: string[], userName: string): Promise<void> {
   try {
-    const response = await api.post<ApiResponse>('/api/hyperv/status', {
-      vmName,
-      userName
+    const response = await api.post<ApiResponse>('/api/hyperv/heartbeat', {
+      userName,
+      activeVMs
     })
 
-    if (response.data.success) console.log(`[HyperV] ${vmName} 상태 업데이트 성공`)
+    if (response.data.success) {
+      console.log(`[HyperV] Heartbeat 성공: ${activeVMs.length}개 VM (${userName})`)
+    }
   } catch (error) {
-    console.error('[HyperV] 서버 전송 오류:', error)
+    console.error('[HyperV] Heartbeat 전송 오류:', error)
   }
 }

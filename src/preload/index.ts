@@ -26,9 +26,6 @@ const api = {
   stopCrawlerScheduler: async () => {
     return await ipcRenderer.invoke('crawler:stop-scheduler')
   },
-  runVacationCrawler: async () => {
-    return await ipcRenderer.invoke('crawler:run-vacation')
-  },
   runTaskCrawler: async () => {
     return await ipcRenderer.invoke('crawler:run-task')
   },

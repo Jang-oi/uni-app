@@ -1,3 +1,3 @@
-provider: generic
-url: https://example.com/auto-updates
-updaterCacheDirName: uni-app-updater
+provider: github
+owner: Jang-oi
+repo: uni-app

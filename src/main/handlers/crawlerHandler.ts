@@ -3,7 +3,7 @@
  */
 
 import { ipcMain } from 'electron'
-import { getSchedulerStatus, runTaskCrawlerManually, runVacationCrawlerManually, startScheduler, stopScheduler } from '../crawler/scheduler'
+import { getSchedulerStatus, runTaskCrawlerManually, startScheduler, stopScheduler } from '../crawler/scheduler'
 import { hasValidCredentials } from '../store'
 
 export function registerCrawlerHandlers() {
@@ -41,18 +41,6 @@ export function registerCrawlerHandlers() {
     stopScheduler()
 
     console.log('[Crawler] 스케줄러 정지됨')
-    return { success: true }
-  })
-
-  /**
-   * 휴가 크롤러 수동 실행
-   */
-  ipcMain.handle('crawler:run-vacation', async () => {
-    if (!hasValidCredentials()) {
-      return { success: false, message: '자격증명을 먼저 설정하세요' }
-    }
-
-    await runVacationCrawlerManually()
     return { success: true }
   })
 

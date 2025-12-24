@@ -5,19 +5,16 @@
 
 import cron, { ScheduledTask } from 'node-cron'
 import { runTaskCrawler } from './task'
-import { runVacationCrawler } from './vacation'
 
 /**
  * 스케줄러 상태 (불변성 유지)
  */
 type SchedulerState = {
-  vacationJob: ScheduledTask | null
   taskJob: ScheduledTask | null
   isRunning: boolean
 }
 
 let schedulerState: SchedulerState = {
-  vacationJob: null,
   taskJob: null,
   isRunning: false
 }
@@ -29,9 +26,6 @@ const runInitialCrawl = async (): Promise<void> => {
   console.log('[CrawlerScheduler] 초기 크롤링 시작')
 
   try {
-    // 휴가 크롤링 (비동기)
-    await runVacationCrawler()
-
     // 업무 크롤링 (비동기)
     await runTaskCrawler()
 
@@ -39,20 +33,6 @@ const runInitialCrawl = async (): Promise<void> => {
   } catch (error) {
     console.error('[CrawlerScheduler] 초기 크롤링 오류:', error)
   }
-}
-
-/**
- * 휴가 크롤링 스케줄 Job 생성
- */
-const createVacationJob = (cronExpression = '0 9,12,18 * * *'): ScheduledTask => {
-  return cron.schedule(cronExpression, async () => {
-    console.log('[CrawlerScheduler] 휴가 크롤링 실행 (정기)')
-    try {
-      await runVacationCrawler()
-    } catch (error) {
-      console.error('[CrawlerScheduler] 휴가 크롤링 오류:', error)
-    }
-  })
 }
 
 /**
@@ -82,7 +62,6 @@ export const startScheduler = async (): Promise<void> => {
 
   // 스케줄 Job 생성
   schedulerState = {
-    vacationJob: createVacationJob(),
     taskJob: createTaskJob(),
     isRunning: true
   }
@@ -103,35 +82,17 @@ export const stopScheduler = (): void => {
     return
   }
 
-  // Job 정지
-  if (schedulerState.vacationJob) {
-    schedulerState.vacationJob.stop()
-  }
-
   if (schedulerState.taskJob) {
     schedulerState.taskJob.stop()
   }
 
   // 상태 초기화
   schedulerState = {
-    vacationJob: null,
     taskJob: null,
     isRunning: false
   }
 
   console.log('[CrawlerScheduler] 스케줄러 정지')
-}
-
-/**
- * 수동 휴가 크롤링 실행
- */
-export const runVacationCrawlerManually = async (): Promise<void> => {
-  console.log('[CrawlerScheduler] 휴가 크롤링 수동 실행')
-  try {
-    await runVacationCrawler()
-  } catch (error) {
-    console.error('[CrawlerScheduler] 휴가 크롤링 수동 실행 오류:', error)
-  }
 }
 
 /**
@@ -157,10 +118,7 @@ export const updateSchedule = (type: 'vacation' | 'task', cronExpression: string
     return
   }
 
-  if (type === 'vacation' && schedulerState.vacationJob) {
-    schedulerState.vacationJob.stop()
-    schedulerState.vacationJob = createVacationJob(cronExpression)
-  } else if (type === 'task' && schedulerState.taskJob) {
+  if (type === 'task' && schedulerState.taskJob) {
     schedulerState.taskJob.stop()
     schedulerState.taskJob = createTaskJob(cronExpression)
   }
