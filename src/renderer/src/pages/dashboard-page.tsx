@@ -28,18 +28,17 @@ export function DashboardPage() {
   const todayVacations = useMemo(() => {
     const allEvents = Object.values(eventsByDate).flat()
     return allEvents.filter((event) => {
-      // 오늘 날짜가 startDate와 endDate 사이에 있는지 확인
       return event.startDate <= today && today <= event.endDate
     })
   }, [eventsByDate, today])
 
-  // 미처리/고객사답변 업무 (status가 'a' 또는 'b')
+  // 미처리/고객사답변 업무
   const filteredTasks = useMemo(() => {
-    return teamTasks.filter((task) => task.STATUS_CODE === 'a' || task.STATUS_CODE === 'b')
+    return teamTasks.filter((task) => task.STATUS_CODE === 'N' || task.WRITER === '')
   }, [teamTasks])
 
   // HyperV 사용 현황 (최대 5개)
-  const topVms = vms.slice(0, 5)
+  const topVms = vms.filter((vm) => vm.isConnected)
 
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
@@ -48,52 +47,6 @@ export function DashboardPage() {
         <h1 className="text-2xl font-semibold text-slate-900">대시보드</h1>
         <p className="text-sm text-slate-500">구독4팀 주요 정보</p>
       </div>
-
-      {/* 요약 카드 - 깔끔한 화이트 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-slate-500">오늘의 휴가자</p>
-                <p className="text-3xl font-semibold text-slate-900">{todayVacations.length}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                <HugeiconsIcon icon={Calendar03Icon} className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-slate-500">확인 필요 업무</p>
-                <p className="text-3xl font-semibold text-slate-900">{filteredTasks.length}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center">
-                <HugeiconsIcon icon={Task01Icon} className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-slate-500">가상머신 활성</p>
-                <p className="text-3xl font-semibold text-slate-900">{vms.filter((vm) => vm.isConnected).length}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
-                <HugeiconsIcon icon={VirtualRealityVr01Icon} className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* 대시보드 그리드 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 오늘의 휴가자 */}
@@ -176,9 +129,9 @@ export function DashboardPage() {
                           <Badge
                             className={cn(
                               'text-xs font-normal',
-                              task.STATUS_CODE === 'a'
+                              task.STATUS_CODE === 'N'
                                 ? 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
-                                : task.STATUS_CODE === 'b'
+                                : task.WRITER === ''
                                   ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
                                   : 'bg-slate-50 text-slate-700 border-slate-200'
                             )}
