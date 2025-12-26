@@ -3,7 +3,6 @@ import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type Col
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollArea } from '../components/ui/scroll-area'
 import { useHypervStore, type HypervVM } from '../stores/hyperv'
@@ -83,14 +82,6 @@ export function VirtualMachinesPage() {
       <div>
         <h1 className="text-3xl font-semibold text-slate-900 mb-2">가상머신</h1>
         <p className="text-slate-600">HYPER-V 의 사용 현황을 확인하세요.</p>
-      </div>
-      <div className="flex items-center gap-4 py-4">
-        <Input
-          placeholder="VM 이름으로 검색..."
-          value={(table.getColumn('vmName')?.getFilterValue() as string) ?? ''}
-          onChange={(event) => table.getColumn('vmName')?.setFilterValue(event.target.value)}
-          className="max-w-sm"
-        />
       </div>
 
       <ScrollArea className="h-[calc(68vh-80px)]">

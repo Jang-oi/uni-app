@@ -4,7 +4,10 @@
 
 import { BASE_URL } from '@shared/api/client'
 import { io, Socket } from 'socket.io-client'
+import { toast } from 'sonner'
 import { create } from 'zustand'
+
+type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
 
 export interface TaskDisplayData {
   SR_IDX: string
@@ -24,22 +27,51 @@ export interface TaskAlert {
   timestamp: string
 }
 
+interface TaskSocketData {
+  team: TaskDisplayData[]
+  members: Record<string, TaskDisplayData[]>
+  lastUpdated: string
+}
+
 interface TaskStore {
-  tasks: TaskDisplayData[]
+  // 데이터
+  teamTasks: TaskDisplayData[]
+  memberTasks: Record<string, TaskDisplayData[]>
+  lastUpdated: string
+
+  // 사용자 정보
+  currentUser: string
+
+  // 알림
   alerts: TaskAlert[]
+
+  // Socket
   socket: Socket | null
-  setTasks: (tasks: TaskDisplayData[]) => void
+  connectionStatus: ConnectionStatus
+
+  // Actions
+  setTeamTasks: (tasks: TaskDisplayData[]) => void
+  setMemberTasks: (members: Record<string, TaskDisplayData[]>) => void
+  setCurrentUser: (userName: string) => void
+  setConnectionStatus: (status: ConnectionStatus) => void
   addAlert: (alert: TaskAlert) => void
   clearAlerts: () => void
   initSocket: () => void
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
-  tasks: [],
+  teamTasks: [],
+  memberTasks: {},
+  lastUpdated: '',
+  currentUser: '',
   alerts: [],
   socket: null,
+  connectionStatus: 'disconnected',
 
-  setTasks: (tasks) => set({ tasks }),
+  setTeamTasks: (tasks) => set({ teamTasks: tasks }),
+  setMemberTasks: (members) => set({ memberTasks: members }),
+  setCurrentUser: (userName) => set({ currentUser: userName }),
+  setConnectionStatus: (status) => set({ connectionStatus: status }),
   addAlert: (alert) => set((state) => ({ alerts: [...state.alerts, alert] })),
   clearAlerts: () => set({ alerts: [] }),
 
@@ -47,11 +79,51 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     // 이미 연결되어 있다면 재연결 방지
     if (get().socket) return
 
-    const newSocket = io(BASE_URL)
+    set({ connectionStatus: 'connecting' })
 
-    // 서버가 쏴주는 'task:updated' 이벤트를 상시 감시
-    newSocket.on('task:updated', (tasks: TaskDisplayData[]) => {
-      set({ tasks })
+    const newSocket = io(BASE_URL, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity
+    })
+
+    // 연결 성공
+    newSocket.on('connect', () => {
+      console.log('[Task] Socket.io 연결 성공')
+      set({ connectionStatus: 'connected' })
+      toast.success('업무 데이터 서버 연결 완료')
+    })
+
+    // 연결 오류
+    newSocket.on('connect_error', (error) => {
+      console.error('[Task] Socket.io 연결 오류:', error)
+      set({ connectionStatus: 'error' })
+      toast.error('업무 데이터 서버 연결 실패', {
+        description: '서버 연결을 확인해주세요. 자동으로 재연결을 시도합니다.'
+      })
+    })
+
+    // 연결 끊김
+    newSocket.on('disconnect', (reason) => {
+      console.warn('[Task] Socket.io 연결 끊김:', reason)
+      set({ connectionStatus: 'disconnected' })
+      if (reason === 'io server disconnect') {
+        // 서버에서 연결을 끊은 경우 수동으로 재연결
+        newSocket.connect()
+      }
+      toast.warning('업무 데이터 서버 연결 끊김', {
+        description: '재연결을 시도합니다.'
+      })
+    })
+
+    // 서버가 쏴주는 'task:updated' 이벤트를 상시 감시 (팀 + 멤버 데이터)
+    newSocket.on('task:updated', (data: TaskSocketData) => {
+      set({
+        teamTasks: data.team,
+        memberTasks: data.members,
+        lastUpdated: data.lastUpdated
+      })
     })
 
     set({ socket: newSocket })

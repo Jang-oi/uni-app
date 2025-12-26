@@ -4,8 +4,7 @@ import { Header } from '@/components/header'
 import { Toaster } from '@/components/ui/sonner'
 import { CalendarPage } from '@/pages/calendar-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
-import { PersonalTasksPage } from './pages/personal-tasks-page'
-import { TeamTasksPage } from './pages/team-tasks-page'
+import { TasksPage } from './pages/tasks-page'
 import { VersionPage } from './pages/version-page'
 
 export default function App() {
@@ -15,10 +14,8 @@ export default function App() {
     switch (activeTab) {
       case '일정':
         return <CalendarPage key="calendar" />
-      case '팀업무':
-        return <TeamTasksPage key="team-tasks" />
-      case '개인업무':
-        return <PersonalTasksPage key="personal-tasks" />
+      case '업무':
+        return <TasksPage key="tasks" />
       case '가상머신':
         return <VirtualMachinesPage key="vm" />
       case '버전관리':

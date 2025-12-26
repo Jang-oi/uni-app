@@ -3,10 +3,14 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 // Custom APIs for renderer
 const api = {
+  // 버전 관리 및 업데이트
   getVersion: () => ipcRenderer.invoke('updater:get-version'),
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
   downloadUpdate: () => ipcRenderer.invoke('updater:download'),
   installUpdate: () => ipcRenderer.invoke('updater:install'),
+
+  // 사용자 정보
+  getUserName: () => ipcRenderer.invoke('user:get-name'),
 
   // 업데이트 이벤트 리스너
   onChecking: (callback: () => void) => {

@@ -43,7 +43,6 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
-    console.log('[App] 일반 모드로 실행 (관리자 기능은 인증 후 사용 가능)')
   })
 
   // 4. 창이 닫힐 때 종료되는 대신 트레이로 최소화되도록 설정
