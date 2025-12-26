@@ -19,16 +19,11 @@ export function TasksPage() {
   const [activeView, setActiveView] = useState<'team' | 'personal'>('team')
   const [sorting, setSorting] = useState<SortingState>([])
 
+  // 스토어에서 데이터만 가져오기 (Socket은 App.tsx에서 이미 초기화됨)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const memberTasks = useTaskStore((state) => state.memberTasks)
   const currentUser = useTaskStore((state) => state.currentUser)
   const setCurrentUser = useTaskStore((state) => state.setCurrentUser)
-  const initSocket = useTaskStore((state) => state.initSocket)
-
-  // Socket.io 연결 및 리스너 가동
-  useEffect(() => {
-    initSocket()
-  }, [initSocket])
 
   // 사용자 정보 조회
   useEffect(() => {

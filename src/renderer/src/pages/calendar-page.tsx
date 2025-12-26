@@ -194,14 +194,9 @@ function DayCell({ date, vacations }: { date: Date; vacations: VacationRawData[]
 
 export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
+  // 스토어에서 데이터만 가져오기 (Socket은 App.tsx에서 이미 초기화됨)
   const vacationsByDate = useVacationStore((state) => state.vacationsByDate)
   const setVacationsByDate = useVacationStore((state) => state.setVacationsByDate)
-  const initSocket = useVacationStore((state) => state.initSocket)
-
-  // Socket.io 연결 및 리스너 가동
-  useEffect(() => {
-    initSocket()
-  }, [initSocket])
 
   // 서버에서 데이터 조회 (초기 로딩)
   useEffect(() => {
