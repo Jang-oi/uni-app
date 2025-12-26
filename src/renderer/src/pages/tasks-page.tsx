@@ -24,7 +24,6 @@ export function TasksPage() {
   const currentUser = useTaskStore((state) => state.currentUser)
   const setCurrentUser = useTaskStore((state) => state.setCurrentUser)
 
-  // 사용자 정보 조회
   useEffect(() => {
     const fetchUserName = async () => {
       try {
@@ -36,7 +35,7 @@ export function TasksPage() {
       }
     }
     fetchUserName()
-  }, [setCurrentUser])
+  }, [])
 
   // 표시할 데이터 결정
   const personalTasks = memberTasks[currentUser] || []
@@ -46,13 +45,9 @@ export function TasksPage() {
     {
       accessorKey: 'CM_NAME',
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 px-1 text-xs font-medium w-full justify-start"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           고객사
+          <HugeiconsIcon icon={ArrowUpDownIcon} className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => {
@@ -71,29 +66,40 @@ export function TasksPage() {
             </Tooltip>
           </TooltipProvider>
         )
-      }
+      },
+      size: 100
     },
     {
-      accessorKey: 'WRITER',
-      header: '담당자',
-      cell: ({ row }) => <div className="text-slate-600 text-[11px]">{row.getValue('WRITER')}</div>
+      accessorKey: 'REQ_TITLE',
+      header: () => (
+        <Button variant="ghost" size="sm" className="h-6 px-1 text-xs font-medium w-full justify-start">
+          제목
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const { displayText } = truncateText(row.original.REQ_TITLE, 34)
+        return (
+          <button
+            className="text-xs cursor-pointer block leading-tight text-left hover:text-blue-600 hover:underline transition-colors"
+            onClick={() => }
+          >
+            {displayText}
+          </button>
+        )
+      },
+      size: 280
     },
     {
       accessorKey: 'STATUS',
       header: '상태',
-      cell: ({ row }) => <div className="text-slate-500">{row.getValue('STATUS')}</div>
+      cell: ({ row }) => <div className="text-slate-500">{row.getValue('STATUS')}</div>,
+      size: 100
     },
     {
       accessorKey: 'REQ_DATE_ALL',
-      header: ({ column }) => {
-        return (
-          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-            요청일
-            <HugeiconsIcon icon={ArrowUpDownIcon} className="ml-2 h-4 w-4" />
-          </Button>
-        )
-      },
-      cell: ({ row }) => <div className="text-slate-500">{row.getValue('REQ_DATE_ALL')}</div>
+      header: '요청일',
+      cell: ({ row }) => <div className="text-slate-500">{row.getValue('REQ_DATE_ALL')}</div>,
+      size: 120
     }
   ]
 
@@ -122,18 +128,22 @@ export function TasksPage() {
       <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'team' | 'personal')}>
         <TabsList>
           <TabsTrigger value="team">팀 전체</TabsTrigger>
-          <TabsTrigger value="personal">개인 ({currentUser})</TabsTrigger>
+          <TabsTrigger value="personal">{currentUser} 매니저</TabsTrigger>
         </TabsList>
 
         <TabsContent value="team" className="mt-6">
-          <ScrollArea className="h-[calc(64vh-80px)]">
+          <ScrollArea className="h-[calc(77vh-80px)]">
             <Table className="w-full border border-slate-200" style={{ tableLayout: 'fixed' }}>
               <TableHeader className="bg-slate-50 border-b border-slate-200">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id} className="hover:bg-transparent border-b">
                     {headerGroup.headers.map((header) => {
                       return (
-                        <TableHead key={header.id} className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                        <TableHead
+                          key={header.id}
+                          className="text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                          style={{ width: `${header.getSize()}px` }}
+                        >
                           {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                         </TableHead>
                       )
@@ -151,7 +161,7 @@ export function TasksPage() {
                       data-state={row.getIsSelected() && 'selected'}
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="py-3">
+                        <TableCell key={cell.id} className="py-3" style={{ width: `${cell.column.getSize()}px` }}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                       ))}
@@ -170,14 +180,18 @@ export function TasksPage() {
         </TabsContent>
 
         <TabsContent value="personal" className="mt-6">
-          <ScrollArea className="h-[calc(64vh-80px)]">
+          <ScrollArea className="h-[calc(77vh-80px)]">
             <Table className="w-full border border-slate-200" style={{ tableLayout: 'fixed' }}>
               <TableHeader className="bg-slate-50 border-b border-slate-200">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id} className="hover:bg-transparent border-b">
                     {headerGroup.headers.map((header) => {
                       return (
-                        <TableHead key={header.id} className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                        <TableHead
+                          key={header.id}
+                          className="text-xs font-semibold text-slate-700 uppercase tracking-wide"
+                          style={{ width: `${header.getSize()}px` }}
+                        >
                           {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                         </TableHead>
                       )
@@ -195,7 +209,7 @@ export function TasksPage() {
                       data-state={row.getIsSelected() && 'selected'}
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="py-3">
+                        <TableCell key={cell.id} className="py-3" style={{ width: `${cell.column.getSize()}px` }}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                       ))}
