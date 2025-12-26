@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { api, ApiResponse } from '@shared/api/client'
-import { VacationRawData } from '@shared/types/data'
+import { ProcessedEvent } from '@shared/types/calendar'
 import { motion } from 'motion/react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { useVacationStore } from '@/stores/vacation'
+import { useCalendarStore } from '@/stores/calendar'
 
 // 날짜 유틸리티
 const getDaysInMonth = (year: number, month: number) => {
@@ -26,18 +26,18 @@ const formatDate = (date: Date) => {
 }
 
 // 휴가 기간 계산 (일 수)
-const getVacationDays = (vacation: VacationRawData) => {
-  const start = new Date(vacation.useSdate)
-  const end = new Date(vacation.useEdate)
+const getVacationDays = (vacation: ProcessedEvent) => {
+  const start = new Date(vacation.startDate)
+  const end = new Date(vacation.endDate)
   const diffTime = Math.abs(end.getTime() - start.getTime())
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
   return diffDays
 }
 
 // 휴가 타입별 색상 설정
-const getVacationColor = (itemName: string, timeTypeName?: string | null) => {
+const getVacationColor = (type: string, displayLabel: string) => {
   // 반차/반반차
-  if (itemName.includes('반차') || timeTypeName?.includes('반차')) {
+  if (type.includes('반차') || displayLabel.includes('반차')) {
     return {
       bg: 'bg-green-100',
       text: 'text-green-800',
@@ -45,7 +45,7 @@ const getVacationColor = (itemName: string, timeTypeName?: string | null) => {
     }
   }
   // 연차 (종일)
-  if (itemName.includes('연차')) {
+  if (type.includes('연차')) {
     return {
       bg: 'bg-blue-100',
       text: 'text-blue-800',
@@ -61,23 +61,12 @@ const getVacationColor = (itemName: string, timeTypeName?: string | null) => {
 }
 
 // 휴가 아이템 컴포넌트 (Bar 형태)
-function VacationItem({ vacation, dateStr }: { vacation: VacationRawData; dateStr: string }) {
-  const isStart = vacation.useSdate === dateStr
-  const isEnd = vacation.useEdate === dateStr
-  const isMultiDay = vacation.useSdate !== vacation.useEdate
+function VacationItem({ vacation, dateStr }: { vacation: ProcessedEvent; dateStr: string }) {
+  const isStart = vacation.startDate === dateStr
+  const isEnd = vacation.endDate === dateStr
+  const isMultiDay = vacation.startDate !== vacation.endDate
   const days = getVacationDays(vacation)
-  const colors = getVacationColor(vacation.itemName, vacation.useTimeTypeName)
-
-  // 시간 정보 포맷팅
-  const getTimeInfo = () => {
-    if (vacation.useTimeTypeName) {
-      return vacation.useTimeTypeName
-    }
-    if (vacation.useStime && vacation.useEtime) {
-      return `${vacation.useStime} ~ ${vacation.useEtime}`
-    }
-    return '종일'
-  }
+  const colors = getVacationColor(vacation.type, vacation.displayLabel)
 
   return (
     <TooltipProvider>
@@ -98,7 +87,7 @@ function VacationItem({ vacation, dateStr }: { vacation: VacationRawData; dateSt
             {/* 시작일에만 이름 + 기간 표시 */}
             {isStart || !isMultiDay ? (
               <span className="flex items-center gap-1">
-                <span>{vacation.usName}</span>
+                <span>{vacation.name}</span>
                 {isMultiDay && <span className="text-[10px] opacity-70">({days}일)</span>}
               </span>
             ) : (
@@ -110,13 +99,12 @@ function VacationItem({ vacation, dateStr }: { vacation: VacationRawData; dateSt
         <TooltipContent side="top" className="max-w-xs">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-3">
-              <p className="font-semibold text-sm">{vacation.usName}</p>
-              <span className={cn('text-xs px-2 py-0.5 rounded', colors.bg, colors.text)}>{vacation.itemName}</span>
+              <p className="font-semibold text-sm">{vacation.name}</p>
+              <span className={cn('text-xs px-2 py-0.5 rounded', colors.bg, colors.text)}>{vacation.type}</span>
             </div>
             <div className="text-xs text-slate-600 space-y-0.5">
-              <p>📅 {vacation.useSdate === vacation.useEdate ? vacation.useSdate : `${vacation.useSdate} ~ ${vacation.useEdate}`}</p>
-              <p>⏰ {getTimeInfo()}</p>
-              {vacation.useDesc && <p className="text-slate-500 mt-1">💬 {vacation.useDesc}</p>}
+              <p>📅 {vacation.startDate === vacation.endDate ? vacation.startDate : `${vacation.startDate} ~ ${vacation.endDate}`}</p>
+              <p>⏰ {vacation.displayLabel}</p>
             </div>
           </div>
         </TooltipContent>
@@ -126,7 +114,7 @@ function VacationItem({ vacation, dateStr }: { vacation: VacationRawData; dateSt
 }
 
 // 날짜 셀 컴포넌트
-function DayCell({ date, vacations }: { date: Date; vacations: VacationRawData[] }) {
+function DayCell({ date, vacations }: { date: Date; vacations: ProcessedEvent[] }) {
   const dateStr = formatDate(date)
   const today = formatDate(new Date())
   const isToday = dateStr === today
@@ -171,8 +159,8 @@ function DayCell({ date, vacations }: { date: Date; vacations: VacationRawData[]
                 <div className="space-y-1.5">
                   <p className="font-semibold text-xs">추가 휴가 ({hiddenCount}건)</p>
                   {vacations.slice(maxVisible).map((vacation) => (
-                    <div key={vacation.useId} className="text-xs">
-                      <span className="font-medium">{vacation.usName}</span> - {vacation.itemName}
+                    <div key={vacation.id} className="text-xs">
+                      <span className="font-medium">{vacation.name}</span> - {vacation.type}
                     </div>
                   ))}
                 </div>
@@ -185,7 +173,7 @@ function DayCell({ date, vacations }: { date: Date; vacations: VacationRawData[]
       {/* 휴가 목록 */}
       <div className="space-y-1">
         {visibleVacations.map((vacation) => (
-          <VacationItem key={`${vacation.useId}-${dateStr}`} vacation={vacation} dateStr={dateStr} />
+          <VacationItem key={`${vacation.id}-${dateStr}`} vacation={vacation} dateStr={dateStr} />
         ))}
       </div>
     </div>
@@ -195,8 +183,8 @@ function DayCell({ date, vacations }: { date: Date; vacations: VacationRawData[]
 export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   // 스토어에서 데이터만 가져오기 (Socket은 App.tsx에서 이미 초기화됨)
-  const vacationsByDate = useVacationStore((state) => state.vacationsByDate)
-  const setVacationsByDate = useVacationStore((state) => state.setVacationsByDate)
+  const eventsByDate = useCalendarStore((state) => state.eventsByDate)
+  const setEventsByDate = useCalendarStore((state) => state.setEventsByDate)
 
   // 서버에서 데이터 조회 (초기 로딩)
   useEffect(() => {
@@ -206,12 +194,12 @@ export function CalendarPage() {
       const response = await api.get<ApiResponse>(`/api/vacations/calendar/${year}/${month}`)
 
       if (response.data.success && response.data.data) {
-        const data = response.data.data as { vacationsByDate: Record<string, VacationRawData[]> }
-        setVacationsByDate(data.vacationsByDate)
+        const data = response.data.data as { eventsDate: Record<string, ProcessedEvent[]> }
+        setEventsByDate(data.eventsDate)
       }
     }
     fetchVacations()
-  }, [currentDate, setVacationsByDate])
+  }, [currentDate, setEventsByDate])
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -307,7 +295,7 @@ export function CalendarPage() {
             }
 
             const dateStr = formatDate(date)
-            const dayVacations = vacationsByDate[dateStr] || []
+            const dayVacations = eventsByDate[dateStr] || []
 
             return <DayCell key={i} date={date} vacations={dayVacations} />
           })}

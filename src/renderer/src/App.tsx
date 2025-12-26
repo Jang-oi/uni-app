@@ -7,9 +7,9 @@ import { CalendarPage } from '@/pages/calendar-page'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { ServerErrorPage } from '@/pages/server-error-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
+import { useCalendarStore } from '@/stores/calendar'
 import { useHypervStore } from '@/stores/hyperv'
 import { useTaskStore } from '@/stores/task'
-import { useVacationStore } from '@/stores/vacation'
 import { TasksPage } from './pages/tasks-page'
 import { VersionPage } from './pages/version-page'
 
@@ -18,7 +18,7 @@ export default function App() {
   const [serverError, setServerError] = useState(false)
 
   // 스토어에서 초기화 함수만 가져오기
-  const initVacationSocket = useVacationStore((state) => state.initSocket)
+  const initCalendarSocket = useCalendarStore((state) => state.initSocket)
   const initTaskSocket = useTaskStore((state) => state.initSocket)
   const initHypervSocket = useHypervStore((state) => state.initSocket)
 
@@ -42,17 +42,17 @@ export default function App() {
 
     // 모든 Socket 초기화 (에러 콜백 전달)
     console.log('[App] Socket 초기화 시작')
-    initVacationSocket(handleError)
+    initCalendarSocket(handleError)
     initTaskSocket(handleError)
     initHypervSocket(handleError)
 
     // 5초 후에도 연결이 안 되면 에러로 간주 (타임아웃)
     const timeout = setTimeout(() => {
-      const vacationStatus = useVacationStore.getState().connectionStatus
+      const calendarStatus = useCalendarStore.getState().connectionStatus
       const taskStatus = useTaskStore.getState().connectionStatus
       const hypervStatus = useHypervStore.getState().connectionStatus
 
-      const allConnected = vacationStatus === 'connected' && taskStatus === 'connected' && hypervStatus === 'connected'
+      const allConnected = calendarStatus === 'connected' && taskStatus === 'connected' && hypervStatus === 'connected'
 
       if (!allConnected) {
         console.error('[App] Socket 연결 타임아웃')
@@ -69,7 +69,7 @@ export default function App() {
     }, 5000)
 
     return () => clearTimeout(timeout)
-  }, [initVacationSocket, initTaskSocket, initHypervSocket])
+  }, [initCalendarSocket, initTaskSocket, initHypervSocket])
 
   // 서버 연결 안 되면 에러 페이지 표시
   if (serverError) {

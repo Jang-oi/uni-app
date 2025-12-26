@@ -1,33 +1,33 @@
 /**
- * 휴가 데이터 Zustand 스토어
+ * 일정 데이터 Zustand 스토어 (범용)
  */
 
 import { BASE_URL } from '@shared/api/client'
-import { VacationRawData } from '@shared/types/data'
+import { ProcessedEvent } from '@shared/types/calendar'
 import { io, Socket } from 'socket.io-client'
 import { create } from 'zustand'
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
 
-interface VacationStore {
-  vacations: VacationRawData[]
-  vacationsByDate: Record<string, VacationRawData[]>
+interface CalendarStore {
+  events: ProcessedEvent[]
+  eventsByDate: Record<string, ProcessedEvent[]>
   socket: Socket | null
   connectionStatus: ConnectionStatus
-  setVacations: (vacations: VacationRawData[]) => void
-  setVacationsByDate: (vacationsByDate: Record<string, VacationRawData[]>) => void
+  setEvents: (events: ProcessedEvent[]) => void
+  setEventsByDate: (eventsByDate: Record<string, ProcessedEvent[]>) => void
   setConnectionStatus: (status: ConnectionStatus) => void
   initSocket: (onError?: () => void) => void
 }
 
-export const useVacationStore = create<VacationStore>((set, get) => ({
-  vacations: [],
-  vacationsByDate: {},
+export const useCalendarStore = create<CalendarStore>((set, get) => ({
+  events: [],
+  eventsByDate: {},
   socket: null,
   connectionStatus: 'disconnected',
 
-  setVacations: (vacations) => set({ vacations }),
-  setVacationsByDate: (vacationsByDate) => set({ vacationsByDate }),
+  setEvents: (events) => set({ events }),
+  setEventsByDate: (eventsByDate) => set({ eventsByDate }),
   setConnectionStatus: (status) => set({ connectionStatus: status }),
 
   initSocket: (onError?: () => void) => {
@@ -45,13 +45,13 @@ export const useVacationStore = create<VacationStore>((set, get) => ({
 
     // 연결 성공
     newSocket.on('connect', () => {
-      console.log('[Vacation] Socket.io 연결 성공')
+      console.log('[Calendar] Socket.io 연결 성공')
       set({ connectionStatus: 'connected' })
     })
 
     // 연결 오류
     newSocket.on('connect_error', (error) => {
-      console.error('[Vacation] Socket.io 연결 오류:', error)
+      console.error('[Calendar] Socket.io 연결 오류:', error)
       set({ connectionStatus: 'error' })
       // 에러 콜백 실행
       if (onError) {
@@ -61,7 +61,7 @@ export const useVacationStore = create<VacationStore>((set, get) => ({
 
     // 연결 끊김
     newSocket.on('disconnect', (reason) => {
-      console.warn('[Vacation] Socket.io 연결 끊김:', reason)
+      console.warn('[Calendar] Socket.io 연결 끊김:', reason)
       set({ connectionStatus: 'disconnected' })
       if (reason === 'io server disconnect') {
         // 서버에서 연결을 끊은 경우 수동으로 재연결
@@ -69,9 +69,9 @@ export const useVacationStore = create<VacationStore>((set, get) => ({
       }
     })
 
-    // 서버가 쏴주는 'vacation:updated' 이벤트를 상시 감시
-    newSocket.on('vacation:updated', (data: { vacationsByDate: Record<string, VacationRawData[]> }) => {
-      set({ vacationsByDate: data.vacationsByDate })
+    // 서버가 쏴주는 'calendar:updated' 이벤트를 상시 감시
+    newSocket.on('calendar:updated', (data: { vacationsDate: Record<string, ProcessedEvent[]> }) => {
+      set({ eventsByDate: data.vacationsDate })
     })
 
     set({ socket: newSocket })

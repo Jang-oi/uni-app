@@ -7,13 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
+import { useCalendarStore } from '@/stores/calendar'
 import { useHypervStore } from '@/stores/hyperv'
 import { useTaskStore } from '@/stores/task'
-import { useVacationStore } from '@/stores/vacation'
 
 export function DashboardPage() {
   // 스토어에서 데이터만 가져오기 (Socket은 App.tsx에서 이미 초기화됨)
-  const vacationsByDate = useVacationStore((state) => state.vacationsByDate)
+  const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const vms = useHypervStore((state) => state.vms)
 
@@ -27,7 +27,7 @@ export function DashboardPage() {
   }, [])
 
   // 오늘의 휴가자
-  const todayVacations = vacationsByDate[today] || []
+  const todayVacations = eventsByDate[today] || []
 
   // 미처리/고객사답변 업무 (status가 'a' 또는 'b')
   const filteredTasks = useMemo(() => {
@@ -133,7 +133,7 @@ export function DashboardPage() {
                   <div className="space-y-2">
                     {todayVacations.map((vacation, index) => (
                       <motion.div
-                        key={vacation.useId}
+                        key={vacation.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
@@ -144,16 +144,13 @@ export function DashboardPage() {
                             <HugeiconsIcon icon={UserIcon} className="w-5 h-5 text-blue-600" />
                           </div>
                           <div>
-                            <p className="font-semibold text-sm text-slate-900">{vacation.usName}</p>
+                            <p className="font-semibold text-sm text-slate-900">{vacation.name}</p>
                             <Badge variant="secondary" className="mt-1 text-xs">
-                              {vacation.itemName}
+                              {vacation.type}
                             </Badge>
                           </div>
                         </div>
-                        <div className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded">
-                          {vacation.useTimeTypeName ||
-                            (vacation.useStime && vacation.useEtime ? `${vacation.useStime}~${vacation.useEtime}` : '종일')}
-                        </div>
+                        <div className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded">{vacation.displayLabel}</div>
                       </motion.div>
                     ))}
                   </div>
