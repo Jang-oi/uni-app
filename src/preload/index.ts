@@ -12,6 +12,9 @@ const api = {
   // 사용자 정보
   getUserName: () => ipcRenderer.invoke('user:get-name'),
 
+  // 외부 URL 열기
+  openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
+
   // 업데이트 이벤트 리스너
   onChecking: (callback: () => void) => {
     ipcRenderer.on('updater:checking', callback)
