@@ -24,57 +24,20 @@ export default function App() {
 
   // 앱 시작 시 모든 Socket 초기화
   useEffect(() => {
-    let errorCount = 0
-    const maxErrors = 3 // 3개 모두 실패하면 에러 페이지로
-
     const handleError = () => {
-      errorCount++
-      console.error(`[App] Socket 연결 오류 (${errorCount}/${maxErrors})`)
-
-      if (errorCount >= maxErrors) {
-        console.error('[App] 모든 Socket 연결 실패 - 에러 페이지로 전환')
-        setServerError(true)
-        toast.error('서버 연결 실패', {
-          description: '서버에 연결할 수 없습니다. 담당자에게 문의하세요.'
-        })
-      }
+      console.error('[App] 모든 Socket 연결 실패 - 에러 페이지로 전환')
+      setServerError(true)
+      toast.error('서버 연결 실패', {
+        description: '서버에 연결할 수 없습니다. 담당자에게 문의하세요.'
+      })
     }
 
-    // 모든 Socket 초기화 (에러 콜백 전달)
-    console.log('[App] Socket 초기화 시작')
     initCalendarSocket(handleError)
     initTaskSocket(handleError)
     initHypervSocket(handleError)
-
-    // 5초 후에도 연결이 안 되면 에러로 간주 (타임아웃)
-    const timeout = setTimeout(() => {
-      const calendarStatus = useCalendarStore.getState().connectionStatus
-      const taskStatus = useTaskStore.getState().connectionStatus
-      const hypervStatus = useHypervStore.getState().connectionStatus
-
-      const allConnected = calendarStatus === 'connected' && taskStatus === 'connected' && hypervStatus === 'connected'
-
-      if (!allConnected) {
-        console.error('[App] Socket 연결 타임아웃')
-        setServerError(true)
-        toast.error('서버 연결 시간 초과', {
-          description: '서버 응답이 없습니다. 담당자에게 문의하세요.'
-        })
-      } else {
-        console.log('[App] 모든 Socket 연결 성공')
-        toast.success('서버 연결 완료', {
-          description: '모든 데이터 스트림이 정상적으로 연결되었습니다.'
-        })
-      }
-    }, 5000)
-
-    return () => clearTimeout(timeout)
   }, [initCalendarSocket, initTaskSocket, initHypervSocket])
 
-  // 서버 연결 안 되면 에러 페이지 표시
-  if (serverError) {
-    return <ServerErrorPage />
-  }
+  if (serverError) return <ServerErrorPage />
 
   const renderPage = () => {
     switch (activeTab) {

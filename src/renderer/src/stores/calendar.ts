@@ -71,6 +71,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
 
     // 서버가 쏴주는 'calendar:updated' 이벤트를 상시 감시
     newSocket.on('calendar:updated', (data: { vacationsDate: Record<string, ProcessedEvent[]> }) => {
+      console.log(data.vacationsDate)
       set({ eventsByDate: data.vacationsDate })
     })
 

@@ -11,7 +11,6 @@ import { useHypervStore } from '@/stores/hyperv'
 import { useTaskStore } from '@/stores/task'
 
 export function DashboardPage() {
-  // 스토어에서 데이터만 가져오기 (Socket은 App.tsx에서 이미 초기화됨)
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const vms = useHypervStore((state) => state.vms)
@@ -25,8 +24,14 @@ export function DashboardPage() {
     return `${year}-${month}-${day}`
   }, [])
 
-  // 오늘의 휴가자
-  const todayVacations = eventsByDate[today] || []
+  // 오늘의 휴가자 - startDate와 endDate 범위로 필터링
+  const todayVacations = useMemo(() => {
+    const allEvents = Object.values(eventsByDate).flat()
+    return allEvents.filter((event) => {
+      // 오늘 날짜가 startDate와 endDate 사이에 있는지 확인
+      return event.startDate <= today && today <= event.endDate
+    })
+  }, [eventsByDate, today])
 
   // 미처리/고객사답변 업무 (status가 'a' 또는 'b')
   const filteredTasks = useMemo(() => {
