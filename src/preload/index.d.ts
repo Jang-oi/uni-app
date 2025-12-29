@@ -41,12 +41,22 @@ declare global {
       getHyperVList: () => Promise<{ success: boolean; data: any[]; error?: string }>
 
       // 사용자 정보
-      getUserName: () => Promise<string>
+      getUserInfo: () => Promise<{
+        success: boolean
+        data?: {
+          hostname: string
+          userName: string | null
+          isRegistered: boolean
+        }
+        error?: any
+      }>
 
       // 외부 URL 열기
       openExternal: (url: string) => Promise<{ success: boolean; error?: any }>
 
       // Windows 네이티브 알림
+      requestNotificationPermission: () => Promise<{ success: boolean; permission: string; error?: any }>
+      openNotificationSettings: () => Promise<{ success: boolean; error?: any }>
       showNotification: (args: { title: string; body: string }) => Promise<{ success: boolean; error?: any }>
 
       // hostname 조회

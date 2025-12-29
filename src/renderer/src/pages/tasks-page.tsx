@@ -16,8 +16,12 @@ export function TasksPage() {
   useEffect(() => {
     const fetchUserName = async () => {
       try {
-        const userName = await window.api.getUserName()
-        setCurrentUser(userName)
+        const result = await window.api.getUserInfo()
+        if (result.success && result.data?.userName) {
+          setCurrentUser(result.data.userName)
+        } else {
+          setCurrentUser('알 수 없음')
+        }
       } catch (error) {
         console.error('[Tasks] 사용자 정보 조회 실패:', error)
         setCurrentUser('알 수 없음')

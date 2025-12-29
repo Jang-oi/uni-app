@@ -39,15 +39,16 @@ export function VirtualMachinesPage() {
       header: '사용요청',
       cell: ({ row }) => {
         const vm = row.original
-        const hasUser = vm.currentUser !== null
+        const hasUser = vm.currentUser !== null && vm.currentHostname !== null
+        const requestVM = useHypervStore((state) => state.requestVM)
 
         return (
           <Button
             size="sm"
             disabled={!hasUser}
             onClick={() => {
-              if (hasUser) {
-                console.log('[VM Request]:', vm.vmName)
+              if (hasUser && vm.currentHostname) {
+                requestVM(vm.vmName, vm.currentHostname)
                 toast.success(`${vm.vmName} 사용 요청이 전송되었습니다.`)
               }
             }}

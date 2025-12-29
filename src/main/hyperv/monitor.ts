@@ -14,7 +14,7 @@ export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
   let state: HyperVMonitorState = {
     isRunning: false,
     activeVMs: new Set<string>(), // 현재 접속 중인 VM 목록
-    userName: os.hostname(),
+    userName: os.hostname(), // hostname을 그대로 전달
     intervalId: null
   }
 

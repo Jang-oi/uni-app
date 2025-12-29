@@ -176,7 +176,10 @@ export function DashboardPage() {
               {topVms.length > 0 ? (
                 <div className="space-y-2">
                   {topVms.map((vm) => (
-                    <div key={vm.vmName} className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                    <div
+                      key={vm.vmName}
+                      className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+                    >
                       <div className="flex items-center gap-3">
                         <div className={cn('w-2.5 h-2.5 rounded-full', vm.isConnected ? 'bg-emerald-500' : 'bg-slate-300')} />
                         <div>

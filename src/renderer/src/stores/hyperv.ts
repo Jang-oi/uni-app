@@ -7,9 +7,9 @@ type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
 export interface HypervVM {
   vmName: string
   currentUser: string | null
+  currentHostname: string | null // 현재 사용자 hostname (Socket.io room 식별용)
   isConnected: boolean
   lastUpdate: string
-  hostname?: string // hostname 추가 (optional - 기존 데이터 호환)
 }
 
 interface HypervStore {
@@ -48,10 +48,10 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
       console.log('[HyperV] Socket.io 연결 성공')
       set({ connectionStatus: 'connected' })
 
-      // userName 등록 (이미 hostname)
-      const userName = await window.api.getUserName()
-      newSocket.emit('register:user', { userName })
-      console.log('[HyperV] userName 등록:', userName)
+      // hostname 등록
+      const hostname = await window.api.getHostname()
+      newSocket.emit('register:user', { hostname })
+      console.log('[HyperV] hostname 등록:', hostname)
     })
 
     // 연결 오류
@@ -94,22 +94,22 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
   },
 
   // VM 사용 요청 메서드
-  requestVM: (vmName: string, currentUserName: string) => {
+  requestVM: (vmName: string, currentHostname: string) => {
     const socket = get().socket
     if (!socket) {
       console.error('[VM Request] Socket이 연결되지 않음')
       return
     }
 
-    // 현재 사용자 이름 가져오기
-    window.api.getUserName().then((requestedBy) => {
+    // 요청자 hostname 가져오기
+    window.api.getHostname().then((requestedByHostname) => {
       socket.emit('vm:request', {
         vmName,
-        requestedBy,
-        currentUserName
+        requestedByHostname,
+        currentHostname
       })
 
-      console.log('[VM Request] 요청 전송:', { vmName, requestedBy, currentUserName })
+      console.log('[VM Request] 요청 전송:', { vmName, requestedByHostname, currentHostname })
     })
   }
 }))
