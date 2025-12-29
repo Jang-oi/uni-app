@@ -15,12 +15,7 @@ export function ServerErrorPage() {
     // 페이지 새로고침으로 재연결 시도
     setTimeout(() => {
       window.location.reload()
-    }, 1000)
-  }
-
-  const handleContactAdmin = () => {
-    // TODO: 담당자 연락 기능 (카카오톡, 이메일 등)
-    console.log('담당자에게 연락하기')
+    }, 500)
   }
 
   return (
@@ -86,10 +81,6 @@ export function ServerErrorPage() {
                 ) : (
                   '재연결 시도'
                 )}
-              </Button>
-
-              <Button onClick={handleContactAdmin} className="w-full" size="lg" variant="outline">
-                담당자에게 연락하기
               </Button>
             </div>
 

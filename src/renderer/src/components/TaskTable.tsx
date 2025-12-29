@@ -57,7 +57,7 @@ export function TaskTable({ data }: TaskTableProps) {
           </TooltipProvider>
         )
       },
-      size: 150
+      size: 100
     },
     {
       accessorKey: 'REQ_TITLE',
@@ -77,7 +77,7 @@ export function TaskTable({ data }: TaskTableProps) {
           </button>
         )
       },
-      size: 400
+      size: 280
     },
     {
       accessorKey: 'STATUS',
@@ -103,7 +103,7 @@ export function TaskTable({ data }: TaskTableProps) {
   })
 
   return (
-    <ScrollArea className="h-[calc(77vh-80px)]">
+    <ScrollArea className="h-[calc(71vh-80px)]">
       <Table className="w-full border border-slate-200" style={{ tableLayout: 'fixed' }}>
         <TableHeader className="bg-slate-50 border-b border-slate-200">
           {table.getHeaderGroups().map((headerGroup) => (

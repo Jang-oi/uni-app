@@ -42,7 +42,7 @@ export function TasksPage() {
         <p className="text-slate-600">팀 업무와 개인 업무를 확인하세요.</p>
       </div>
 
-      <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'team' | 'personal')}>
+      <Tabs className="gap-6" value={activeView} onValueChange={(value) => setActiveView(value as 'team' | 'personal')}>
         <TabsList>
           <TabsTrigger value="team">팀 전체</TabsTrigger>
           <TabsTrigger value="personal">{currentUser} 매니저</TabsTrigger>
