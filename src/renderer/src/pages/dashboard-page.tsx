@@ -2,7 +2,9 @@ import { useMemo } from 'react'
 import { Calendar03Icon, Task01Icon, UserIcon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { motion } from 'motion/react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -15,6 +17,7 @@ export function DashboardPage() {
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const vms = useHypervStore((state) => state.vms)
+  const requestVM = useHypervStore((state) => state.requestVM)
 
   // 오늘 날짜 (YYYY-MM-DD)
   const today = useMemo(() => {
@@ -173,10 +176,7 @@ export function DashboardPage() {
               {topVms.length > 0 ? (
                 <div className="space-y-2">
                   {topVms.map((vm) => (
-                    <div
-                      key={vm.vmName}
-                      className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-                    >
+                    <div key={vm.vmName} className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className={cn('w-2.5 h-2.5 rounded-full', vm.isConnected ? 'bg-emerald-500' : 'bg-slate-300')} />
                         <div>
@@ -184,12 +184,18 @@ export function DashboardPage() {
                           <p className="text-xs text-slate-500">{vm.currentUser || '대기 중'}</p>
                         </div>
                       </div>
-                      <Badge
-                        variant={vm.isConnected ? 'default' : 'secondary'}
-                        className={cn('text-xs', vm.isConnected ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-200 text-slate-600')}
+                      <Button
+                        size="sm"
+                        disabled={!vm.currentUser}
+                        onClick={() => {
+                          if (vm.currentUser) {
+                            requestVM(vm.vmName, vm.currentUser)
+                            toast.success(`${vm.vmName} 사용 요청이 전송되었습니다.`)
+                          }
+                        }}
                       >
-                        {vm.isConnected ? '활성' : '대기'}
-                      </Badge>
+                        요청하기
+                      </Button>
                     </div>
                   ))}
                 </div>

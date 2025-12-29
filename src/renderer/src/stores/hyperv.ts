@@ -9,6 +9,7 @@ export interface HypervVM {
   currentUser: string | null
   isConnected: boolean
   lastUpdate: string
+  hostname?: string // hostname 추가 (optional - 기존 데이터 호환)
 }
 
 interface HypervStore {
@@ -18,6 +19,7 @@ interface HypervStore {
   initSocket: (onError?: () => void) => void
   setVMs: (vms: HypervVM[]) => void
   setConnectionStatus: (status: ConnectionStatus) => void
+  requestVM: (vmName: string, currentUserHostname: string) => void
 }
 
 export const useHypervStore = create<HypervStore>((set, get) => ({
@@ -42,9 +44,14 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
     })
 
     // 연결 성공
-    newSocket.on('connect', () => {
+    newSocket.on('connect', async () => {
       console.log('[HyperV] Socket.io 연결 성공')
       set({ connectionStatus: 'connected' })
+
+      // userName 등록 (이미 hostname)
+      const userName = await window.api.getUserName()
+      newSocket.emit('register:user', { userName })
+      console.log('[HyperV] userName 등록:', userName)
     })
 
     // 연결 오류
@@ -72,6 +79,37 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
       set({ vms: updatedVms })
     })
 
+    // VM 사용 요청 알림 수신
+    newSocket.on('vm:notification', async (data: { vmName: string; requestedBy: string; message: string }) => {
+      console.log('[VM Notification]:', data)
+
+      // Electron 네이티브 알림 표시
+      await window.api.showNotification({
+        title: 'VM 사용 요청',
+        body: data.message
+      })
+    })
+
     set({ socket: newSocket })
+  },
+
+  // VM 사용 요청 메서드
+  requestVM: (vmName: string, currentUserName: string) => {
+    const socket = get().socket
+    if (!socket) {
+      console.error('[VM Request] Socket이 연결되지 않음')
+      return
+    }
+
+    // 현재 사용자 이름 가져오기
+    window.api.getUserName().then((requestedBy) => {
+      socket.emit('vm:request', {
+        vmName,
+        requestedBy,
+        currentUserName
+      })
+
+      console.log('[VM Request] 요청 전송:', { vmName, requestedBy, currentUserName })
+    })
   }
 }))

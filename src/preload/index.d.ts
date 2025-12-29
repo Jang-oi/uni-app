@@ -46,6 +46,12 @@ declare global {
       // 외부 URL 열기
       openExternal: (url: string) => Promise<{ success: boolean; error?: any }>
 
+      // Windows 네이티브 알림
+      showNotification: (args: { title: string; body: string }) => Promise<{ success: boolean; error?: any }>
+
+      // hostname 조회
+      getHostname: () => Promise<string>
+
       // 자동 업데이트
       getVersion: () => Promise<{ success: boolean; version: string }>
       checkForUpdates: () => Promise<{ success: boolean; message?: string }>

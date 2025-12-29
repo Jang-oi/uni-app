@@ -15,6 +15,12 @@ const api = {
   // 외부 URL 열기
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
 
+  // Windows 네이티브 알림
+  showNotification: (args: { title: string; body: string }) => ipcRenderer.invoke('notification:show', args),
+
+  // hostname 조회
+  getHostname: () => ipcRenderer.invoke('system:get-hostname'),
+
   // 업데이트 이벤트 리스너
   onChecking: (callback: () => void) => {
     ipcRenderer.on('updater:checking', callback)
