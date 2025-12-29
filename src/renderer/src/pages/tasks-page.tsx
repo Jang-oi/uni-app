@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'motion/react'
+import { Task01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { TaskTable } from '@/components/TaskTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTaskStore } from '@/stores/task'
+import { PageHeader } from '../components/page-header'
 
 export function TasksPage() {
   const [activeView, setActiveView] = useState<'team' | 'personal'>('team')
@@ -34,17 +36,12 @@ export function TasksPage() {
   const personalTasks = memberTasks[currentUser] || []
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="p-8 space-y-6"
-    >
-      <div>
-        <h1 className="text-3xl font-semibold text-slate-900 mb-2">업무</h1>
-        <p className="text-slate-600">팀 업무와 개인 업무를 확인하세요.</p>
-      </div>
+    <div className="p-8 h-full flex flex-col bg-white">
+      <PageHeader
+        title="업무 관리"
+        description="고객사 요청 사항(SR) 및 팀 내부 태스크를 실시간으로 확인합니다."
+        icon={<HugeiconsIcon icon={Task01Icon} size={20} />}
+      />
 
       <Tabs className="gap-6" value={activeView} onValueChange={(value) => setActiveView(value as 'team' | 'personal')}>
         <TabsList>
@@ -60,6 +57,6 @@ export function TasksPage() {
           <TaskTable data={personalTasks} />
         </TabsContent>
       </Tabs>
-    </motion.div>
+    </div>
   )
 }

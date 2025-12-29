@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from '@tanstack/react-table'
-import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { PageHeader } from '../components/page-header'
 import { ScrollArea } from '../components/ui/scroll-area'
 import { useHypervStore, type HypervVM } from '../stores/hyperv'
 
@@ -32,7 +34,7 @@ export function VirtualMachinesPage() {
       header: '상태',
       cell: ({ row }) => {
         const isConnected = row.getValue('isConnected') as boolean
-        return <div className={`font-medium ${isConnected ? 'text-green-600' : 'text-slate-400'}`}>{isConnected ? '활성' : '대기'}</div>
+        return <div className={`font-medium ${isConnected ? 'text-primary' : 'text-slate-400'}`}>{isConnected ? '활성' : '대기'}</div>
       }
     },
     {
@@ -70,17 +72,12 @@ export function VirtualMachinesPage() {
   })
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="p-8 space-y-6"
-    >
-      <div>
-        <h1 className="text-3xl font-semibold text-slate-900 mb-2">가상머신</h1>
-        <p className="text-slate-600">HYPER-V 의 사용 현황을 확인하세요.</p>
-      </div>
+    <div className="p-8 h-full flex flex-col bg-white">
+      <PageHeader
+        title="가상머신"
+        description="팀에서 공용으로 사용하는 Hyper-V 인스턴스의 실시간 점유 상태입니다."
+        icon={<HugeiconsIcon icon={VirtualRealityVr01Icon} size={20} />}
+      />
 
       <ScrollArea className="h-[calc(68vh-80px)]">
         <Table className="w-full border border-slate-200" style={{ tableLayout: 'fixed' }}>
@@ -122,6 +119,6 @@ export function VirtualMachinesPage() {
           </TableBody>
         </Table>
       </ScrollArea>
-    </motion.div>
+    </div>
   )
 }

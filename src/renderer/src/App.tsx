@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { toast } from 'sonner'
 import { Header } from '@/components/header'
+import { LoadingScreen } from '@/components/loading-screen' // 로딩 스크린 임포트
 import { Toaster } from '@/components/ui/sonner'
 import { CalendarPage } from '@/pages/calendar-page'
 import { DashboardPage } from '@/pages/dashboard-page'
@@ -15,30 +16,46 @@ import { VersionPage } from './pages/version-page'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('대시보드')
+  const [isInitializing, setIsInitializing] = useState(true)
   const [serverError, setServerError] = useState(false)
 
-  // 스토어에서 초기화 함수만 가져오기
   const initCalendarSocket = useCalendarStore((state) => state.initSocket)
   const initTaskSocket = useTaskStore((state) => state.initSocket)
   const initHypervSocket = useHypervStore((state) => state.initSocket)
 
   // 앱 시작 시 모든 Socket 초기화
   useEffect(() => {
-    const handleError = () => {
-      console.error('[App] 모든 Socket 연결 실패 - 에러 페이지로 전환')
-      setServerError(true)
-      toast.error('서버 연결 실패', {
-        description: '서버에 연결할 수 없습니다. 담당자에게 문의하세요.'
-      })
+    const initializeApp = async () => {
+      try {
+        const handleError = () => {
+          console.error('[App] 소켓 연결 실패')
+          setServerError(true)
+          toast.error('서버 연결 실패', {
+            description: '서버에 연결할 수 없습니다. 담당자에게 문의하세요.'
+          })
+        }
+
+        initCalendarSocket(handleError)
+        initTaskSocket(handleError)
+        initHypervSocket(handleError)
+
+        await new Promise((resolve) => setTimeout(resolve, 3000))
+      } catch (error) {
+        console.error('[App] 치명적 오류 발생:', error)
+        setServerError(true)
+      } finally {
+        setIsInitializing(false)
+      }
     }
 
-    initCalendarSocket(handleError)
-    initTaskSocket(handleError)
-    initHypervSocket(handleError)
+    initializeApp()
   }, [initCalendarSocket, initTaskSocket, initHypervSocket])
 
+  // 렌더링 로직 분기
   if (serverError) return <ServerErrorPage />
 
+  // 초기화 중이면 로딩 스크린 표시
+  if (isInitializing) return <LoadingScreen />
   const renderPage = () => {
     switch (activeTab) {
       case '대시보드':

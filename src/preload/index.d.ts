@@ -64,6 +64,7 @@ declare global {
 
       // 자동 업데이트
       getVersion: () => Promise<{ success: boolean; version: string }>
+      getVersionHistory: () => Promise<{ success: boolean; history: Array<{ version: string; date: string; changes: string[] }> }>
       checkForUpdates: () => Promise<{ success: boolean; message?: string }>
       downloadUpdate: () => Promise<{ success: boolean; message?: string }>
       installUpdate: () => Promise<{ success: boolean; message?: string }>
@@ -72,7 +73,9 @@ declare global {
       onChecking: (callback: () => void) => () => void
       onUpdateAvailable: (callback: (info: { version: string; releaseDate: string; releaseNotes: any }) => void) => () => void
       onUpdateNotAvailable: (callback: (info: { version: string }) => void) => () => void
-      onDownloadProgress: (callback: (progress: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => void) => () => void
+      onDownloadProgress: (
+        callback: (progress: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => void
+      ) => () => void
       onUpdateDownloaded: (callback: (info: { version: string }) => void) => () => void
       onError: (callback: (error: { message: string }) => void) => () => void
     }

@@ -1,23 +1,21 @@
 import { useMemo } from 'react'
-import { Calendar03Icon, Task01Icon, UserIcon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon, Task01Icon, UserIcon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 import { useCalendarStore } from '@/stores/calendar'
 import { useHypervStore } from '@/stores/hyperv'
 import { useTaskStore } from '@/stores/task'
+import { PageHeader } from '../components/page-header'
 
 export function DashboardPage() {
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const vms = useHypervStore((state) => state.vms)
-  const requestVM = useHypervStore((state) => state.requestVM)
 
   // 오늘 날짜 (YYYY-MM-DD)
   const today = useMemo(() => {
@@ -28,7 +26,6 @@ export function DashboardPage() {
     return `${year}-${month}-${day}`
   }, [])
 
-  // 오늘의 휴가자 - startDate와 endDate 범위로 필터링
   const todayVacations = useMemo(() => {
     const allEvents = Object.values(eventsByDate).flat()
     return allEvents.filter((event) => {
@@ -36,181 +33,156 @@ export function DashboardPage() {
     })
   }, [eventsByDate, today])
 
-  // 미처리/고객사답변 업무
   const filteredTasks = useMemo(() => {
-    return teamTasks
+    return teamTasks.filter((task) => task.STATUS_CODE === 'N' || task.WRITER === '')
   }, [teamTasks])
 
-  // HyperV 사용 현황 (최대 5개)
-  const topVms = vms.filter((vm) => vm.isConnected)
+  const requestVM = useHypervStore((state) => state.requestVM)
 
-  console.log(todayVacations)
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="p-8 space-y-6"
-    >
-      <div>
-        <h1 className="text-3xl font-semibold text-slate-900 mb-2">대시보드</h1>
-        <p className="text-slate-600">구독4팀 주요 정보</p>
-      </div>
+    <div className="p-8 h-full flex flex-col bg-white">
+      <PageHeader
+        title="대시보드"
+        description="실시간 팀 현황 및 주요 지표를 요약하여 보여줍니다."
+        icon={<HugeiconsIcon icon={Task01Icon} size={20} />}
+      />
 
-      <div className="grid grid-cols-2 lg:grid-cols-2 gap-6">
-        {/* Tasks Card */}
-        <Card className="col-span-2 border border-slate-200 bg-white">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center">
-                <HugeiconsIcon icon={Task01Icon} className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-base font-semibold text-slate-900">확인 필요 업무</CardTitle>
-                <CardDescription className="text-sm text-slate-600">미처리/고객사답변 · {filteredTasks.length}건</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[180px]">
-              {filteredTasks.length > 0 ? (
-                <Table className="w-full border border-slate-200">
-                  <TableHeader className="bg-slate-50 border-b border-slate-200">
-                    <TableRow className="hover:bg-transparent border-b">
-                      <TableHead className="text-xs font-semibold text-slate-700 uppercase tracking-wide">고객사</TableHead>
-                      <TableHead className="text-xs font-semibold text-slate-700 uppercase tracking-wide">상태</TableHead>
-                      <TableHead className="text-xs font-semibold text-slate-700 uppercase tracking-wide">요청일</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTasks.map((task) => (
-                      <TableRow key={task.SR_IDX} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
-                        <TableCell className="py-3 text-[11px] font-medium text-slate-900">{task.CM_NAME}</TableCell>
-                        <TableCell className="py-3">
-                          <Badge
-                            className={cn(
-                              'text-xs',
-                              task.STATUS_CODE === 'N' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
-                            )}
-                          >
+      <div className="flex-1 grid grid-cols-3 gap-5 min-h-0">
+        <div className="col-span-2">
+          <Card className="h-full border-slate-200 shadow-none overflow-hidden flex flex-col">
+            <ScrollArea className="h-[calc(86vh-80px)]">
+              <div className="p-4 space-y-3">
+                {filteredTasks.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400">
+                    <p className="text-sm">등록된 업무가 없습니다.</p>
+                  </div>
+                ) : (
+                  filteredTasks.map((task) => (
+                    <div
+                      key={task.SR_IDX}
+                      className="group flex items-center justify-between p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
+                    >
+                      <div className="flex flex-col gap-1 flex-1 min-w-0">
+                        <span className="text-[10px] font-bold text-primary uppercase truncate">{task.CM_NAME}</span>
+                        <span className="text-sm font-medium text-slate-900 truncate">{task.REQ_TITLE}</span>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          <span>{task.WRITER}</span>
+                          <span>•</span>
+                          <span>{task.REQ_DATE}</span>
+                          <span>•</span>
+                          <Badge variant={task.STATUS_CODE === '9' ? 'default' : 'secondary'} className="h-4 text-[9px] px-1.5">
                             {task.STATUS}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="py-3 text-[11px] text-slate-500">{task.REQ_DATE}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-sm text-slate-500">확인이 필요한 업무가 없습니다</p>
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-        {/* Today's Vacations Card */}
-        <Card className="border border-slate-200 bg-white">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center">
-                <HugeiconsIcon icon={Calendar03Icon} className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-base font-semibold text-slate-900">오늘의 휴가자</CardTitle>
-                <CardDescription className="text-sm text-slate-600">
-                  {today} · {todayVacations.length}명
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[240px]">
-              {todayVacations.length > 0 ? (
-                <div className="space-y-2">
-                  {todayVacations.map((vacation) => (
-                    <div
-                      key={vacation.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                          <HugeiconsIcon icon={UserIcon} className="w-4 h-4 text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">{vacation.name}</p>
-                          <p className="text-xs text-slate-500">{vacation.type}</p>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-700">
-                        {vacation.displayLabel}
-                      </Badge>
+                      <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4 text-slate-300 group-hover:text-primary ml-2" />
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-sm text-slate-500">오늘 휴가자가 없습니다</p>
-                </div>
-              )}
+                  ))
+                )}
+              </div>
             </ScrollArea>
-          </CardContent>
-        </Card>
+          </Card>
+        </div>
 
-        {/* HyperV Status Card */}
-        <Card className="border border-slate-200 bg-white">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center">
-                <HugeiconsIcon icon={VirtualRealityVr01Icon} className="w-5 h-5 text-white" />
+        {/* 오른쪽: VM 및 휴가자 (수직 배치) */}
+        <div className="col-span-1 flex flex-col gap-5">
+          <div className="flex-1">
+            <Card className="h-full border-slate-200 shadow-none flex flex-col">
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
+                <HugeiconsIcon icon={VirtualRealityVr01Icon} size={16} className="text-primary" />
+                <span className="text-sm font-bold text-slate-800">VM 실시간 상태</span>
               </div>
-              <div>
-                <CardTitle className="text-base font-semibold text-slate-900">HyperV 사용 현황</CardTitle>
-                <CardDescription className="text-sm text-slate-600">실시간 가상머신 상태</CardDescription>
+              <ScrollArea className="h-[calc(40vh-80px)]">
+                <div className="p-4 space-y-2">
+                  {vms.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">
+                      <p className="text-xs">VM 정보를 불러오는 중...</p>
+                    </div>
+                  ) : (
+                    vms.map((vm) => (
+                      <div key={vm.vmName} className="p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className={cn('w-2 h-2 rounded-full', vm.isConnected ? 'bg-primary' : 'bg-slate-300')} />
+                            <span className="text-sm font-semibold text-slate-800">{vm.vmName}</span>
+                          </div>
+                          <Badge variant={vm.isConnected ? 'default' : 'secondary'} className="h-5 text-[10px]">
+                            {vm.isConnected ? '사용 중' : '대기'}
+                          </Badge>
+                        </div>
+                        {vm.currentUser && (
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 mb-2">
+                            <span>사용자: {vm.currentUser}</span>
+                          </div>
+                        )}
+                        {vm.isConnected && vm.currentHostname && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full h-7 text-[11px]"
+                            onClick={async () => {
+                              const myHostname = await window.api.getHostname()
+                              if (vm.currentHostname === myHostname) {
+                                toast.info('현재 사용 중인 VM입니다.')
+                                return
+                              }
+                              if (!vm.currentHostname) return
+                              requestVM(vm.vmName, vm.currentHostname)
+                              toast.success(`${vm.currentUser}님에게 사용 요청을 전송했습니다.`)
+                            }}
+                          >
+                            사용 요청
+                          </Button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </Card>
+          </div>
+
+          <div className="flex-1">
+            <Card className="h-full border-slate-200 shadow-none flex flex-col">
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
+                <HugeiconsIcon icon={UserIcon} size={16} className="text-primary" />
+                <span className="text-sm font-bold text-slate-800">오늘의 휴가</span>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[240px]">
-              {topVms.length > 0 ? (
-                <div className="space-y-2">
-                  {topVms.map((vm) => (
-                    <div
-                      key={vm.vmName}
-                      className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={cn('w-2.5 h-2.5 rounded-full', vm.isConnected ? 'bg-emerald-500' : 'bg-slate-300')} />
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">{vm.vmName}</p>
-                          <p className="text-xs text-slate-500">{vm.currentUser || '대기 중'}</p>
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-2">
+                  {todayVacations.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">
+                      <p className="text-xs">오늘 휴가자가 없습니다.</p>
+                    </div>
+                  ) : (
+                    todayVacations.map((vacation) => (
+                      <div
+                        key={vacation.id}
+                        className="p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-[10px] font-bold text-primary">{vacation.name.charAt(0)}</span>
+                          </div>
+                          <span className="text-sm font-semibold text-slate-800">{vacation.name}</span>
+                        </div>
+                        <div className="ml-8 space-y-0.5">
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                            <span className="font-medium">{vacation.type}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                            <span>{vacation.displayLabel}</span>
+                          </div>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        disabled={!vm.currentUser}
-                        onClick={() => {
-                          if (vm.currentUser) {
-                            requestVM(vm.vmName, vm.currentUser)
-                            toast.success(`${vm.vmName} 사용 요청이 전송되었습니다.`)
-                          }
-                        }}
-                      >
-                        요청하기
-                      </Button>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-sm text-slate-500">가상머신 정보가 없습니다</p>
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+              </ScrollArea>
+            </Card>
+          </div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

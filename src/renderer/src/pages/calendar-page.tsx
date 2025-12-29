@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, ArrowRight01Icon, Calendar03Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ProcessedEvent } from '@shared/types/calendar'
-import { motion } from 'motion/react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useCalendarStore } from '@/stores/calendar'
+import { PageHeader } from '../components/page-header'
 
 // 날짜 유틸리티
 const getDaysInMonth = (year: number, month: number) => {
@@ -108,7 +107,7 @@ function DayCell({ date, vacations, isCurrentMonth }: { date: Date; vacations: P
       className={cn(
         'min-h-[110px] border-r border-b border-slate-200 p-2 transition-colors',
         isCurrentMonth ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/30',
-        isToday && 'bg-blue-50/50 ring-2 ring-blue-300 ring-inset'
+        isToday && 'bg-primary/5 ring-2 ring-primary/30 ring-inset'
       )}
     >
       {/* 날짜 표시 */}
@@ -116,10 +115,10 @@ function DayCell({ date, vacations, isCurrentMonth }: { date: Date; vacations: P
         <span
           className={cn(
             'text-sm font-semibold',
-            isToday && 'text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full',
+            isToday && 'text-primary bg-primary/10 px-2 py-0.5 rounded-full',
             !isToday && !isCurrentMonth && 'text-slate-400',
             !isToday && isCurrentMonth && isSunday && 'text-red-600',
-            !isToday && isCurrentMonth && isSaturday && 'text-blue-600',
+            !isToday && isCurrentMonth && isSaturday && 'text-primary',
             !isToday && isCurrentMonth && !isSunday && !isSaturday && 'text-slate-700'
           )}
         >
@@ -131,7 +130,7 @@ function DayCell({ date, vacations, isCurrentMonth }: { date: Date; vacations: P
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <button className="text-[10px] text-slate-600 hover:text-blue-600 px-1.5 py-0.5 bg-slate-100 rounded hover:bg-blue-100 transition-colors font-medium">
+                <button className="text-[10px] text-slate-600 hover:text-primary px-1.5 py-0.5 bg-slate-100 rounded hover:bg-primary/10 transition-colors font-medium">
                   +{hiddenCount}
                 </button>
               </TooltipTrigger>
@@ -163,7 +162,6 @@ function DayCell({ date, vacations, isCurrentMonth }: { date: Date; vacations: P
 export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
-  const connectionStatus = useCalendarStore((state) => state.connectionStatus)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -220,28 +218,14 @@ export function CalendarPage() {
 
   // 디버깅 정보 계산
   const eventDates = Object.keys(eventsByDate)
-  const totalEvents = Object.values(eventsByDate).flat().length
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="p-8 space-y-6"
-    >
-      {/* 페이지 헤더 */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-semibold text-slate-900">휴가 일정</h1>
-          {connectionStatus === 'connected' && <Badge variant="default">✅ 연결됨</Badge>}
-          {connectionStatus === 'connecting' && <Badge variant="outline">🔄 연결 중...</Badge>}
-          {connectionStatus === 'error' && <Badge variant="destructive">❌ 연결 실패</Badge>}
-          {connectionStatus === 'disconnected' && <Badge variant="secondary">⚠️ 연결 끊김</Badge>}
-        </div>
-        <p className="text-slate-600">4팀 휴가 일정을 확인하세요.</p>
-      </div>
-
+    <div className="p-8 h-full flex flex-col bg-white">
+      <PageHeader
+        title="팀 일정"
+        description="팀원들의 휴가 일정을 확인하고 공유합니다."
+        icon={<HugeiconsIcon icon={Calendar03Icon} size={20} />}
+      />
       {/* 달력 네비게이션 */}
       <div className="gap-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -262,22 +246,6 @@ export function CalendarPage() {
         </div>
       </div>
 
-      {/* 디버깅 정보 (개발 환경) */}
-      {import.meta.env.DEV && (
-        <div className="bg-slate-100 border border-slate-300 rounded-lg p-4 text-xs text-slate-700 space-y-1">
-          <div className="font-semibold text-sm mb-2">📊 디버그 정보</div>
-          <div>• 데이터가 있는 날짜: {eventDates.length}일</div>
-          <div>• 전체 이벤트 수: {totalEvents}개</div>
-          {eventDates.length > 0 && (
-            <div>
-              • 날짜 예시: {eventDates.slice(0, 5).join(', ')}
-              {eventDates.length > 5 ? '...' : ''}
-            </div>
-          )}
-          <div>• 연결 상태: {connectionStatus}</div>
-        </div>
-      )}
-
       {/* 빈 데이터 안내 */}
       {eventDates.length === 0 && (
         <div className="text-center py-12 bg-slate-50 border border-slate-200 rounded-lg">
@@ -297,7 +265,7 @@ export function CalendarPage() {
                 key={i}
                 className={cn(
                   'py-3 text-center text-sm font-bold border-r border-slate-200 last:border-r-0',
-                  i === 0 ? 'text-red-600' : i === 6 ? 'text-blue-600' : 'text-slate-700'
+                  i === 0 ? 'text-red-600' : i === 6 ? 'text-primary' : 'text-slate-700'
                 )}
               >
                 {day}
@@ -316,16 +284,6 @@ export function CalendarPage() {
           </div>
         </div>
       )}
-
-      {/* 범례 */}
-      <div className="flex gap-4 flex-wrap">
-        {Object.entries(USER_COLORS).map(([name, color]) => (
-          <div key={name} className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: color }} />
-            <span className="text-sm text-slate-700">{name}</span>
-          </div>
-        ))}
-      </div>
-    </motion.div>
+    </div>
   )
 }
