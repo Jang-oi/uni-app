@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import { Header } from '@/components/header'
 import { LoadingScreen } from '@/components/loading-screen' // 로딩 스크린 임포트
 import { Toaster } from '@/components/ui/sonner'
-import { CalendarPage } from '@/pages/calendar-page'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { ServerErrorPage } from '@/pages/server-error-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
@@ -60,8 +59,6 @@ export default function App() {
     switch (activeTab) {
       case '대시보드':
         return <DashboardPage key="dashboard" />
-      case '일정':
-        return <CalendarPage key="calendar" />
       case '업무':
         return <TasksPage key="tasks" />
       case '가상머신':

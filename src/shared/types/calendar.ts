@@ -12,11 +12,9 @@ export interface VacationRawData {
 
 export interface ProcessedEvent {
   id: string
+  start: string
+  end: string
+  title: string
+  allDay: boolean
   name: string
-  startDate: string
-  endDate: string
-  isMultiDay: boolean
-  startTimeWeight: number // 정렬용: HH * 60 + MM
-  displayLabel: string
-  type: string
 }

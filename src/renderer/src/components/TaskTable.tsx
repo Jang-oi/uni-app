@@ -7,21 +7,11 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { TaskDisplayData } from '@/stores/task'
-
-const SUPPORT_URL = 'https://114.unipost.co.kr/home.uni'
+import { openUniPost } from '../util/util'
 
 function truncateText(text: string, maxLength: number) {
   if (!text || text.length <= maxLength) return { isTruncated: false, displayText: text || '' }
   return { isTruncated: true, displayText: text.slice(0, maxLength) + '...' }
-}
-
-async function openUniPost(srIdx: string) {
-  try {
-    const url = `${SUPPORT_URL}?access=list&srIdx=${srIdx}`
-    await window.api.openExternal(url)
-  } catch (error) {
-    console.error('[TaskTable] 외부 URL 열기 실패:', error)
-  }
 }
 
 interface TaskTableProps {

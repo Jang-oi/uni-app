@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { ArrowRight01Icon, Task01Icon, UserIcon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -10,7 +11,7 @@ import { cn } from '@/lib/utils'
 import { useCalendarStore } from '@/stores/calendar'
 import { useHypervStore } from '@/stores/hyperv'
 import { useTaskStore } from '@/stores/task'
-import { PageHeader } from '../components/page-header'
+import { openUniPost } from '@/util/util'
 
 export function DashboardPage() {
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
@@ -34,19 +35,10 @@ export function DashboardPage() {
   }, [eventsByDate, today])
 
   const filteredTasks = useMemo(() => {
-    return teamTasks.filter((task) => task.STATUS_CODE === 'N' && task.REQ_TITLE.includes('긴급'))
+    return teamTasks.filter((task) => task.STATUS_CODE === 'N' || task.REQ_TITLE.includes('긴급'))
   }, [teamTasks])
 
   const requestVM = useHypervStore((state) => state.requestVM)
-
-  const handleTaskClick = async (srIdx: string) => {
-    try {
-      const url = `https://114.unipost.co.kr/home.uni?access=list&srIdx=${srIdx}`
-      await window.api.openExternal(url)
-    } catch (error) {
-      console.error('[DashboardPage] 외부 URL 열기 실패:', error)
-    }
-  }
 
   return (
     <div className="p-8 h-full flex flex-col bg-white">
@@ -61,14 +53,17 @@ export function DashboardPage() {
           <Card className="h-full border-slate-200 shadow-none overflow-hidden flex flex-col">
             <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-800">긴급 업무 현황</span>
+                <span className="text-sm font-bold text-slate-800">업무 현황</span>
                 <Badge variant="destructive" className="h-5 text-[10px]">
-                  고객사답변 대기
+                  고객사답변 건
+                </Badge>
+                <Badge variant="secondary" className="h-5 text-[10px]">
+                  제목에 긴급 포함 건
                 </Badge>
               </div>
               <span className="text-xs text-slate-500">{filteredTasks.length}건</span>
             </div>
-            <ScrollArea className="h-[calc(86vh-80px)]">
+            <ScrollArea className="h-[calc(78vh-80px)]">
               <div className="p-4 space-y-3">
                 {filteredTasks.length === 0 ? (
                   <div className="text-center py-8 text-slate-400">
@@ -78,8 +73,8 @@ export function DashboardPage() {
                   filteredTasks.map((task) => (
                     <div
                       key={task.SR_IDX}
-                      onClick={() => handleTaskClick(task.SR_IDX)}
-                      className="group flex items-center justify-between p-3 rounded-xl border border-red-100 bg-red-50/50 hover:border-red-200 hover:bg-red-50 transition-all cursor-pointer"
+                      onClick={() => openUniPost(task.SR_IDX)}
+                      className="group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer"
                     >
                       <div className="flex flex-col gap-1 flex-1 min-w-0">
                         <span className="text-[10px] font-bold text-primary uppercase truncate">{task.CM_NAME}</span>
@@ -89,8 +84,8 @@ export function DashboardPage() {
                           <span>•</span>
                           <span>{task.REQ_DATE}</span>
                           <span>•</span>
-                          <Badge variant="destructive" className="h-4 text-[9px] px-1.5">
-                            {task.STATUS}
+                          <Badge variant={task.STATUS_CODE === 'N' ? 'destructive' : 'secondary'} className="h-4 text-[9px] px-1.5">
+                            {task.STATUS_CODE === 'N' ? task.STATUS : '제목에 긴급 포함 건'}
                           </Badge>
                         </div>
                       </div>
