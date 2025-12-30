@@ -10,6 +10,7 @@ import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
 import { useCalendarStore } from '@/stores/calendar'
 import { useHypervStore } from '@/stores/hyperv'
 import { useTaskStore } from '@/stores/task'
+import { useVersionStore } from '@/stores/version'
 import { TasksPage } from './pages/tasks-page'
 import { VersionPage } from './pages/version-page'
 
@@ -21,6 +22,7 @@ export default function App() {
   const initCalendarSocket = useCalendarStore((state) => state.initSocket)
   const initTaskSocket = useTaskStore((state) => state.initSocket)
   const initHypervSocket = useHypervStore((state) => state.initSocket)
+  const initVersion = useVersionStore((state) => state.initVersion)
 
   // 앱 시작 시 모든 Socket 초기화
   useEffect(() => {
@@ -37,6 +39,7 @@ export default function App() {
         initCalendarSocket(handleError)
         initTaskSocket(handleError)
         initHypervSocket(handleError)
+        await initVersion()
 
         await new Promise((resolve) => setTimeout(resolve, 3000))
       } catch (error) {
@@ -48,7 +51,7 @@ export default function App() {
     }
 
     initializeApp()
-  }, [initCalendarSocket, initTaskSocket, initHypervSocket])
+  }, [initCalendarSocket, initTaskSocket, initHypervSocket, initVersion])
 
   // 렌더링 로직 분기
   if (serverError) return <ServerErrorPage />
@@ -61,7 +64,7 @@ export default function App() {
         return <DashboardPage key="dashboard" />
       case '업무':
         return <TasksPage key="tasks" />
-      case '가상머신':
+      case 'HYPER-V':
         return <VirtualMachinesPage key="vm" />
       case '버전관리':
         return <VersionPage key="version" />

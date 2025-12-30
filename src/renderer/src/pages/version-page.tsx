@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { Alert01Icon, DeveloperIcon, PackageIcon, RefreshIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
@@ -7,43 +7,32 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useVersionStore } from '@/stores/version'
 import { PageHeader } from '../components/page-header'
 
-// 서버 데이터와 일치하는 인터페이스
-interface VersionHistory {
-  version: string
-  date: string
-  changes: string[]
-}
-
 export function VersionPage() {
-  const [currentVersion, setCurrentVersion] = useState<string>('')
-  const [history, setHistory] = useState<VersionHistory[]>([])
-  const [isChecking, setIsChecking] = useState(false)
-  const [updateAvailable, setUpdateAvailable] = useState(false)
-  const [availableVersion, setAvailableVersion] = useState<string>('')
-  const [isDownloading, setIsDownloading] = useState(false)
-  const [downloadProgress, setDownloadProgress] = useState(0)
-  const [isDownloaded, setIsDownloaded] = useState(false)
-  const [lastCheckTime, setLastCheckTime] = useState<string>('확인 전')
-
   const isListenerSet = useRef(false)
 
-  const loadVersionData = async () => {
-    try {
-      const result = await window.api.getVersion()
-      if (result.success && result.versionInfo) {
-        setCurrentVersion(result.versionInfo.currentVersion)
-        setHistory(result.versionInfo.releases || [])
-      }
-    } catch (error) {
-      console.error('버전 정보 로드 실패:', error)
-    }
-  }
+  // Store에서 상태 가져오기
+  const currentVersion = useVersionStore((state) => state.currentVersion)
+  const history = useVersionStore((state) => state.history)
+  const isChecking = useVersionStore((state) => state.isChecking)
+  const updateAvailable = useVersionStore((state) => state.updateAvailable)
+  const availableVersion = useVersionStore((state) => state.availableVersion)
+  const isDownloading = useVersionStore((state) => state.isDownloading)
+  const downloadProgress = useVersionStore((state) => state.downloadProgress)
+  const isDownloaded = useVersionStore((state) => state.isDownloaded)
+  const lastCheckTime = useVersionStore((state) => state.lastCheckTime)
+
+  // Store의 액션 가져오기
+  const setIsChecking = useVersionStore((state) => state.setIsChecking)
+  const setUpdateAvailable = useVersionStore((state) => state.setUpdateAvailable)
+  const setDownloadProgress = useVersionStore((state) => state.setDownloadProgress)
+  const setIsDownloading = useVersionStore((state) => state.setIsDownloading)
+  const setIsDownloaded = useVersionStore((state) => state.setIsDownloaded)
+  const setLastCheckTime = useVersionStore((state) => state.setLastCheckTime)
 
   useEffect(() => {
-    loadVersionData()
-
     if (isListenerSet.current) return
     isListenerSet.current = true
 
@@ -51,8 +40,7 @@ export function VersionPage() {
     window.api.onChecking(() => setIsChecking(true))
     window.api.onUpdateAvailable((info) => {
       setIsChecking(false)
-      setUpdateAvailable(true)
-      setAvailableVersion(info.version)
+      setUpdateAvailable(true, info.version)
       setLastCheckTime('방금 전')
       toast.success(`새 버전 v${info.version}이 준비되었습니다.`, { id: 'upd-toast' })
     })
@@ -71,7 +59,7 @@ export function VersionPage() {
       setIsChecking(false)
       toast.error(`오류 발생: ${err.message}`, { id: 'upd-toast' })
     })
-  }, [])
+  }, [setIsChecking, setUpdateAvailable, setDownloadProgress, setIsDownloading, setIsDownloaded, setLastCheckTime])
 
   return (
     <div className="p-8 h-full flex flex-col bg-slate-50/30">
