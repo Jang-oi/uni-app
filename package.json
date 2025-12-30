@@ -1,6 +1,6 @@
 {
   "name": "uni-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "구독4팀 통합 관리 애플리케이션",
   "main": "./out/main/index.js",
   "author": "Jang-oi",
@@ -23,7 +23,7 @@
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
     "build:linux": "electron-vite build && electron-builder --linux",
-    "deploy": "electron-vite --config ./vite.config.ts build && electron-builder --win --publish always"
+    "deploy": "electron-vite --config ./electron.vite.config.ts build && electron-builder --win --publish always"
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",

@@ -12,12 +12,12 @@ files:
 asarUnpack:
   - resources/**
 win:
-  icon: build/unicorn3.ico
+  icon: build/unicorn.ico
   executableName: uni-app
   requestedExecutionLevel: requireAdministrator
 extraResources:
-  - from: build/unicorn3.ico
-    to: unicorn3.ico
+  - from: build/unicorn.ico
+    to: unicorn.ico
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

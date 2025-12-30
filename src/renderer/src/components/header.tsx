@@ -8,7 +8,7 @@ interface HeaderProps {
 
 const tabs = [
   { id: '대시보드', label: '대시보드' },
-  { id: '가상머신', label: '가상 머신' },
+  { id: 'HYPER-V', label: 'HYPER-V' },
   { id: '업무', label: '업무' },
   { id: '버전관리', label: '버전관리' }
 ]

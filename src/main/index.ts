@@ -20,8 +20,8 @@ const hypervMonitor = createHyperVMonitor(async (activeVMs: string[], userName: 
 })
 
 export const uniIcon = is.dev
-  ? join(__dirname, '../../build/unicorn3.ico') // 개발 환경 경로
-  : join(process.resourcesPath, 'unicorn3.ico') // 빌드된 앱(프로덕션) 경로
+  ? join(__dirname, '../../build/unicorn.ico') // 개발 환경 경로
+  : join(process.resourcesPath, 'unicorn.ico') // 빌드된 앱(프로덕션) 경로
 
 function createWindow(): void {
   // 브라우저 윈도우 생성
