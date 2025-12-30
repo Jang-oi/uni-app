@@ -85,7 +85,7 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
 
       // Electron 네이티브 알림 표시
       await window.api.showNotification({
-        title: 'VM 사용 요청',
+        title: `[HYPER-V 사용 요청] ${data.vmName}`,
         body: data.message
       })
     })

@@ -36,58 +36,13 @@ export function registerAllHandlers() {
     }
   })
 
-  // Windows 알림 권한 요청 핸들러
-  ipcMain.handle('notification:request-permission', async () => {
-    try {
-      // Windows에서는 Notification.isSupported()로 알림 지원 확인
-      if (!Notification.isSupported()) {
-        console.warn('[Notification] 알림이 지원되지 않는 시스템입니다.')
-        return { success: false, permission: 'denied' }
-      }
-
-      // Windows에서는 명시적 권한 요청이 없지만, 테스트 알림으로 확인
-      const testNotification = new Notification({
-        title: 'Uni App',
-        body: '알림이 활성화되었습니다.',
-        silent: true
-      })
-      testNotification.show()
-
-      console.log('[Notification] 알림 권한 확인 완료')
-      return { success: true, permission: 'granted' }
-    } catch (error) {
-      console.error('[Notification] 알림 권한 확인 실패:', error)
-      return { success: false, permission: 'denied', error }
-    }
-  })
-
-  // Windows 알림 설정 페이지 열기
-  ipcMain.handle('notification:open-settings', async () => {
-    try {
-      // Windows 10/11 알림 설정 페이지 열기
-      const { spawn } = require('child_process')
-
-      // ms-settings:notifications - Windows 알림 설정
-      spawn('cmd.exe', ['/c', 'start', 'ms-settings:notifications'], {
-        detached: true,
-        stdio: 'ignore'
-      })
-
-      console.log('[Notification] Windows 알림 설정 페이지 열기')
-      return { success: true }
-    } catch (error) {
-      console.error('[Notification] 설정 페이지 열기 실패:', error)
-      return { success: false, error }
-    }
-  })
-
   // Windows 네이티브 알림 핸들러
   ipcMain.handle('notification:show', (_event, args: { title: string; body: string }) => {
     try {
       const notification = new Notification({
         title: args.title,
         body: args.body,
-        silent: false // 소리 포함
+        timeoutType: 'default' // 알림이 유지되는 시간 설정
       })
 
       notification.show()

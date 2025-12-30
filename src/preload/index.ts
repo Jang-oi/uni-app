@@ -5,7 +5,6 @@ import { contextBridge, ipcRenderer } from 'electron'
 const api = {
   // 버전 관리 및 업데이트
   getVersion: () => ipcRenderer.invoke('updater:get-version'),
-  getVersionHistory: () => ipcRenderer.invoke('updater:get-history'),
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
   downloadUpdate: () => ipcRenderer.invoke('updater:download'),
   installUpdate: () => ipcRenderer.invoke('updater:install'),
@@ -13,9 +12,6 @@ const api = {
   // 외부 URL 열기
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
 
-  // Windows 네이티브 알림
-  requestNotificationPermission: () => ipcRenderer.invoke('notification:request-permission'),
-  openNotificationSettings: () => ipcRenderer.invoke('notification:open-settings'),
   showNotification: (args: { title: string; body: string }) => ipcRenderer.invoke('notification:show', args),
 
   // hostname 조회

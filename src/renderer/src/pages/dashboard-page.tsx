@@ -106,8 +106,8 @@ export function DashboardPage() {
                 <HugeiconsIcon icon={VirtualRealityVr01Icon} size={16} className="text-primary" />
                 <span className="text-sm font-bold text-slate-800">VM 실시간 상태</span>
               </div>
-              <ScrollArea className="h-[calc(40vh-80px)]">
-                <div className="p-4 space-y-2">
+              <ScrollArea className="h-[calc(48vh-80px)]">
+                <div className="px-2 space-y-2">
                   {vms.length === 0 ? (
                     <div className="text-center py-8 text-slate-400">
                       <p className="text-xs">VM 정보가 없습니다.</p>
@@ -158,12 +158,12 @@ export function DashboardPage() {
 
           <div className="flex-1">
             <Card className="h-full border-slate-200 shadow-none flex flex-col">
-              <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
+              <div className="px-5 py-2 border-b border-slate-100 flex items-center gap-2">
                 <HugeiconsIcon icon={UserIcon} size={16} className="text-primary" />
                 <span className="text-sm font-bold text-slate-800">오늘의 휴가</span>
               </div>
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-2">
+              <ScrollArea className="h-[calc(24vh-80px)]">
+                <div className="px-2 space-y-2">
                   {todayVacations.length === 0 ? (
                     <div className="text-center py-8 text-slate-400">
                       <p className="text-xs">오늘 휴가자가 없습니다.</p>

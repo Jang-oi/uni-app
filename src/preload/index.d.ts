@@ -63,7 +63,7 @@ declare global {
       getHostname: () => Promise<string>
 
       // 자동 업데이트
-      getVersion: () => Promise<{ success: boolean; version: string }>
+      getVersion: () => Promise<{ success: boolean; versionInfo: any }>
       getVersionHistory: () => Promise<{ success: boolean; history: Array<{ version: string; date: string; changes: string[] }> }>
       checkForUpdates: () => Promise<{ success: boolean; message?: string }>
       downloadUpdate: () => Promise<{ success: boolean; message?: string }>

@@ -11,10 +11,15 @@ export interface GitHubRelease {
   prerelease: boolean
 }
 
-export interface ChangelogItem {
+export interface releases {
   version: string
   date: string
-  type: 'major' | 'minor' | 'patch'
   changes: string[]
-  url: string
+}
+
+export interface VersionInfo {
+  currentVersion: string
+  latestVersion?: string
+  isLatest: boolean
+  releases: releases[]
 }
