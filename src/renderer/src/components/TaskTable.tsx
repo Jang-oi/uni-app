@@ -84,7 +84,7 @@ export function TaskTable({ data, onRequestClick }: TaskTableProps) {
     },
     {
       id: 'actions',
-      header: '액션',
+      header: '요청',
       cell: ({ row }) => (
         <Button
           size="sm"

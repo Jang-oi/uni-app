@@ -12,7 +12,7 @@ const api = {
   // 외부 URL 열기
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
 
-  showNotification: (args: { title: string; body: string }) => ipcRenderer.invoke('notification:show', args),
+  showNotification: (args: { title: string; body: string; taskId?: string }) => ipcRenderer.invoke('notification:show', args),
 
   // hostname 조회
   getHostname: () => ipcRenderer.invoke('system:get-hostname'),

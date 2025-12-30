@@ -149,7 +149,8 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       window.api.showNotification({
         title:
           notification.type === 'task-check' ? '업무 확인 요청' : notification.type === 'task-support' ? '업무 지원 요청' : 'VM 사용 요청',
-        body: notification.message
+        body: notification.message,
+        taskId: notification.taskId // 알림 클릭 시 URL 열기용 taskId 전달
       })
     })
 

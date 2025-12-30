@@ -1,6 +1,6 @@
 {
   "name": "uni-app",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "구독4팀 통합 관리 애플리케이션",
   "main": "./out/main/index.js",
   "author": "Jang-oi",
