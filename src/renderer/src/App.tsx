@@ -5,10 +5,12 @@ import { Header } from '@/components/header'
 import { LoadingScreen } from '@/components/loading-screen' // 로딩 스크린 임포트
 import { Toaster } from '@/components/ui/sonner'
 import { DashboardPage } from '@/pages/dashboard-page'
+import { NotificationsPage } from '@/pages/notifications-page'
 import { ServerErrorPage } from '@/pages/server-error-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
 import { useCalendarStore } from '@/stores/calendar'
 import { useHypervStore } from '@/stores/hyperv'
+import { useNotificationStore } from '@/stores/notification'
 import { useTaskStore } from '@/stores/task'
 import { useVersionStore } from '@/stores/version'
 import { TasksPage } from './pages/tasks-page'
@@ -22,6 +24,7 @@ export default function App() {
   const initCalendarSocket = useCalendarStore((state) => state.initSocket)
   const initTaskSocket = useTaskStore((state) => state.initSocket)
   const initHypervSocket = useHypervStore((state) => state.initSocket)
+  const initNotificationSocket = useNotificationStore((state) => state.initSocket)
   const initVersion = useVersionStore((state) => state.initVersion)
 
   // 앱 시작 시 모든 Socket 초기화
@@ -39,6 +42,7 @@ export default function App() {
         initCalendarSocket(handleError)
         initTaskSocket(handleError)
         initHypervSocket(handleError)
+        initNotificationSocket(handleError)
         await initVersion()
 
         await new Promise((resolve) => setTimeout(resolve, 3000))
@@ -51,7 +55,7 @@ export default function App() {
     }
 
     initializeApp()
-  }, [initCalendarSocket, initTaskSocket, initHypervSocket, initVersion])
+  }, [initCalendarSocket, initTaskSocket, initHypervSocket, initNotificationSocket, initVersion])
 
   // 렌더링 로직 분기
   if (serverError) return <ServerErrorPage />
@@ -66,6 +70,8 @@ export default function App() {
         return <TasksPage key="tasks" />
       case 'HYPER-V':
         return <VirtualMachinesPage key="vm" />
+      case '알림':
+        return <NotificationsPage key="notifications" />
       case '버전관리':
         return <VersionPage key="version" />
       default:

@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Task01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { TaskRequestModal } from '@/components/task-request-modal'
 import { TaskTable } from '@/components/TaskTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { TaskDisplayData } from '@/stores/task'
 import { useTaskStore } from '@/stores/task'
 import { PageHeader } from '../components/page-header'
 
 export function TasksPage() {
   const [activeView, setActiveView] = useState<'team' | 'personal'>('team')
+  const [selectedTask, setSelectedTask] = useState<TaskDisplayData | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const memberTasks = useTaskStore((state) => state.memberTasks)
@@ -35,6 +39,11 @@ export function TasksPage() {
   // 표시할 데이터 결정
   const personalTasks = memberTasks[currentUser] || []
 
+  const handleRequestClick = (task: TaskDisplayData) => {
+    setSelectedTask(task)
+    setIsModalOpen(true)
+  }
+
   return (
     <div className="p-8 h-full flex flex-col bg-white">
       <PageHeader
@@ -50,13 +59,15 @@ export function TasksPage() {
         </TabsList>
 
         <TabsContent value="team" className="mt-6">
-          <TaskTable data={teamTasks} />
+          <TaskTable data={teamTasks} onRequestClick={handleRequestClick} />
         </TabsContent>
 
         <TabsContent value="personal" className="mt-6">
-          <TaskTable data={personalTasks} />
+          <TaskTable data={personalTasks} onRequestClick={handleRequestClick} />
         </TabsContent>
       </Tabs>
+
+      <TaskRequestModal task={selectedTask} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }

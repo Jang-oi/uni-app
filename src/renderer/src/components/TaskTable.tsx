@@ -16,9 +16,10 @@ function truncateText(text: string, maxLength: number) {
 
 interface TaskTableProps {
   data: TaskDisplayData[]
+  onRequestClick?: (task: TaskDisplayData) => void
 }
 
-export function TaskTable({ data }: TaskTableProps) {
+export function TaskTable({ data, onRequestClick }: TaskTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
 
   const columns = [
@@ -80,6 +81,24 @@ export function TaskTable({ data }: TaskTableProps) {
       header: '요청일',
       cell: ({ row }) => <div className="text-slate-500">{row.getValue('REQ_DATE_ALL')}</div>,
       size: 120
+    },
+    {
+      id: 'actions',
+      header: '액션',
+      cell: ({ row }) => (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={(e) => {
+            e.stopPropagation()
+            onRequestClick?.(row.original)
+          }}
+          className="text-xs h-7"
+        >
+          요청
+        </Button>
+      ),
+      size: 80
     }
   ]
 
