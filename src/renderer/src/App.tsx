@@ -76,7 +76,7 @@ export default function App() {
       <main className="flex-1 overflow-auto">
         <AnimatePresence mode="wait">{renderPage()}</AnimatePresence>
       </main>
-      <Toaster position="top-center" richColors />
+      <Toaster position="top-right" richColors />
     </div>
   )
 }

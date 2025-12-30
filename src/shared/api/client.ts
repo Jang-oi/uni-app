@@ -5,7 +5,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 
-export const BASE_URL = import.meta.env.VITE_SERVER_URL || 'http://192.168.10.30:3001'
+export const BASE_URL = import.meta.env.VITE_SERVER_URL || 'http://192.168.10.246:3000'
 /**
  * Axios 인스턴스 생성
  */

@@ -48,8 +48,14 @@ export function VirtualMachinesPage() {
           <Button
             size="sm"
             disabled={!hasUser}
-            onClick={() => {
+            onClick={async () => {
               if (hasUser && vm.currentHostname) {
+                const myHostname = await window.api.getHostname()
+                if (vm.currentHostname === myHostname) {
+                  toast.info('현재 사용 중인 VM입니다.')
+                  return
+                }
+                if (!vm.currentHostname) return
                 requestVM(vm.vmName, vm.currentHostname)
                 toast.success(`${vm.vmName} 사용 요청이 전송되었습니다.`)
               }
