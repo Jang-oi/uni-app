@@ -37,6 +37,7 @@
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "electron-store": "^8.2.0",
     "electron-updater": "^6.6.2",
     "framer-motion": "^12.23.26",
