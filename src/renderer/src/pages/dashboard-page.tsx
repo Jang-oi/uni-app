@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight01Icon, Task01Icon, UserIcon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
@@ -17,6 +17,17 @@ export function DashboardPage() {
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const vms = useHypervStore((state) => state.vms)
+
+  const [myHostname, setMyHostname] = useState<string>('')
+
+  // 컴포넌트 마운트 시 본인의 호스트네임 가져오기
+  useEffect(() => {
+    const fetchHostname = async () => {
+      const hostname = await window.api.getHostname()
+      setMyHostname(hostname)
+    }
+    fetchHostname()
+  }, [])
 
   // 오늘 날짜 (YYYY-MM-DD)
   const today = useMemo(() => {
@@ -37,6 +48,12 @@ export function DashboardPage() {
   const filteredTasks = useMemo(() => {
     return teamTasks.filter((task) => task.STATUS_CODE === 'N' || task.REQ_TITLE.includes('긴급'))
   }, [teamTasks])
+
+  // 본인이 사용 중인 VM 제외
+  const filteredVMs = useMemo(() => {
+    if (!myHostname) return vms
+    return vms.filter((vm) => vm.currentHostname !== myHostname)
+  }, [vms, myHostname])
 
   const requestVM = useHypervStore((state) => state.requestVM)
 
@@ -108,12 +125,12 @@ export function DashboardPage() {
               </div>
               <ScrollArea className="h-[calc(48vh-80px)]">
                 <div className="px-2 space-y-2">
-                  {vms.length === 0 ? (
+                  {filteredVMs.length === 0 ? (
                     <div className="text-center py-8 text-slate-400">
                       <p className="text-xs">VM 정보가 없습니다.</p>
                     </div>
                   ) : (
-                    vms.map((vm) => (
+                    filteredVMs.map((vm) => (
                       <div key={vm.vmName} className="p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
@@ -134,12 +151,7 @@ export function DashboardPage() {
                             size="sm"
                             variant="outline"
                             className="w-full h-7 text-[11px]"
-                            onClick={async () => {
-                              const myHostname = await window.api.getHostname()
-                              if (vm.currentHostname === myHostname) {
-                                toast.info('현재 사용 중인 VM입니다.')
-                                return
-                              }
+                            onClick={() => {
                               if (!vm.currentHostname) return
                               requestVM(vm.vmName, vm.currentHostname)
                               toast.success(`${vm.currentUser}님에게 사용 요청을 전송했습니다.`)
