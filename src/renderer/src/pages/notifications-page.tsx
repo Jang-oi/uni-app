@@ -76,7 +76,7 @@ export function NotificationsPage() {
       </div>
 
       <Card className="flex-1 border-slate-200 shadow-none overflow-hidden flex flex-col">
-        <ScrollArea className="h-[calc(85vh-80px)]">
+        <ScrollArea className="h-[calc(86vh-80px)]">
           <div className="p-4 space-y-3">
             {filteredNotifications.length === 0 ? (
               <div className="text-center py-16 text-slate-400">

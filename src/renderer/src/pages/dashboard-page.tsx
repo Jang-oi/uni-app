@@ -52,7 +52,7 @@ export function DashboardPage() {
   // 본인이 사용 중인 VM 제외
   const filteredVMs = useMemo(() => {
     if (!myHostname) return vms
-    return vms.filter((vm) => vm.currentHostname !== myHostname)
+    return vms.filter((vm) => vm.currentHostname !== myHostname && vm.isConnected)
   }, [vms, myHostname])
 
   const requestVM = useHypervStore((state) => state.requestVM)
@@ -80,7 +80,7 @@ export function DashboardPage() {
               </div>
               <span className="text-xs text-slate-500">{filteredTasks.length}건</span>
             </div>
-            <ScrollArea className="h-[calc(78vh-80px)]">
+            <ScrollArea className="h-[calc(80vh-80px)]">
               <div className="p-4 space-y-3">
                 {filteredTasks.length === 0 ? (
                   <div className="text-center py-8 text-slate-400">

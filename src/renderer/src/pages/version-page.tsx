@@ -121,7 +121,7 @@ export function VersionPage() {
         <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2">
           <HugeiconsIcon icon={DeveloperIcon} size={16} className="text-primary" /> 업데이트 히스토리
         </h3>
-        <ScrollArea className="h-[calc(80vh-80px)]">
+        <ScrollArea className="h-[calc(58vh-80px)]">
           <div className="space-y-8 relative ml-3 border-l-2 border-slate-100 pl-8 pb-10">
             {history.length === 0 ? (
               <div className="py-12 text-center text-slate-400">
