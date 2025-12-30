@@ -103,10 +103,22 @@ export function VersionPage() {
             </Button>
           ) : !isDownloaded ? (
             <div className="w-full space-y-2">
-              <Button onClick={() => window.api.downloadUpdate()} disabled={isDownloading} className="w-full">
+              <Button
+                onClick={() => {
+                  setIsDownloading(true)
+                  window.api.downloadUpdate()
+                }}
+                disabled={isDownloading}
+                className="w-full"
+              >
                 {isDownloading ? `다운로드 중... ${downloadProgress}%` : '지금 업데이트'}
               </Button>
-              {isDownloading && <Progress value={downloadProgress} className="h-1" />}
+              {isDownloading && (
+                <div className="space-y-1">
+                  <Progress value={downloadProgress} className="h-1.5" />
+                  <p className="text-[10px] text-slate-400 text-center">{downloadProgress}% 완료</p>
+                </div>
+              )}
             </div>
           ) : (
             <Button onClick={() => window.api.installUpdate()} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
