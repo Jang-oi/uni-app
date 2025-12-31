@@ -1,6 +1,6 @@
 {
   "name": "uni-app",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "구독4팀 통합 관리 애플리케이션",
   "main": "./out/main/index.js",
   "author": "Jang-oi",
@@ -38,6 +38,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "date-fns": "^4.1.0",
     "electron-store": "^8.2.0",
     "electron-updater": "^6.6.2",
     "framer-motion": "^12.23.26",

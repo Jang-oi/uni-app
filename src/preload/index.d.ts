@@ -65,6 +65,9 @@ declare global {
       // hostname 조회
       getHostname: () => Promise<string>
 
+      // HyperV VM 연결
+      connectToVM: (args: { hostServer: string; vmName: string }) => Promise<{ success: boolean; error?: any }>
+
       // 자동 업데이트
       getVersion: () => Promise<{ success: boolean; versionInfo: any }>
       getVersionHistory: () => Promise<{ success: boolean; history: Array<{ version: string; date: string; changes: string[] }> }>

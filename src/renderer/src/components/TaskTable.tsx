@@ -52,20 +52,17 @@ export function TaskTable({ data, onRequestClick }: TaskTableProps) {
     },
     {
       accessorKey: 'REQ_TITLE',
-      header: () => (
-        <Button variant="ghost" size="sm" className="h-6 px-1 text-xs font-medium w-full justify-start">
-          제목
-        </Button>
-      ),
+      header: '제목',
       cell: ({ row }) => {
-        const { displayText } = truncateText(row.original.REQ_TITLE, 34)
+        const { displayText } = truncateText(row.original.REQ_TITLE, 28)
         return (
-          <button
-            className="text-xs cursor-pointer block leading-tight text-left hover:text-blue-600 hover:underline transition-colors"
+          <Button
+            className="leading-tight text-left hover:text-blue-600 hover:underline transition-colors"
+            variant="ghost"
             onClick={() => openUniPost(row.original.SR_IDX)}
           >
             {displayText}
-          </button>
+          </Button>
         )
       },
       size: 280

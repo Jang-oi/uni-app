@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
+import { useEffect, useState } from 'react'
+import { Loading03Icon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from '@tanstack/react-table'
 import { toast } from 'sonner'
@@ -10,10 +10,16 @@ import { ScrollArea } from '../components/ui/scroll-area'
 import { useHypervStore, type HypervVM } from '../stores/hyperv'
 
 export function VirtualMachinesPage() {
-  // 스토어에서 데이터만 가져오기 (Socket은 App.tsx에서 이미 초기화됨)
   const vms = useHypervStore((state) => state.vms)
 
   const [sorting, setSorting] = useState<SortingState>([])
+  const [myHostname, setMyHostname] = useState<string | null>(null)
+  const [connectingVM, setConnectingVM] = useState<string | null>(null)
+
+  // 내 hostname 가져오기
+  useEffect(() => {
+    window.api.getHostname().then(setMyHostname)
+  }, [])
 
   const columns: ColumnDef<HypervVM>[] = [
     {
@@ -38,27 +44,64 @@ export function VirtualMachinesPage() {
       }
     },
     {
-      header: '사용요청',
+      header: '작업',
       cell: ({ row }) => {
         const vm = row.original
-        const hasUser = vm.currentUser !== null && vm.currentHostname !== null
         const requestVM = useHypervStore((state) => state.requestVM)
 
+        // 비활성 VM (실행하기)
+        if (!vm.isConnected && !vm.currentUser) {
+          const isConnecting = connectingVM === vm.vmName
+
+          return (
+            <Button
+              size="sm"
+              className="bg-green-600 hover:bg-green-700"
+              disabled={isConnecting}
+              onClick={async () => {
+                setConnectingVM(vm.vmName)
+                try {
+                  const result = await window.api.connectToVM({
+                    hostServer: vm.hostServer,
+                    vmName: vm.vmName
+                  })
+
+                  if (result.success) {
+                    toast.success(`${vm.vmName} 연결 완료!`)
+                  } else {
+                    toast.error(`연결 실패: ${result.error || '알 수 없는 오류'}`)
+                  }
+                } catch (error) {
+                  console.error('[VM Connect] 연결 실패:', error)
+                  toast.error('VM 연결에 실패했습니다.')
+                } finally {
+                  setConnectingVM(null)
+                }
+              }}
+            >
+              {isConnecting ? (
+                <>
+                  <HugeiconsIcon icon={Loading03Icon} className="w-3 h-3 mr-1.5 animate-spin" />
+                  연결 중...
+                </>
+              ) : (
+                '실행하기'
+              )}
+            </Button>
+          )
+        }
         return (
           <Button
             size="sm"
-            disabled={!hasUser}
+            className="bg-blue-600 hover:bg-blue-700"
             onClick={async () => {
-              if (hasUser && vm.currentHostname) {
-                const myHostname = await window.api.getHostname()
-                if (vm.currentHostname === myHostname) {
-                  toast.info('현재 사용 중인 VM입니다.')
-                  return
-                }
-                if (!vm.currentHostname) return
-                requestVM(vm.vmName, vm.currentHostname)
-                toast.success(`${vm.vmName} 사용 요청이 전송되었습니다.`)
+              if (!vm.currentHostname) return
+              if (vm.currentHostname === myHostname) {
+                toast.success(`본인이 사용중인 VM 입니다.`)
+                return
               }
+              requestVM(vm.vmName, vm.currentHostname)
+              toast.success(`${vm.vmName} 사용 요청이 전송되었습니다.`)
             }}
           >
             요청하기

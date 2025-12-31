@@ -11,10 +11,11 @@ interface ImportMeta {
 // Electron API 타입 정의
 interface ElectronAPI {
   openExternal: (url: string) => Promise<{ success: boolean; error?: any }>
-  showNotification: (args: { title: string; body: string; taskId?: string }) => Promise<{ success: boolean; error?: any }>
+  showUniNotification: (args: { title: string; body: string; taskId?: string }) => Promise<{ success: boolean; error?: any }>
   setBadgeCount: (count: number, badgeData: string | null) => Promise<{ success: boolean; error?: any }>
   getHostname: () => Promise<string>
   getUserInfo: () => Promise<{ success: boolean; data?: any; error?: any }>
+  connectToVM: (args: { hostServer: string; vmName: string }) => Promise<{ success: boolean; error?: any }>
   getVersion: () => Promise<{ success: boolean; versionInfo?: any; error?: any }>
   checkForUpdates: () => Promise<any>
   downloadUpdate: () => Promise<any>

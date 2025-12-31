@@ -3,6 +3,7 @@ import { AnimatePresence } from 'motion/react'
 import { Header } from '@/components/header'
 import { LoadingScreen } from '@/components/loading-screen' // 로딩 스크린 임포트
 import { Toaster } from '@/components/ui/sonner'
+import { VMResponseDialog } from '@/components/vm-response-dialog'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { NotificationsPage } from '@/pages/notifications-page'
 import { ServerErrorPage } from '@/pages/server-error-page'
@@ -81,6 +82,7 @@ export default function App() {
         <AnimatePresence mode="wait">{renderPage()}</AnimatePresence>
       </main>
       <Toaster position="top-right" richColors theme={'light'} />
+      <VMResponseDialog />
     </div>
   )
 }

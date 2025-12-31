@@ -26,6 +26,18 @@ export interface Notification {
   vmName?: string
 }
 
+export interface VMRequestDialogData {
+  vmName: string
+  requesters: Array<{
+    notificationId: string
+    name: string
+    hostname: string
+    timestamp: string
+    isFirst: boolean
+  }>
+  isOpen: boolean
+}
+
 interface NotificationStore {
   // 데이터
   notifications: Notification[]
@@ -43,6 +55,9 @@ interface NotificationStore {
   markAllAsRead: () => void
   setConnectionStatus: (status: ConnectionStatus) => void
   initSocket: (onError?: () => void) => void
+
+  // VM 요청 집계
+  aggregateVMRequests: (vmName: string) => VMRequestDialogData
 }
 
 const createClearRedBadge = (count: number): string | null => {
@@ -186,7 +201,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       get().addNotification(notification)
 
       // Windows 토스트 알림 표시
-      window.api.showNotification({
+      window.api.showUniNotification({
         title:
           notification.type === 'task-check' ? '업무 확인 요청' : notification.type === 'task-support' ? '업무 지원 요청' : 'VM 사용 요청',
         body: notification.message,
@@ -208,6 +223,40 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       })
     })
 
+    // 알림 삭제 수신 (VM 요청 취소 시)
+    newSocket.on('notification:removed', (notificationId: string) => {
+      console.log('[Notification] 알림 삭제 수신:', notificationId)
+      set((state) => {
+        const notifications = state.notifications.filter((n) => n.id !== notificationId)
+        const unreadCount = notifications.filter((n) => !n.isRead).length
+        // 배지 카운트 업데이트
+        const badgeData = createClearRedBadge(unreadCount)
+        window.api.setBadgeCount(unreadCount, badgeData).catch((err) => console.error('[Badge] 업데이트 실패:', err))
+        return { notifications, unreadCount }
+      })
+    })
+
     set({ socket: newSocket })
+  },
+
+  aggregateVMRequests: (vmName) => {
+    const { notifications } = get()
+
+    // 해당 VM의 읽지 않은 요청 알림만 필터링하고 timestamp 기준 정렬
+    const vmNotifications = notifications
+      .filter((n) => n.type === 'vm-request' && n.vmName === vmName && !n.isRead)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+
+    return {
+      vmName,
+      requesters: vmNotifications.map((n, idx) => ({
+        notificationId: n.id,
+        name: n.senderName,
+        hostname: n.senderHostname,
+        timestamp: n.timestamp,
+        isFirst: idx === 0 // FIFO: 첫 번째 요청자 표시
+      })),
+      isOpen: true
+    }
   }
 }))

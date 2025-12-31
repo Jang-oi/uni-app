@@ -4,6 +4,7 @@
  */
 
 import { registerBadgeHandlers } from './badgeHandler'
+import { registerHypervHandlers } from './hypervHandler'
 import { registerNotificationHandlers } from './notificationHandler'
 import { registerShellHandlers } from './shellHandler'
 import { registerSystemHandlers } from './systemHandler'
@@ -20,6 +21,7 @@ export function registerAllHandlers() {
   registerNotificationHandlers()
   registerSystemHandlers()
   registerBadgeHandlers()
+  registerHypervHandlers()
 
   console.log('[Handlers] 모든 IPC 핸들러 등록 완료')
 }

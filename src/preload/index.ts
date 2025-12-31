@@ -12,7 +12,7 @@ const api = {
   // 외부 URL 열기
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
 
-  showNotification: (args: { title: string; body: string; taskId?: string }) => ipcRenderer.invoke('notification:show', args),
+  showUniNotification: (args: { title: string; body: string; taskId?: string }) => ipcRenderer.invoke('notification:show', args),
 
   // 배지 카운트 설정
   setBadgeCount: (count: number, badgeData: string | null) => ipcRenderer.invoke('badge:set-count', count, badgeData),
@@ -22,6 +22,9 @@ const api = {
 
   // 사용자 정보 조회 (서버에서 가져오기)
   getUserInfo: () => ipcRenderer.invoke('user:get-info'),
+
+  // HyperV VM 연결
+  connectToVM: (args: { hostServer: string; vmName: string }) => ipcRenderer.invoke('hyperv:connect-vm', args),
 
   // 업데이트 이벤트 리스너
   onChecking: (callback: () => void) => {

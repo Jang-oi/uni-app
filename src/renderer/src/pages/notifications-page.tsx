@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Message02Icon, Notification02Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
+import { VMRequestReceiverDialog } from '@/components/vm-request-receiver-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import type { Notification } from '@/stores/notification'
+import type { Notification, VMRequestDialogData } from '@/stores/notification'
 import { useNotificationStore } from '@/stores/notification'
 import { openUniPost } from '@/util/util'
 
@@ -16,8 +18,10 @@ export function NotificationsPage() {
   const notifications = useNotificationStore((state) => state.notifications)
   const markAsRead = useNotificationStore((state) => state.markAsRead)
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead)
+  const aggregateVMRequests = useNotificationStore((state) => state.aggregateVMRequests)
 
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  const [vmRequestDialog, setVmRequestDialog] = useState<VMRequestDialogData | null>(null)
 
   const filteredNotifications = useMemo(() => {
     if (filter === 'unread') {
@@ -35,10 +39,53 @@ export function NotificationsPage() {
       markAsRead(notification.id)
     }
 
+    // VM 요청 알림이면 VMRequestReceiverDialog 오픈
+    if (notification.type === 'vm-request' && notification.vmName) {
+      const dialogData = aggregateVMRequests(notification.vmName)
+      if (dialogData.requesters.length === 0) {
+        toast.info('대기 중인 요청이 없습니다.')
+        return
+      }
+      setVmRequestDialog(dialogData)
+      return
+    }
+
     // 업무 관련 알림이면 해당 업무로 이동
     if (notification.taskId) {
       openUniPost(notification.taskId)
     }
+  }
+
+  const handleApproveVM = async () => {
+    if (!vmRequestDialog) return
+
+    const approverHostname = await window.api.getHostname()
+    const socket = useNotificationStore.getState().socket
+
+    if (socket) {
+      socket.emit('vm:approve-request', {
+        vmName: vmRequestDialog.vmName,
+        approverHostname
+      })
+    }
+
+    setVmRequestDialog(null)
+  }
+
+  const handleRejectVM = async () => {
+    if (!vmRequestDialog) return
+
+    const rejectorHostname = await window.api.getHostname()
+    const socket = useNotificationStore.getState().socket
+
+    if (socket) {
+      socket.emit('vm:reject-request', {
+        vmName: vmRequestDialog.vmName,
+        rejectorHostname
+      })
+    }
+
+    setVmRequestDialog(null)
   }
 
   const getTypeIcon = (type: string) => {
@@ -129,6 +176,17 @@ export function NotificationsPage() {
           </div>
         </ScrollArea>
       </Card>
+
+      {vmRequestDialog && (
+        <VMRequestReceiverDialog
+          vmName={vmRequestDialog.vmName}
+          requesters={vmRequestDialog.requesters}
+          isOpen={vmRequestDialog.isOpen}
+          onApprove={handleApproveVM}
+          onReject={handleRejectVM}
+          onClose={() => setVmRequestDialog(null)}
+        />
+      )}
     </div>
   )
 }
