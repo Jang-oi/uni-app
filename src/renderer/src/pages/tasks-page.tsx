@@ -52,17 +52,21 @@ export function TasksPage() {
         icon={<HugeiconsIcon icon={Task01Icon} size={20} />}
       />
 
-      <Tabs className="gap-6" value={activeView} onValueChange={(value) => setActiveView(value as 'team' | 'personal')}>
-        <TabsList>
-          <TabsTrigger value="team">팀 전체</TabsTrigger>
-          <TabsTrigger value="personal">{currentUser} 매니저</TabsTrigger>
-        </TabsList>
+      <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'team' | 'personal')}>
+        <div className="flex items-center justify-between mb-4">
+          <TabsList className="w-[400px] grid grid-cols-2">
+            <TabsTrigger value="team">팀 전체 ({teamTasks.length}건)</TabsTrigger>
+            <TabsTrigger value="personal">
+              {currentUser} 매니저 ({personalTasks.length}건)
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="team" className="mt-6">
+        <TabsContent value="team">
           <TaskTable data={teamTasks} onRequestClick={handleRequestClick} />
         </TabsContent>
 
-        <TabsContent value="personal" className="mt-6">
+        <TabsContent value="personal">
           <TaskTable data={personalTasks} onRequestClick={handleRequestClick} />
         </TabsContent>
       </Tabs>

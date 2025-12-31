@@ -112,7 +112,7 @@ export function TaskTable({ data, onRequestClick }: TaskTableProps) {
   })
 
   return (
-    <ScrollArea className="h-[calc(71vh-80px)]">
+    <ScrollArea className="h-[calc(80vh-80px)]">
       <Table className="w-full border border-slate-200" style={{ tableLayout: 'fixed' }}>
         <TableHeader className="bg-slate-50 border-b border-slate-200">
           {table.getHeaderGroups().map((headerGroup) => (

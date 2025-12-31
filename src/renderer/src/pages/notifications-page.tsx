@@ -55,7 +55,7 @@ export function NotificationsPage() {
   }
 
   return (
-    <div className="p-8 h-full flex flex-col bg-slate-50/30">
+    <div className="p-8 h-full flex flex-col bg-white">
       <PageHeader
         title="알림 센터"
         description="받은 알림을 확인하고 관리하세요."

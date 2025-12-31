@@ -62,7 +62,7 @@ export function VersionPage() {
   }, [setIsChecking, setUpdateAvailable, setDownloadProgress, setIsDownloading, setIsDownloaded, setLastCheckTime])
 
   return (
-    <div className="p-8 h-full flex flex-col bg-slate-50/30">
+    <div className="p-8 h-full flex flex-col bg-white">
       <PageHeader
         title="버전 관리"
         description="업데이트 내역을 확인하고 최신 버전을 유지하세요."
