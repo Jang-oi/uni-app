@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Loading03Icon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
+import { Loading03Icon, Search01Icon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from '@tanstack/react-table'
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState
+} from '@tanstack/react-table'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { PageHeader } from '../components/page-header'
 import { ScrollArea } from '../components/ui/scroll-area'
@@ -14,6 +24,7 @@ export function VirtualMachinesPage() {
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [myHostname, setMyHostname] = useState<string | null>(null)
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [connectingVM, setConnectingVM] = useState<string | null>(null)
 
   // 내 hostname 가져오기
@@ -115,9 +126,11 @@ export function VirtualMachinesPage() {
     data: vms,
     columns,
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    state: { sorting }
+    state: { sorting, columnFilters }
   })
 
   return (
@@ -127,6 +140,22 @@ export function VirtualMachinesPage() {
         description="팀에서 공용으로 사용하는 Hyper-V 인스턴스의 실시간 점유 상태입니다."
         icon={<HugeiconsIcon icon={VirtualRealityVr01Icon} size={20} />}
       />
+
+      {/* 검색 입력 */}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="VM 이름으로 검색..."
+            value={(table.getColumn('vmName')?.getFilterValue() as string) ?? ''}
+            onChange={(event) => table.getColumn('vmName')?.setFilterValue(event.target.value)}
+            className="pl-9"
+          />
+        </div>
+        {(table.getColumn('vmName')?.getFilterValue() as string) && (
+          <div className="text-sm text-slate-500">{table.getFilteredRowModel().rows.length}개의 VM 검색됨</div>
+        )}
+      </div>
 
       <ScrollArea className="h-[calc(68vh-80px)]">
         <Table className="w-full border border-slate-200" style={{ tableLayout: 'fixed' }}>

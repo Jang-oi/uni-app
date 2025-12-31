@@ -39,9 +39,7 @@ export function Header({ activeTab, setActiveTab }: HeaderProps) {
           >
             <span className={activeTab === tab.id ? 'text-slate-900' : 'text-slate-600'}>{tab.label}</span>
             {tab.id === '알림' && unreadCount > 0 && (
-              <Badge className="ml-1 h-5 min-w-5 px-1.5 flex items-center justify-center text-[10px] bg-red-500 hover:bg-red-600">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </Badge>
+              <Badge className="h-5 min-w-5 rounded-full px-1 tabular-nums bg-destructive">{unreadCount > 99 ? '99+' : unreadCount}</Badge>
             )}
             {activeTab === tab.id && (
               <motion.div
