@@ -129,7 +129,7 @@ export function VersionPage() {
       </div>
 
       {/* 히스토리 목록 */}
-      <div className="flex-1 flex flex-col min-h-0 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+      <div className="flex-1 flex flex-col min-h-0 bg-white border border-slate-200 p-6 shadow-sm">
         <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2">
           <HugeiconsIcon icon={DeveloperIcon} size={16} className="text-primary" /> 업데이트 히스토리
         </h3>
@@ -155,7 +155,7 @@ export function VersionPage() {
                       </Badge>
                     )}
                   </div>
-                  <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100">
+                  <div className="bg-slate-50/50 p-5 border border-slate-100">
                     <ul className="space-y-2">
                       {item.changes.map((change, i) => (
                         <li key={i} className="text-sm text-slate-600 flex items-start gap-2.5">

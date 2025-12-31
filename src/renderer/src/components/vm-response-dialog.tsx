@@ -3,7 +3,7 @@
  * 대기 중/승인됨/거부됨 3가지 상태 표시
  */
 import { useState } from 'react'
-import { CheckmarkCircle02Icon, Clock02Icon, Cancel02Icon, Loading03Icon } from '@hugeicons/core-free-icons'
+import { Cancel02Icon, CheckmarkCircle02Icon, Clock02Icon, Loading03Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -54,7 +54,7 @@ export function VMResponseDialog() {
   // 대기 중 상태
   if (dialogState.type === 'waiting') {
     return (
-      <Dialog open={dialogState.isOpen} onOpenChange={handleClose}>
+      <Dialog open={dialogState.isOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <div className="flex items-center gap-3">
@@ -90,7 +90,7 @@ export function VMResponseDialog() {
   // 승인됨 상태
   if (dialogState.type === 'approved') {
     return (
-      <Dialog open={dialogState.isOpen} onOpenChange={handleClose}>
+      <Dialog open={dialogState.isOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export function VMResponseDialog() {
     const message = isManualReject ? '요청이 거부되었습니다' : `${dialogState.approvedUserName}님이 먼저 승인받아 사용 중입니다`
 
     return (
-      <Dialog open={dialogState.isOpen} onOpenChange={handleClose}>
+      <Dialog open={dialogState.isOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <div className="flex items-center gap-3">

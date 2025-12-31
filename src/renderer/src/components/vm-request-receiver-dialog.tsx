@@ -47,7 +47,7 @@ export function VMRequestReceiverDialog({ vmName, requesters, isOpen, onApprove,
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -79,7 +79,9 @@ export function VMRequestReceiverDialog({ vmName, requesters, isOpen, onApprove,
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {requester.isFirst && <span className="text-lg">⭐</span>}
-                        <p className={cn('text-sm font-medium', requester.isFirst ? 'text-yellow-900' : 'text-slate-900')}>{requester.name}</p>
+                        <p className={cn('text-sm font-medium', requester.isFirst ? 'text-yellow-900' : 'text-slate-900')}>
+                          {requester.name}
+                        </p>
                       </div>
                       <span className="text-xs text-slate-500">
                         {formatDistanceToNow(new Date(requester.timestamp), { addSuffix: true, locale: ko })}
@@ -97,7 +99,9 @@ export function VMRequestReceiverDialog({ vmName, requesters, isOpen, onApprove,
               <p className="text-xs text-amber-900">
                 ⚠️ 승인 시 가장 먼저 요청한 <strong>{firstRequester.name}님</strong>에게 우선 승인됩니다.
               </p>
-              {requesters.length > 1 && <p className="text-xs text-amber-700 mt-1">나머지 {requesters.length - 1}명은 자동으로 거부됩니다.</p>}
+              {requesters.length > 1 && (
+                <p className="text-xs text-amber-700 mt-1">나머지 {requesters.length - 1}명은 자동으로 거부됩니다.</p>
+              )}
             </div>
           )}
         </div>

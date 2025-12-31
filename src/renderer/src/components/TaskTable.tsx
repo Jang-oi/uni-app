@@ -85,7 +85,7 @@ export function TaskTable({ data, onRequestClick }: TaskTableProps) {
       cell: ({ row }) => (
         <Button
           size="sm"
-          variant="outline"
+          variant="destructive"
           onClick={(e) => {
             e.stopPropagation()
             onRequestClick?.(row.original)

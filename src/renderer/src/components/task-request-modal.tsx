@@ -88,7 +88,7 @@ export function TaskRequestModal({ task, isOpen, onClose }: TaskRequestModalProp
   if (!task) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>업무 요청 보내기</DialogTitle>

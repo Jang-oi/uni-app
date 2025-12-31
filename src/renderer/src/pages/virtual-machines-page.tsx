@@ -67,7 +67,7 @@ export function VirtualMachinesPage() {
           return (
             <Button
               size="sm"
-              className="bg-green-600 hover:bg-green-700"
+              variant="destructive"
               disabled={isConnecting}
               onClick={async () => {
                 setConnectingVM(vm.vmName)
@@ -104,7 +104,6 @@ export function VirtualMachinesPage() {
         return (
           <Button
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
             onClick={async () => {
               if (!vm.currentHostname) return
               if (vm.currentHostname === myHostname) {
