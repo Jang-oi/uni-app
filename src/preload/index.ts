@@ -14,6 +14,9 @@ const api = {
 
   showNotification: (args: { title: string; body: string; taskId?: string }) => ipcRenderer.invoke('notification:show', args),
 
+  // 배지 카운트 설정
+  setBadgeCount: (count: number, badgeData: string | null) => ipcRenderer.invoke('badge:set-count', count, badgeData),
+
   // hostname 조회
   getHostname: () => ipcRenderer.invoke('system:get-hostname'),
 

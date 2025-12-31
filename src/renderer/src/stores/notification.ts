@@ -45,6 +45,35 @@ interface NotificationStore {
   initSocket: (onError?: () => void) => void
 }
 
+const createClearRedBadge = (count: number): string | null => {
+  if (count <= 0) return null
+
+  const size = 32 // 오버레이 아이콘 표준 크기
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+
+  ctx.beginPath()
+  ctx.arc(size / 2, size / 2, 20, 0, Math.PI * 2) // 원 크기를 15로 키움 (여백 최소화)
+  ctx.fillStyle = '#FF0000'
+  ctx.fill()
+
+  ctx.fillStyle = '#FFFFFF'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  // 숫자가 10 이상이면 폰트 크기 조절
+  const fontSize = count > 9 ? '22px' : '24px'
+  ctx.font = `${fontSize} Arial, sans-serif`
+
+  const displayText = count > 99 ? '99' : count.toString()
+  ctx.fillText(displayText, size / 2, size / 2 + 1) // 위치 미세 조정
+
+  return canvas.toDataURL('image/png')
+}
+
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
   notifications: [],
   unreadCount: 0,
@@ -54,21 +83,32 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   setNotifications: (notifications) => {
     const unreadCount = notifications.filter((n) => !n.isRead).length
     set({ notifications, unreadCount })
+    // 배지 카운트 업데이트
+    const badgeData = createClearRedBadge(unreadCount)
+    window.api.setBadgeCount(unreadCount, badgeData).catch((err) => console.error('[Badge] 업데이트 실패:', err))
   },
 
-  addNotification: (notification) =>
+  addNotification: (notification) => {
     set((state) => {
       const newNotifications = [notification, ...state.notifications]
       const unreadCount = newNotifications.filter((n) => !n.isRead).length
+      // 배지 카운트 업데이트
+      const badgeData = createClearRedBadge(unreadCount)
+      window.api.setBadgeCount(unreadCount, badgeData).catch((err) => console.error('[Badge] 업데이트 실패:', err))
       return { notifications: newNotifications, unreadCount }
-    }),
+    })
+  },
 
-  updateNotification: (notification) =>
+  updateNotification: (notification) => {
     set((state) => {
       const notifications = state.notifications.map((n) => (n.id === notification.id ? notification : n))
       const unreadCount = notifications.filter((n) => !n.isRead).length
+      // 배지 카운트 업데이트
+      const badgeData = createClearRedBadge(unreadCount)
+      window.api.setBadgeCount(unreadCount, badgeData).catch((err) => console.error('[Badge] 업데이트 실패:', err))
       return { notifications, unreadCount }
-    }),
+    })
+  },
 
   markAsRead: (notificationId) => {
     const socket = get().socket

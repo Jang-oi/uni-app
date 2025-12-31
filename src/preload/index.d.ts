@@ -57,7 +57,10 @@ declare global {
       // Windows 네이티브 알림
       requestNotificationPermission: () => Promise<{ success: boolean; permission: string; error?: any }>
       openNotificationSettings: () => Promise<{ success: boolean; error?: any }>
-      showNotification: (args: { title: string; body: string }) => Promise<{ success: boolean; error?: any }>
+      showNotification: (args: { title: string; body: string; taskId?: string }) => Promise<{ success: boolean; error?: any }>
+
+      // 배지 카운트
+      setBadgeCount: (count: number) => Promise<{ success: boolean; error?: any }>
 
       // hostname 조회
       getHostname: () => Promise<string>

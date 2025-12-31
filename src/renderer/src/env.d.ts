@@ -12,6 +12,7 @@ interface ImportMeta {
 interface ElectronAPI {
   openExternal: (url: string) => Promise<{ success: boolean; error?: any }>
   showNotification: (args: { title: string; body: string; taskId?: string }) => Promise<{ success: boolean; error?: any }>
+  setBadgeCount: (count: number, badgeData: string | null) => Promise<{ success: boolean; error?: any }>
   getHostname: () => Promise<string>
   getUserInfo: () => Promise<{ success: boolean; data?: any; error?: any }>
   getVersion: () => Promise<{ success: boolean; versionInfo?: any; error?: any }>
