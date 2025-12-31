@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Search01Icon, Tick02Icon, UserIcon } from '@hugeicons/core-free-icons'
+import { Tick02Icon, UserIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -118,20 +117,7 @@ export function TaskRequestModal({ task, isOpen, onClose }: TaskRequestModalProp
 
           {/* 받는 사람 */}
           <div className="space-y-2">
-            <Label>받는 사람 ({teamMembers.length}명)</Label>
-
-            {/* 검색 */}
-            <div className="relative">
-              <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="팀원 검색..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-sm"
-              />
-            </div>
-
-            {/* 사용자 목록 */}
+            <Label>받는 사람</Label>
             <ScrollArea className="h-[200px] border rounded-lg">
               <div className="p-2 space-y-1">
                 {filteredMembers.length === 0 ? (
@@ -142,7 +128,7 @@ export function TaskRequestModal({ task, isOpen, onClose }: TaskRequestModalProp
                       key={member}
                       onClick={() => setSelectedMember(member)}
                       className={cn(
-                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left transition-colors',
+                        'cursor-pointer w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left transition-colors',
                         selectedMember === member ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100'
                       )}
                     >

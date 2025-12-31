@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence } from 'motion/react'
-import { toast } from 'sonner'
 import { Header } from '@/components/header'
 import { LoadingScreen } from '@/components/loading-screen' // 로딩 스크린 임포트
 import { Toaster } from '@/components/ui/sonner'
@@ -32,11 +31,7 @@ export default function App() {
     const initializeApp = async () => {
       try {
         const handleError = () => {
-          console.error('[App] 소켓 연결 실패')
           setServerError(true)
-          toast.error('서버 연결 실패', {
-            description: '서버에 연결할 수 없습니다. 담당자에게 문의하세요.'
-          })
         }
 
         initCalendarSocket(handleError)
