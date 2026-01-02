@@ -18,9 +18,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PageHeader } from '../components/page-header'
 import { ScrollArea } from '../components/ui/scroll-area'
 import { useHypervStore, type HypervVM } from '../stores/hyperv'
+import { useSocketStore } from '../stores/socket'
 
 export function VirtualMachinesPage() {
   const vms = useHypervStore((state) => state.vms)
+  const socket = useSocketStore((state) => state.socket)
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [myHostname, setMyHostname] = useState<string | null>(null)
@@ -31,6 +33,29 @@ export function VirtualMachinesPage() {
   useEffect(() => {
     window.api.getHostname().then(setMyHostname)
   }, [])
+
+  // Socket 이벤트 리스너 등록
+  useEffect(() => {
+    if (!socket) return
+
+    // 중복 요청 처리
+    const handleDuplicate = (data: { vmName: string; firstRequesterName: string }) => {
+      toast.error(`${data.firstRequesterName}님이 먼저 요청하신 상태입니다.`)
+    }
+
+    // 타임아웃 처리
+    const handleTimeout = (data: { vmName: string }) => {
+      toast.warning(`${data.vmName} 요청이 1분간 응답이 없어 만료되었습니다. 다시 요청해주세요.`)
+    }
+
+    socket.on('vm:request-duplicate', handleDuplicate)
+    socket.on('vm:timeout', handleTimeout)
+
+    return () => {
+      socket.off('vm:request-duplicate', handleDuplicate)
+      socket.off('vm:timeout', handleTimeout)
+    }
+  }, [socket])
 
   const columns: ColumnDef<HypervVM>[] = [
     {
@@ -111,7 +136,7 @@ export function VirtualMachinesPage() {
                 return
               }
               requestVM(vm.vmName, vm.currentHostname)
-              toast.success(`${vm.vmName} 사용 요청이 전송되었습니다.`)
+              toast.info(`${vm.vmName} 사용 요청을 전송했습니다. (1분간 유효)`)
             }}
           >
             요청하기

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
-import { useNotificationStore } from '@/stores/notification'
+import { useSocketStore } from '@/stores/socket'
 import type { TaskDisplayData } from '@/stores/task'
 import { useTaskStore } from '@/stores/task'
 
@@ -25,7 +25,7 @@ export function TaskRequestModal({ task, isOpen, onClose }: TaskRequestModalProp
 
   const memberTasks = useTaskStore((state) => state.memberTasks)
   const currentUser = useTaskStore((state) => state.currentUser)
-  const socket = useNotificationStore((state) => state.socket)
+  const socket = useSocketStore((state) => state.socket)
 
   // 팀원 목록 (본인 제외)
   const teamMembers = useMemo(() => {

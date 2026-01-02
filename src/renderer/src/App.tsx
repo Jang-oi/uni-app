@@ -11,6 +11,7 @@ import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
 import { useCalendarStore } from '@/stores/calendar'
 import { useHypervStore } from '@/stores/hyperv'
 import { useNotificationStore } from '@/stores/notification'
+import { useSocketStore } from '@/stores/socket'
 import { useTaskStore } from '@/stores/task'
 import { useVersionStore } from '@/stores/version'
 import { TasksPage } from './pages/tasks-page'
@@ -21,13 +22,14 @@ export default function App() {
   const [isInitializing, setIsInitializing] = useState(true)
   const [serverError, setServerError] = useState(false)
 
-  const initCalendarSocket = useCalendarStore((state) => state.initSocket)
-  const initTaskSocket = useTaskStore((state) => state.initSocket)
-  const initHypervSocket = useHypervStore((state) => state.initSocket)
-  const initNotificationSocket = useNotificationStore((state) => state.initSocket)
+  const initSocket = useSocketStore((state) => state.initSocket)
+  const initCalendarListeners = useCalendarStore((state) => state.initListeners)
+  const initTaskListeners = useTaskStore((state) => state.initListeners)
+  const initHypervListeners = useHypervStore((state) => state.initListeners)
+  const initNotificationListeners = useNotificationStore((state) => state.initListeners)
   const initVersion = useVersionStore((state) => state.initVersion)
 
-  // 앱 시작 시 모든 Socket 초기화
+  // 앱 시작 시 공유 Socket 연결 및 각 스토어 리스너 등록
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -35,10 +37,16 @@ export default function App() {
           setServerError(true)
         }
 
-        initCalendarSocket(handleError)
-        initTaskSocket(handleError)
-        initHypervSocket(handleError)
-        initNotificationSocket(handleError)
+        // 1. 공유 소켓 연결 (가장 먼저!)
+        initSocket(handleError)
+
+        // 2. 각 스토어의 이벤트 리스너 등록
+        initCalendarListeners()
+        initTaskListeners()
+        initHypervListeners()
+        initNotificationListeners()
+
+        // 3. 버전 정보 가져오기
         await initVersion()
 
         await new Promise((resolve) => setTimeout(resolve, 3000))
@@ -51,7 +59,7 @@ export default function App() {
     }
 
     initializeApp()
-  }, [initCalendarSocket, initTaskSocket, initHypervSocket, initNotificationSocket, initVersion])
+  }, [initSocket, initCalendarListeners, initTaskListeners, initHypervListeners, initNotificationListeners, initVersion])
 
   // 렌더링 로직 분기
   if (serverError) return <ServerErrorPage />

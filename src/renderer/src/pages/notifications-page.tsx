@@ -3,15 +3,16 @@ import { Message02Icon, Notification02Icon, Tick02Icon } from '@hugeicons/core-f
 import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
-import { VMRequestReceiverDialog } from '@/components/vm-request-receiver-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { VMRequestReceiverDialog } from '@/components/vm-request-receiver-dialog'
 import { cn } from '@/lib/utils'
 import type { Notification, VMRequestDialogData } from '@/stores/notification'
 import { useNotificationStore } from '@/stores/notification'
+import { useSocketStore } from '@/stores/socket'
 import { openUniPost } from '@/util/util'
 
 export function NotificationsPage() {
@@ -60,7 +61,7 @@ export function NotificationsPage() {
     if (!vmRequestDialog) return
 
     const approverHostname = await window.api.getHostname()
-    const socket = useNotificationStore.getState().socket
+    const socket = useSocketStore.getState().getSocket()
 
     if (socket) {
       socket.emit('vm:approve-request', {
@@ -76,7 +77,7 @@ export function NotificationsPage() {
     if (!vmRequestDialog) return
 
     const rejectorHostname = await window.api.getHostname()
-    const socket = useNotificationStore.getState().socket
+    const socket = useSocketStore.getState().getSocket()
 
     if (socket) {
       socket.emit('vm:reject-request', {

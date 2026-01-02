@@ -1,8 +1,12 @@
-import { BASE_URL } from '@shared/api/client'
-import { io, Socket } from 'socket.io-client'
 import { create } from 'zustand'
+import { useSocketStore } from './socket'
 
-type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
+export interface ConnectedUser {
+  hostname: string
+  name: string
+  socketId: string
+  connectedAt: string
+}
 
 export interface HypervVM {
   vmName: string
@@ -27,12 +31,12 @@ export interface VMResponseDialogState {
 
 interface HypervStore {
   vms: HypervVM[]
-  socket: Socket | null
-  connectionStatus: ConnectionStatus
+  connectedUsers: ConnectedUser[]
   vmResponseDialog: VMResponseDialogState | null
-  initSocket: (onError?: () => void) => void
+  initListeners: () => void
+  cleanupListeners: () => void
   setVMs: (vms: HypervVM[]) => void
-  setConnectionStatus: (status: ConnectionStatus) => void
+  setConnectedUsers: (users: ConnectedUser[]) => void
   setVMResponseDialog: (state: VMResponseDialogState | null) => void
   requestVM: (vmName: string, currentUserHostname: string) => void
   cancelVMRequest: (vmName: string) => void
@@ -40,70 +44,29 @@ interface HypervStore {
 
 export const useHypervStore = create<HypervStore>((set, get) => ({
   vms: [],
-  socket: null,
-  connectionStatus: 'disconnected',
+  connectedUsers: [],
   vmResponseDialog: null,
 
   setVMs: (vms) => set({ vms }),
-  setConnectionStatus: (status) => set({ connectionStatus: status }),
+  setConnectedUsers: (users) => set({ connectedUsers: users }),
   setVMResponseDialog: (state) => set({ vmResponseDialog: state }),
 
-  initSocket: (onError?: () => void) => {
-    // 이미 연결되어 있다면 재연결 방지
-    if (get().socket) return
+  initListeners: () => {
+    const socket = useSocketStore.getState().getSocket()
+    if (!socket) {
+      console.error('[HyperV] 공유 소켓이 없습니다')
+      return
+    }
 
-    set({ connectionStatus: 'connecting' })
+    console.log('[HyperV] 이벤트 리스너 등록')
 
-    const newSocket = io(BASE_URL, {
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 3 // 무한 재시도 대신 3회로 제한
-    })
-
-    // 연결 성공
-    newSocket.on('connect', async () => {
-      console.log('[HyperV] Socket.io 연결 성공')
-      set({ connectionStatus: 'connected' })
-
-      // hostname 등록
-      const hostname = await window.api.getHostname()
-      newSocket.emit('register:user', { hostname })
-      console.log('[HyperV] hostname 등록:', hostname)
-    })
-
-    // 연결 오류
-    newSocket.on('connect_error', (error) => {
-      console.error('[HyperV] Socket.io 연결 오류:', error)
-      set({ connectionStatus: 'error' })
-      // 에러 콜백 실행
-      if (onError) {
-        onError()
-      }
-    })
-
-    // 연결 끊김
-    newSocket.on('disconnect', (reason) => {
-      console.warn('[HyperV] Socket.io 연결 끊김:', reason)
-      set({ connectionStatus: 'disconnected' })
-      if (reason === 'io server disconnect') {
-        // 서버에서 연결을 끊은 경우 수동으로 재연결
-        newSocket.connect()
-      }
-    })
-
-    // 서버가 쏴주는 'hyperv:updated' 이벤트를 상시 감시
-    newSocket.on('hyperv:updated', (updatedVms: HypervVM[]) => {
+    // HyperV 상태 업데이트
+    socket.on('hyperv:updated', (updatedVms: HypervVM[]) => {
       set({ vms: updatedVms })
     })
 
-    // VM 사용 요청 알림 수신 (기존 - 제거 예정, notification store에서 처리)
-    newSocket.on('vm:notification', async (data: { vmName: string; requestedBy: string; message: string }) => {
-      console.log('[VM Notification]:', data)
-    })
-
     // VM 대기 상태 수신
-    newSocket.on('vm:queue-status', (data: { vmName: string; queuePosition: number; totalWaiting: number; estimatedWaitMessage: string }) => {
+    socket.on('vm:queue-status', (data: { vmName: string; queuePosition: number; totalWaiting: number; estimatedWaitMessage: string }) => {
       console.log('[VM Queue Status]:', data)
       set({
         vmResponseDialog: {
@@ -117,7 +80,7 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
     })
 
     // VM 큐 업데이트 수신 (순번 변경)
-    newSocket.on('vm:queue-updated', (data: { vmName: string; queuePosition: number; totalWaiting: number }) => {
+    socket.on('vm:queue-updated', (data: { vmName: string; queuePosition: number; totalWaiting: number }) => {
       console.log('[VM Queue Updated]:', data)
       const currentDialog = get().vmResponseDialog
       if (currentDialog && currentDialog.type === 'waiting' && currentDialog.vmName === data.vmName) {
@@ -132,7 +95,7 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
     })
 
     // VM 승인 수신
-    newSocket.on('vm:approved', (data: { vmName: string; hostServer: string; approverName: string }) => {
+    socket.on('vm:approved', (data: { vmName: string; hostServer: string; approverName: string }) => {
       console.log('[VM Approved]:', data)
       set({
         vmResponseDialog: {
@@ -146,7 +109,7 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
     })
 
     // VM 거부 수신
-    newSocket.on('vm:rejected', (data: { vmName: string; reason: 'manual' | 'other-approved'; approvedUserName?: string }) => {
+    socket.on('vm:rejected', (data: { vmName: string; reason: 'manual' | 'other-approved'; approvedUserName?: string }) => {
       console.log('[VM Rejected]:', data)
       set({
         vmResponseDialog: {
@@ -159,14 +122,45 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
       })
     })
 
-    set({ socket: newSocket })
+    // VM 중복 요청 감지
+    socket.on('vm:request-duplicate', (data: { vmName: string; firstRequesterName: string }) => {
+      console.log('[VM Request Duplicate]:', data)
+      // Toast로 표시 (virtual-machines-page에서 처리)
+    })
+
+    // VM 요청 타임아웃
+    socket.on('vm:timeout', (data: { vmName: string }) => {
+      console.log('[VM Timeout]:', data)
+      set({ vmResponseDialog: null })
+    })
+
+    // 접속자 목록 업데이트 수신
+    socket.on('users:connected', (users: ConnectedUser[]) => {
+      console.log('[HyperV] 접속자 목록 업데이트:', users.length, '명')
+      set({ connectedUsers: users })
+    })
+  },
+
+  cleanupListeners: () => {
+    const socket = useSocketStore.getState().getSocket()
+    if (!socket) return
+
+    console.log('[HyperV] 이벤트 리스너 제거')
+    socket.off('hyperv:updated')
+    socket.off('vm:queue-status')
+    socket.off('vm:queue-updated')
+    socket.off('vm:approved')
+    socket.off('vm:rejected')
+    socket.off('vm:request-duplicate')
+    socket.off('vm:timeout')
+    socket.off('users:connected')
   },
 
   // VM 사용 요청 메서드
   requestVM: (vmName: string, currentHostname: string) => {
-    const socket = get().socket
+    const socket = useSocketStore.getState().getSocket()
     if (!socket) {
-      console.error('[VM Request] Socket이 연결되지 않음')
+      console.error('[VM Request] 공유 소켓이 없습니다')
       return
     }
 
@@ -184,9 +178,9 @@ export const useHypervStore = create<HypervStore>((set, get) => ({
 
   // VM 요청 취소 메서드
   cancelVMRequest: (vmName: string) => {
-    const socket = get().socket
+    const socket = useSocketStore.getState().getSocket()
     if (!socket) {
-      console.error('[VM Cancel] Socket이 연결되지 않음')
+      console.error('[VM Cancel] 공유 소켓이 없습니다')
       return
     }
 
