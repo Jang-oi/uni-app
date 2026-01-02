@@ -33,10 +33,7 @@ export default function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        const handleError = () => {
-          setServerError(true)
-        }
-
+        const handleError = () => setServerError(true)
         // 1. 공유 소켓 연결 (가장 먼저!)
         initSocket(handleError)
 
