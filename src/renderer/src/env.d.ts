@@ -11,7 +11,13 @@ interface ImportMeta {
 // Electron API 타입 정의
 interface ElectronAPI {
   openExternal: (url: string) => Promise<{ success: boolean; error?: any }>
-  showUniNotification: (args: { title: string; body: string; taskId?: string }) => Promise<{ success: boolean; error?: any }>
+  showUniNotification: (args: {
+    title: string
+    body: string
+    taskId?: string
+    vmName?: string
+    notificationType?: 'task-check' | 'task-support' | 'vm-request' | 'vm-approved' | 'vm-rejected'
+  }) => Promise<{ success: boolean; error?: any }>
   setBadgeCount: (count: number, badgeData: string | null) => Promise<{ success: boolean; error?: any }>
   getHostname: () => Promise<string>
   getUserInfo: () => Promise<{ success: boolean; data?: any; error?: any }>
@@ -28,6 +34,9 @@ interface ElectronAPI {
   ) => () => void
   onUpdateDownloaded: (callback: (info: { version: string }) => void) => () => void
   onError: (callback: (error: { message: string }) => void) => () => void
+  // VM 알림 이벤트 리스너
+  onVMRequestClicked: (callback: (data: { vmName: string }) => void) => () => void
+  onVMResultClicked: (callback: (data: { type: 'vm-approved' | 'vm-rejected'; vmName: string }) => void) => () => void
 }
 
 interface Window {

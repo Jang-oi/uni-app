@@ -57,10 +57,20 @@ declare global {
       // Windows 네이티브 알림
       requestNotificationPermission: () => Promise<{ success: boolean; permission: string; error?: any }>
       openNotificationSettings: () => Promise<{ success: boolean; error?: any }>
-      showNotification: (args: { title: string; body: string; taskId?: string }) => Promise<{ success: boolean; error?: any }>
+      showUniNotification: (args: {
+        title: string
+        body: string
+        taskId?: string
+        vmName?: string
+        notificationType?: 'task-check' | 'task-support' | 'vm-request' | 'vm-approved' | 'vm-rejected'
+      }) => Promise<{ success: boolean; error?: any }>
 
       // 배지 카운트
-      setBadgeCount: (count: number) => Promise<{ success: boolean; error?: any }>
+      setBadgeCount: (count: number, badgeData: string | null) => Promise<{ success: boolean; error?: any }>
+
+      // VM 알림 이벤트 리스너
+      onVMRequestClicked: (callback: (data: { vmName: string }) => void) => () => void
+      onVMResultClicked: (callback: (data: { type: 'vm-approved' | 'vm-rejected'; vmName: string }) => void) => () => void
 
       // hostname 조회
       getHostname: () => Promise<string>

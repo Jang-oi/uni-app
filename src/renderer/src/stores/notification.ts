@@ -22,18 +22,9 @@ export interface Notification {
   taskTitle?: string
   // VM 관련 (vm-request 타입일 때 사용)
   vmName?: string
-}
-
-export interface VMRequestDialogData {
-  vmName: string
-  requesters: Array<{
-    notificationId: string
-    name: string
-    hostname: string
-    timestamp: string
-    isFirst: boolean
-  }>
-  isOpen: boolean
+  expiresAt?: string // VM 요청 만료 시간 (60초 후)
+  isCancelled?: boolean // 요청자가 취소한 요청 여부
+  isProcessed?: boolean // 이미 승인/거절 처리된 요청 여부
 }
 
 interface NotificationStore {
@@ -49,9 +40,6 @@ interface NotificationStore {
   markAllAsRead: () => void
   initListeners: () => void
   cleanupListeners: () => void
-
-  // VM 요청 집계
-  aggregateVMRequests: (vmName: string) => VMRequestDialogData
 }
 
 const createClearRedBadge = (count: number): string | null => {
@@ -168,7 +156,9 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
         title:
           notification.type === 'task-check' ? '업무 확인 요청' : notification.type === 'task-support' ? '업무 지원 요청' : 'VM 사용 요청',
         body: notification.message,
-        taskId: notification.taskId // 알림 클릭 시 URL 열기용 taskId 전달
+        taskId: notification.taskId, // 알림 클릭 시 URL 열기용 taskId 전달
+        vmName: notification.vmName, // VM 관련 알림의 경우 vmName 전달
+        notificationType: notification.type // 알림 타입 전달 (Actions 표시용)
       })
     })
 
@@ -210,26 +200,5 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     socket.off('notification:updated')
     socket.off('notification:all-read')
     socket.off('notification:removed')
-  },
-
-  aggregateVMRequests: (vmName) => {
-    const { notifications } = get()
-
-    // 해당 VM의 읽지 않은 요청 알림만 필터링하고 timestamp 기준 정렬
-    const vmNotifications = notifications
-      .filter((n) => n.type === 'vm-request' && n.vmName === vmName && !n.isRead)
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-
-    return {
-      vmName,
-      requesters: vmNotifications.map((n, idx) => ({
-        notificationId: n.id,
-        name: n.senderName,
-        hostname: n.senderHostname,
-        timestamp: n.timestamp,
-        isFirst: idx === 0 // FIFO: 첫 번째 요청자 표시
-      })),
-      isOpen: true
-    }
   }
 }))
