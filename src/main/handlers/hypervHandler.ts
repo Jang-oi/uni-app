@@ -40,6 +40,4 @@ export function registerHypervHandlers() {
       return { success: false, error: error.message || '알 수 없는 오류' }
     }
   })
-
-  console.log('[HypervHandler] HyperV 핸들러 등록 완료')
 }

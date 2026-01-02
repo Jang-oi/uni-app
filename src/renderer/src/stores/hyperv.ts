@@ -24,6 +24,13 @@ export interface VMRequestState {
   expiresAt: number // 만료 시간 (60초 후)
 }
 
+export interface VMRequestDialogState {
+  isOpen: boolean
+  vmName: string
+  requesterName: string
+  timestamp: string
+}
+
 export interface VMResponseDialogState {
   type: 'approved' | 'rejected'
   vmName: string
@@ -37,12 +44,14 @@ export interface VMResponseDialogState {
 interface HypervStore {
   vms: HypervVM[]
   connectedUsers: ConnectedUser[]
+  vmRequestDialog: VMRequestDialogState | null // 추가
   vmResponseDialog: VMResponseDialogState | null
   activeRequest: VMRequestState | null // 현재 활성 요청 상태
   initListeners: () => void
   cleanupListeners: () => void
   setVMs: (vms: HypervVM[]) => void
   setConnectedUsers: (users: ConnectedUser[]) => void
+  setVMRequestDialog: (state: VMRequestDialogState | null) => void // 추가
   setVMResponseDialog: (state: VMResponseDialogState | null) => void
   setActiveRequest: (state: VMRequestState | null) => void
   requestVM: (vmName: string, currentUserHostname: string) => void
@@ -52,11 +61,13 @@ interface HypervStore {
 export const useHypervStore = create<HypervStore>((set) => ({
   vms: [],
   connectedUsers: [],
+  vmRequestDialog: null,
   vmResponseDialog: null,
   activeRequest: null,
 
   setVMs: (vms) => set({ vms }),
   setConnectedUsers: (users) => set({ connectedUsers: users }),
+  setVMRequestDialog: (state) => set({ vmRequestDialog: state }),
   setVMResponseDialog: (state) => set({ vmResponseDialog: state }),
   setActiveRequest: (state) => set({ activeRequest: state }),
 
@@ -66,9 +77,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
       console.error('[HyperV] 공유 소켓이 없습니다')
       return
     }
-
-    console.log('[HyperV] 이벤트 리스너 등록')
-
     // HyperV 상태 업데이트
     socket.on('hyperv:updated', (updatedVms: HypervVM[]) => {
       set({ vms: updatedVms })

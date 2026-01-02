@@ -8,15 +8,11 @@ export async function sendHyperVHeartbeat(activeVMs: string[], userName: string)
   try {
     const hostname = os.hostname()
 
-    const response = await api.post<ApiResponse>('/api/hyperv/heartbeat', {
+    await api.post<ApiResponse>('/api/hyperv/heartbeat', {
       userName,
       activeVMs,
       hostname // hostname 추가
     })
-
-    if (response.data.success) {
-      console.log(`[HyperV] Heartbeat 성공: ${activeVMs.length}개 VM (${userName}, ${hostname})`)
-    }
   } catch (error) {
     console.error('[HyperV] Heartbeat 전송 오류:', error)
   }

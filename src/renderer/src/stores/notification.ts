@@ -150,7 +150,6 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     socket.on('notification:new', (notification: Notification) => {
       console.log('[Notification] 새 알림 수신:', notification)
       get().addNotification(notification)
-
       // Windows 토스트 알림 표시
       window.api.showUniNotification({
         title:
@@ -158,7 +157,8 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
         body: notification.message,
         taskId: notification.taskId, // 알림 클릭 시 URL 열기용 taskId 전달
         vmName: notification.vmName, // VM 관련 알림의 경우 vmName 전달
-        notificationType: notification.type // 알림 타입 전달 (Actions 표시용)
+        notificationType: notification.type, // 알림 타입 전달 (Actions 표시용)
+        senderName: notification.senderName
       })
     })
 

@@ -58,14 +58,7 @@ export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
 
       state.activeVMs = new Set(fetchedVMs)
 
-      // 3초마다 무조건 전체 상태 전송 (서버가 판단)
       const vmList = Array.from(state.activeVMs)
-      if (vmList.length > 0) {
-        console.log(`[HyperV Monitor] 💓 Heartbeat: ${vmList.length}개 사용 중 →`, vmList)
-      } else {
-        console.log(`[HyperV Monitor] 💤 Heartbeat: 사용 중인 VM 없음`)
-      }
-
       onStatusChange(vmList, state.userName)
     })
   }
@@ -73,7 +66,6 @@ export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
   const start = (): void => {
     if (state.isRunning) return
     state.isRunning = true
-    console.log('[HyperV Monitor] 모니터링 시작 (3초마다 현재 상태 전송)')
     checkHyperVStatus()
     state.intervalId = setInterval(checkHyperVStatus, CHECK_INTERVAL_MS)
   }

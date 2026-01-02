@@ -21,11 +21,9 @@ const createApiClient = (): AxiosInstance => {
   // 요청 인터셉터 (로깅)
   instance.interceptors.request.use(
     (config) => {
-      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`)
       return config
     },
     (error) => {
-      console.error('[API Request Error]', error)
       return Promise.reject(error)
     }
   )
@@ -33,20 +31,9 @@ const createApiClient = (): AxiosInstance => {
   // 응답 인터셉터 (로깅 및 에러 핸들링)
   instance.interceptors.response.use(
     (response) => {
-      console.log(`[API Response] ${response.status} ${response.config.url}`)
       return response
     },
     (error) => {
-      if (error.response) {
-        // 서버가 응답했지만 에러 상태 코드
-        console.error(`[API Error] ${error.response.status} ${error.response.config.url}`, error.response.data)
-      } else if (error.request) {
-        // 요청은 보냈지만 응답이 없음
-        console.error('[API Error] No response received', error.request)
-      } else {
-        // 요청 설정 중 에러 발생
-        console.error('[API Error]', error.message)
-      }
       return Promise.reject(error)
     }
   )

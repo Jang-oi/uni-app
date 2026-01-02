@@ -1,35 +1,54 @@
 /**
  * VM 요청 수신 Dialog (수신자용)
- * Lock 시스템: 단일 요청자만 처리
+ * 전역 Store 기반으로 작동
  */
 import { Notification02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useHypervStore } from '@/stores/hyperv'
+import { useSocketStore } from '@/stores/socket'
 
-interface VMRequestReceiverDialogProps {
-  vmName: string
-  requesterName: string
-  timestamp: string
-  isOpen: boolean
-  onApprove: () => void
-  onReject: () => void
-  onClose: () => void
-}
+export function VMRequestReceiverDialog() {
+  const dialogState = useHypervStore((state) => state.vmRequestDialog)
+  const setDialogState = useHypervStore((state) => state.setVMRequestDialog)
+  const socket = useSocketStore((state) => state.getSocket())
 
-export function VMRequestReceiverDialog({
-  vmName,
-  requesterName,
-  timestamp,
-  isOpen,
-  onApprove,
-  onReject,
-  onClose
-}: VMRequestReceiverDialogProps) {
+  if (!dialogState) return null
+
+  const handleClose = () => {
+    setDialogState(null)
+  }
+
+  const handleApprove = async () => {
+    const approverHostname = await window.api.getHostname()
+    if (socket) {
+      socket.emit('vm:approve-request', {
+        vmName: dialogState.vmName,
+        approverHostname
+      })
+      toast.success(`${dialogState.requesterName}님에게 승인했습니다`)
+    }
+    handleClose()
+  }
+
+  const handleReject = async () => {
+    const rejectorHostname = await window.api.getHostname()
+    if (socket) {
+      socket.emit('vm:reject-request', {
+        vmName: dialogState.vmName,
+        rejectorHostname
+      })
+      toast.info('요청을 거부했습니다')
+    }
+    handleClose()
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={dialogState.isOpen}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -38,37 +57,36 @@ export function VMRequestReceiverDialog({
             </div>
             <div>
               <DialogTitle>VM 사용 요청</DialogTitle>
-              <DialogDescription>{vmName}</DialogDescription>
+              <DialogDescription>{dialogState.vmName}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* 요청자 정보 */}
           <div className="p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-700 mb-1">요청자</p>
-                <p className="text-lg font-semibold text-primary">{requesterName}</p>
+                <p className="text-lg font-semibold text-primary">{dialogState.requesterName}</p>
               </div>
-              <span className="text-xs text-slate-500">{formatDistanceToNow(new Date(timestamp), { addSuffix: true, locale: ko })}</span>
+              <span className="text-xs text-slate-500">
+                {formatDistanceToNow(new Date(dialogState.timestamp), { addSuffix: true, locale: ko })}
+              </span>
             </div>
           </div>
 
-          {/* 안내 메시지 */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
             <p className="text-xs text-amber-900">
-              <strong>{requesterName}님</strong>이 <strong>{vmName}</strong> 사용을 요청했습니다.
+              <strong>{dialogState.requesterName}님</strong>이 <strong>{dialogState.vmName}</strong> 사용을 요청했습니다.
             </p>
-            <p className="text-xs text-amber-700 mt-1">승인 시 해당 VM에 즉시 연결됩니다.</p>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onReject}>
+          <Button variant="outline" onClick={handleReject}>
             거부
           </Button>
-          <Button onClick={onApprove}>승인</Button>
+          <Button onClick={handleApprove}>승인</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

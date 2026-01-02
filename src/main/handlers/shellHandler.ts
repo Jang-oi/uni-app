@@ -14,6 +14,4 @@ export function registerShellHandlers() {
       return { success: false, error }
     }
   })
-
-  console.log('[ShellHandler] Shell 핸들러 등록 완료')
 }

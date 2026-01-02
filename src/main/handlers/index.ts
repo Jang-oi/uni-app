@@ -22,6 +22,4 @@ export function registerAllHandlers() {
   registerSystemHandlers()
   registerBadgeHandlers()
   registerHypervHandlers()
-
-  console.log('[Handlers] 모든 IPC 핸들러 등록 완료')
 }

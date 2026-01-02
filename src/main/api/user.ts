@@ -19,7 +19,6 @@ export async function getUserInfoFromServer(): Promise<UserInfo> {
     })
 
     if (response.data.success && response.data.data) {
-      console.log(`[User] 사용자 정보 조회 성공:`, response.data.data)
       return response.data.data
     }
 

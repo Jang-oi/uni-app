@@ -72,8 +72,6 @@ export function registerVersionHandlers() {
       isLatest = currentVersion === latestVersion
     }
 
-    console.log(releases)
-
     const versionInfo: VersionInfo = {
       currentVersion,
       latestVersion,

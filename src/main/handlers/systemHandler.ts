@@ -9,6 +9,4 @@ export function registerSystemHandlers() {
   ipcMain.handle('system:get-hostname', () => {
     return os.hostname()
   })
-
-  console.log('[SystemHandler] 시스템 정보 핸들러 등록 완료')
 }

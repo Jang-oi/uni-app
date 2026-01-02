@@ -15,6 +15,4 @@ export function registerUserHandlers() {
       return { success: false, error }
     }
   })
-
-  console.log('[UserHandler] 사용자 정보 핸들러 등록 완료')
 }

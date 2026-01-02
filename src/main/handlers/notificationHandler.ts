@@ -14,6 +14,7 @@ export function registerNotificationHandlers() {
         body: string
         taskId?: string
         vmName?: string
+        senderName?: string
         notificationType?: 'task-check' | 'task-support' | 'vm-request' | 'vm-approved' | 'vm-rejected'
       }
     ) => {
@@ -52,7 +53,8 @@ export function registerNotificationHandlers() {
           // VM 요청 알림 클릭 시 Renderer에 이벤트 전송 (알림 페이지 이동 + 다이얼로그 오픈)
           if (args.notificationType === 'vm-request' && args.vmName) {
             mainWindow.webContents.send('notification:vm-request-clicked', {
-              vmName: args.vmName
+              vmName: args.vmName,
+              senderName: args.senderName
             })
             console.log('[Notification] VM 요청 알림 클릭:', args.vmName)
           }
@@ -76,6 +78,4 @@ export function registerNotificationHandlers() {
       }
     }
   )
-
-  console.log('[NotificationHandler] 알림 핸들러 등록 완료')
 }

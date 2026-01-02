@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Message02Icon, Notification02Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
@@ -8,20 +8,18 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { VMRequestReceiverDialog } from '@/components/vm-request-receiver-dialog'
 import { cn } from '@/lib/utils'
 import type { Notification } from '@/stores/notification'
 import { useNotificationStore } from '@/stores/notification'
-import { useSocketStore } from '@/stores/socket'
 import { openUniPost } from '@/util/util'
+import { useHypervStore } from '../stores/hyperv'
 
 export function NotificationsPage() {
   const notifications = useNotificationStore((state) => state.notifications)
   const markAsRead = useNotificationStore((state) => state.markAsRead)
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead)
-
+  const setVMRequestDialog = useHypervStore((state) => state.setVMRequestDialog)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
-  const [vmRequestDialog, setVmRequestDialog] = useState<Notification | null>(null)
 
   const filteredNotifications = useMemo(() => {
     if (filter === 'unread') {
@@ -50,21 +48,6 @@ export function NotificationsPage() {
     return true
   }
 
-  // Windows 알림 클릭 시 VM 요청 다이얼로그 자동 오픈
-  useEffect(() => {
-    const unsubscribe = window.api.onVMRequestClicked((data) => {
-      console.log('[NotificationsPage] VM 요청 알림 클릭:', data)
-      // 해당 vmName의 알림을 찾아서 다이얼로그 오픈
-      const targetNotification = notifications.find((n) => n.type === 'vm-request' && n.vmName === data.vmName && !n.isRead)
-      if (targetNotification && isVMRequestClickable(targetNotification)) {
-        setVmRequestDialog(targetNotification)
-        markAsRead(targetNotification.id)
-      }
-    })
-
-    return () => unsubscribe()
-  }, [notifications, markAsRead])
-
   const handleNotificationClick = (notification: Notification) => {
     // 클릭 불가능한 상태면 return
     if (!isVMRequestClickable(notification)) {
@@ -86,7 +69,12 @@ export function NotificationsPage() {
 
     // VM 요청 알림이면 VMRequestReceiverDialog 오픈
     if (notification.type === 'vm-request' && notification.vmName) {
-      setVmRequestDialog(notification)
+      setVMRequestDialog({
+        isOpen: true,
+        vmName: notification.vmName,
+        requesterName: notification.senderName,
+        timestamp: notification.timestamp
+      })
       return
     }
 
@@ -94,40 +82,6 @@ export function NotificationsPage() {
     if (notification.taskId) {
       openUniPost(notification.taskId)
     }
-  }
-
-  const handleApproveVM = async () => {
-    if (!vmRequestDialog || !vmRequestDialog.vmName) return
-
-    const approverHostname = await window.api.getHostname()
-    const socket = useSocketStore.getState().getSocket()
-
-    if (socket) {
-      socket.emit('vm:approve-request', {
-        vmName: vmRequestDialog.vmName,
-        approverHostname
-      })
-      toast.success(`${vmRequestDialog.senderName}님에게 승인했습니다`)
-    }
-
-    setVmRequestDialog(null)
-  }
-
-  const handleRejectVM = async () => {
-    if (!vmRequestDialog || !vmRequestDialog.vmName) return
-
-    const rejectorHostname = await window.api.getHostname()
-    const socket = useSocketStore.getState().getSocket()
-
-    if (socket) {
-      socket.emit('vm:reject-request', {
-        vmName: vmRequestDialog.vmName,
-        rejectorHostname
-      })
-      toast.info('요청을 거부했습니다')
-    }
-
-    setVmRequestDialog(null)
   }
 
   const getTypeIcon = (type: string) => {
@@ -234,18 +188,6 @@ export function NotificationsPage() {
           </div>
         </ScrollArea>
       </Card>
-
-      {vmRequestDialog && vmRequestDialog.vmName && (
-        <VMRequestReceiverDialog
-          vmName={vmRequestDialog.vmName}
-          requesterName={vmRequestDialog.senderName}
-          timestamp={vmRequestDialog.timestamp}
-          isOpen={true}
-          onApprove={handleApproveVM}
-          onReject={handleRejectVM}
-          onClose={() => setVmRequestDialog(null)}
-        />
-      )}
     </div>
   )
 }

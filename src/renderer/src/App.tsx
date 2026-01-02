@@ -14,6 +14,7 @@ import { useNotificationStore } from '@/stores/notification'
 import { useSocketStore } from '@/stores/socket'
 import { useTaskStore } from '@/stores/task'
 import { useVersionStore } from '@/stores/version'
+import { VMRequestReceiverDialog } from './components/vm-request-receiver-dialog'
 import { TasksPage } from './pages/tasks-page'
 import { VersionPage } from './pages/version-page'
 
@@ -28,6 +29,7 @@ export default function App() {
   const initHypervListeners = useHypervStore((state) => state.initListeners)
   const initNotificationListeners = useNotificationStore((state) => state.initListeners)
   const initVersion = useVersionStore((state) => state.initVersion)
+  const setVMRequestDialog = useHypervStore((state) => state.setVMRequestDialog) // 추가
   const setVMResponseDialog = useHypervStore((state) => state.setVMResponseDialog)
 
   // 앱 시작 시 공유 Socket 연결 및 각 스토어 리스너 등록
@@ -64,10 +66,12 @@ export default function App() {
     // VM 요청 알림 클릭 시 (알림 페이지 이동 + 해당 알림 다이얼로그 오픈)
     const unsubscribeVMRequestClick = window.api.onVMRequestClicked((data) => {
       console.log('[App] VM 요청 알림 클릭:', data)
-      // 알림 페이지로 이동
-      setActiveTab('알림')
-      // 알림 페이지에서 해당 vmName의 알림을 찾아서 다이얼로그 오픈
-      // (notifications-page.tsx에서 처리됨)
+      setVMRequestDialog({
+        isOpen: true,
+        vmName: data.vmName,
+        requesterName: data.senderName,
+        timestamp: new Date().toISOString()
+      })
     })
 
     // VM 결과 알림 클릭 시 (Dialog 열기)
@@ -120,6 +124,7 @@ export default function App() {
       </main>
       <Toaster position="top-right" richColors theme={'light'} />
       <VMResponseDialog />
+      <VMRequestReceiverDialog />
     </div>
   )
 }

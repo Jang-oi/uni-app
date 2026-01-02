@@ -81,14 +81,12 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // 모든 IPC 핸들러 등록
   registerAllHandlers()
 
   createTray()
   createWindow()
   initAutoUpdater(mainWindow)
   hypervMonitor.start()
-  console.log('[App] HyperV 모니터링 백그라운드 서비스 시작')
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
