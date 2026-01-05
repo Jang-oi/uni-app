@@ -36,6 +36,7 @@ interface NotificationStore {
   setNotifications: (notifications: Notification[]) => void
   addNotification: (notification: Notification) => void
   updateNotification: (notification: Notification) => void
+  removeNotification: (notificationId: string) => void
   markAsRead: (notificationId: string) => void
   markAllAsRead: () => void
   initListeners: () => void
@@ -93,7 +94,16 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
         console.log('[Notification] 중복 알림 감지, 업데이트로 처리:', notification.id)
         newNotifications = state.notifications.map((n) => (n.id === notification.id ? notification : n))
       } else {
-        newNotifications = [notification, ...state.notifications]
+        // VM 요청 알림의 경우, 같은 VM에 대한 이전 요청 알림 삭제
+        if (notification.type === 'vm-request' && notification.vmName) {
+          console.log('[Notification] VM 요청 알림 추가, 같은 VM의 이전 알림 제거:', notification.vmName)
+          newNotifications = [
+            notification,
+            ...state.notifications.filter((n) => !(n.type === 'vm-request' && n.vmName === notification.vmName && n.id !== notification.id))
+          ]
+        } else {
+          newNotifications = [notification, ...state.notifications]
+        }
       }
 
       const unreadCount = newNotifications.filter((n) => !n.isRead).length
@@ -107,6 +117,17 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   updateNotification: (notification) => {
     set((state) => {
       const notifications = state.notifications.map((n) => (n.id === notification.id ? notification : n))
+      const unreadCount = notifications.filter((n) => !n.isRead).length
+      // 배지 카운트 업데이트
+      const badgeData = createClearRedBadge(unreadCount)
+      window.api.setBadgeCount(unreadCount, badgeData).catch((err) => console.error('[Badge] 업데이트 실패:', err))
+      return { notifications, unreadCount }
+    })
+  },
+
+  removeNotification: (notificationId) => {
+    set((state) => {
+      const notifications = state.notifications.filter((n) => n.id !== notificationId)
       const unreadCount = notifications.filter((n) => !n.isRead).length
       // 배지 카운트 업데이트
       const badgeData = createClearRedBadge(unreadCount)
@@ -157,9 +178,22 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     })
 
     // 새 알림 수신
-    socket.on('notification:new', (notification: Notification) => {
+    socket.on('notification:new', async (notification: Notification) => {
       console.log('[Notification] 새 알림 수신:', notification)
       get().addNotification(notification)
+
+      // VM 요청 알림인 경우 즉시 다이얼로그 표시
+      if (notification.type === 'vm-request' && notification.vmName) {
+        const { useHypervStore } = await import('./hyperv')
+        useHypervStore.getState().setVMRequestDialog({
+          isOpen: true,
+          vmName: notification.vmName,
+          requesterName: notification.senderName,
+          timestamp: notification.timestamp
+        })
+        console.log('[Notification] VM 요청 다이얼로그 자동 표시:', notification.vmName)
+      }
+
       // Windows 토스트 알림 표시
       window.api.showUniNotification({
         title:
@@ -186,17 +220,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       })
     })
 
-    // 알림 삭제 수신 (VM 요청 취소 시)
+    // 알림 삭제 수신 (VM 요청 취소/만료/처리 완료 시)
     socket.on('notification:removed', (notificationId: string) => {
       console.log('[Notification] 알림 삭제 수신:', notificationId)
-      set((state) => {
-        const notifications = state.notifications.filter((n) => n.id !== notificationId)
-        const unreadCount = notifications.filter((n) => !n.isRead).length
-        // 배지 카운트 업데이트
-        const badgeData = createClearRedBadge(unreadCount)
-        window.api.setBadgeCount(unreadCount, badgeData).catch((err) => console.error('[Badge] 업데이트 실패:', err))
-        return { notifications, unreadCount }
-      })
+      get().removeNotification(notificationId)
     })
   },
 
