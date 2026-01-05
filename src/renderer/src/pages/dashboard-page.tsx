@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { VMRequestProgress } from '@/components/vm-request-progress'
 import { cn } from '@/lib/utils'
 import { useCalendarStore } from '@/stores/calendar'
 import { useHypervStore } from '@/stores/hyperv'
@@ -16,6 +17,8 @@ export function DashboardPage() {
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const vms = useHypervStore((state) => state.vms)
+  const activeRequest = useHypervStore((state) => state.activeRequest)
+  const cancelVMRequest = useHypervStore((state) => state.cancelVMRequest)
 
   const [myHostname, setMyHostname] = useState<string>('')
 
@@ -51,7 +54,7 @@ export function DashboardPage() {
   // 본인이 사용 중인 VM 제외
   const filteredVMs = useMemo(() => {
     if (!myHostname) return vms
-    return vms.filter((vm) => vm.currentHostname !== myHostname && vm.isConnected)
+    return vms.filter((vm) => vm.isConnected)
   }, [vms, myHostname])
 
   const requestVM = useHypervStore((state) => state.requestVM)
@@ -62,6 +65,11 @@ export function DashboardPage() {
         title="대시보드"
         description="실시간 팀 현황 및 주요 지표를 요약하여 보여줍니다."
         icon={<HugeiconsIcon icon={Task01Icon} size={20} />}
+        action={
+          activeRequest ? (
+            <VMRequestProgress vmName={activeRequest.vmName} expiresAt={activeRequest.expiresAt} onCancel={() => cancelVMRequest(activeRequest.vmName)} />
+          ) : undefined
+        }
       />
 
       <div className="flex-1 grid grid-cols-3 gap-5 min-h-0">

@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { VMRequestProgress } from '@/components/vm-request-progress'
 import { PageHeader } from '../components/page-header'
 import { ScrollArea } from '../components/ui/scroll-area'
 import { useHypervStore, type HypervVM } from '../stores/hyperv'
@@ -28,38 +29,11 @@ export function VirtualMachinesPage() {
   const [myHostname, setMyHostname] = useState<string | null>(null)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [connectingVM, setConnectingVM] = useState<string | null>(null)
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(0)
 
   // 내 hostname 가져오기
   useEffect(() => {
     window.api.getHostname().then(setMyHostname)
   }, [])
-
-  // 30초 카운트다운 타이머
-  useEffect(() => {
-    if (!activeRequest) {
-      setRemainingSeconds(0)
-      return
-    }
-
-    const updateTimer = () => {
-      const now = Date.now()
-      const remaining = Math.max(0, Math.ceil((activeRequest.expiresAt - now) / 1000))
-      setRemainingSeconds(remaining)
-
-      if (remaining <= 0) {
-        setRemainingSeconds(0)
-      }
-    }
-
-    // 즉시 실행
-    updateTimer()
-
-    // 1초마다 업데이트
-    const interval = setInterval(updateTimer, 1000)
-
-    return () => clearInterval(interval)
-  }, [activeRequest])
 
   const columns: ColumnDef<HypervVM>[] = [
     {
@@ -166,45 +140,16 @@ export function VirtualMachinesPage() {
         title="HYPER-V"
         description="팀에서 공용으로 사용하는 Hyper-V 인스턴스의 실시간 점유 상태입니다."
         icon={<HugeiconsIcon icon={VirtualRealityVr01Icon} size={20} />}
+        action={
+          activeRequest ? (
+            <VMRequestProgress
+              vmName={activeRequest.vmName}
+              expiresAt={activeRequest.expiresAt}
+              onCancel={() => cancelVMRequest(activeRequest.vmName)}
+            />
+          ) : undefined
+        }
       />
-
-      {/* VM 요청 카운트다운 UI */}
-      {activeRequest && remainingSeconds > 0 && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-blue-900">{activeRequest.vmName} 사용 요청 중...</span>
-              <span className="text-xs text-blue-700">응답 대기 중 (요청자에게 알림이 전송되었습니다)</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="relative w-12 h-12">
-                <svg className="w-12 h-12 transform -rotate-90">
-                  <circle cx="24" cy="24" r="20" stroke="#DBEAFE" strokeWidth="4" fill="none" />
-                  <circle
-                    cx="24"
-                    cy="24"
-                    r="20"
-                    stroke="#3B82F6"
-                    strokeWidth="4"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 20}`}
-                    strokeDashoffset={`${2 * Math.PI * 20 * (1 - remainingSeconds / 60)}`}
-                    className="transition-all duration-1000"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-bold text-blue-600">{remainingSeconds}s</span>
-                </div>
-              </div>
-            </div>
-            <Button size="sm" variant="outline" onClick={() => cancelVMRequest(activeRequest.vmName)}>
-              요청 취소
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* 검색 입력 */}
       <div className="mb-4 flex items-center gap-2">
