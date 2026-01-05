@@ -55,7 +55,7 @@ export function NotificationsPage() {
         if (notification.isCancelled) {
           toast.info('취소된 요청입니다')
         } else if (isVMRequestExpired(notification)) {
-          toast.info('만료된 요청입니다 (60초 초과)')
+          toast.info('만료된 요청입니다 (30초 초과)')
         } else if (notification.isProcessed) {
           toast.info('이미 처리된 요청입니다')
         }
@@ -173,7 +173,7 @@ export function NotificationsPage() {
                       {notification.vmName && (
                         <div className="space-y-1">
                           <p className="text-xs text-slate-500 truncate">VM: {notification.vmName}</p>
-                          {expired && <p className="text-xs text-amber-600 font-medium">⏱️ 만료됨 (60초 초과)</p>}
+                          {expired && <p className="text-xs text-amber-600 font-medium">⏱️ 만료됨 (30초 초과)</p>}
                           {cancelled && <p className="text-xs text-slate-400 font-medium">❌ 취소됨</p>}
                           {processed && <p className="text-xs text-green-600 font-medium">✅ 처리 완료</p>}
                         </div>

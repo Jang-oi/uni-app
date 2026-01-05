@@ -73,23 +73,6 @@ export function registerNotificationHandlers() {
               console.error('[Notification] URL 열기 실패:', error)
             }
           }
-
-          // VM 요청 알림 클릭 시 Renderer에 이벤트 전송 (알림 페이지 이동 + 다이얼로그 오픈)
-          if (args.notificationType === 'vm-request' && args.vmName) {
-            mainWindow.webContents.send('notification:vm-request-clicked', {
-              vmName: args.vmName,
-              senderName: args.senderName
-            })
-            console.log('[Notification] VM 요청 알림 클릭:', args.vmName)
-          }
-
-          // VM 결과 알림 클릭 시 Renderer에 이벤트 전송
-          if (args.notificationType === 'vm-approved' || args.notificationType === 'vm-rejected') {
-            mainWindow.webContents.send('notification:vm-result-clicked', {
-              type: args.notificationType,
-              vmName: args.vmName
-            })
-          }
         })
 
         notification.show()

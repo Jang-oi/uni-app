@@ -35,7 +35,7 @@ export function VirtualMachinesPage() {
     window.api.getHostname().then(setMyHostname)
   }, [])
 
-  // 60초 카운트다운 타이머
+  // 30초 카운트다운 타이머
   useEffect(() => {
     if (!activeRequest) {
       setRemainingSeconds(0)

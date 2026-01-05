@@ -3,6 +3,7 @@
  */
 
 import { create } from 'zustand'
+import { useHypervStore } from './hyperv'
 import { useSocketStore } from './socket'
 
 type NotificationType = 'task-check' | 'task-support' | 'vm-request'
@@ -22,7 +23,7 @@ export interface Notification {
   taskTitle?: string
   // VM 관련 (vm-request 타입일 때 사용)
   vmName?: string
-  expiresAt?: string // VM 요청 만료 시간 (60초 후)
+  expiresAt?: string // VM 요청 만료 시간 (30초 후)
   isCancelled?: boolean // 요청자가 취소한 요청 여부
   isProcessed?: boolean // 이미 승인/거절 처리된 요청 여부
 }
@@ -212,6 +213,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     socket.on('notification:removed', (notificationId: string) => {
       console.log('[Notification] 알림 삭제 수신:', notificationId)
       get().removeNotification(notificationId)
+      useHypervStore.setState({ vmRequestDialog: null })
     })
   },
 

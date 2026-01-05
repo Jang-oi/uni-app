@@ -32,16 +32,6 @@ const api = {
   // HyperV VM 연결
   connectToVM: (args: { hostServer: string; vmName: string }) => ipcRenderer.invoke('hyperv:connect-vm', args),
 
-  // 알림 이벤트 리스너 (Main → Renderer)
-  onVMRequestClicked: (callback: (data: { vmName: string }) => void) => {
-    ipcRenderer.on('notification:vm-request-clicked', (_event, data) => callback(data))
-    return () => ipcRenderer.removeAllListeners('notification:vm-request-clicked')
-  },
-  onVMResultClicked: (callback: (data: { type: 'vm-approved' | 'vm-rejected'; vmName: string }) => void) => {
-    ipcRenderer.on('notification:vm-result-clicked', (_event, data) => callback(data))
-    return () => ipcRenderer.removeAllListeners('notification:vm-result-clicked')
-  },
-
   // 업데이트 이벤트 리스너
   onChecking: (callback: () => void) => {
     ipcRenderer.on('updater:checking', callback)

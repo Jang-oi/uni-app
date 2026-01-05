@@ -35,9 +35,6 @@ interface ElectronAPI {
   ) => () => void
   onUpdateDownloaded: (callback: (info: { version: string }) => void) => () => void
   onError: (callback: (error: { message: string }) => void) => () => void
-  // VM 알림 이벤트 리스너
-  onVMRequestClicked: (callback: (data: { vmName: string; senderName: string }) => void) => () => void
-  onVMResultClicked: (callback: (data: { type: 'vm-approved' | 'vm-rejected'; vmName: string }) => void) => () => void
 }
 
 interface Window {

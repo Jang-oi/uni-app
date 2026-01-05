@@ -22,7 +22,7 @@ export interface VMRequestState {
   vmName: string
   requestId: string
   startTime: number // 요청 시작 시간 (밀리초)
-  expiresAt: number // 만료 시간 (60초 후)
+  expiresAt: number // 만료 시간 (30초 후)
 }
 
 export interface VMRequestDialogState {
@@ -90,15 +90,15 @@ export const useHypervStore = create<HypervStore>((set) => ({
           vmName: data.vmName,
           requestId: data.requestId,
           startTime: now,
-          expiresAt: now + 60000 // 60초 후
+          expiresAt: now + 30000 // 30초 후
         }
       })
-      toast.info(`${data.vmName} 사용 요청을 전송했습니다. (60초간 유효)`)
+      toast.info(`${data.vmName} 사용 요청을 전송했습니다. (30초간 유효)`)
     })
 
     // VM 요청 Lock 상태 (다른 사람이 먼저 요청 중)
     socket.on('vm:request-locked', (data: { vmName: string; firstRequesterName: string }) => {
-      toast.error(`이미 ${data.firstRequesterName}님이 요청 중입니다. (60초 동안 Lock)`)
+      toast.error(`이미 ${data.firstRequesterName}님이 요청 중입니다. (30초 동안 Lock)`)
     })
 
     // VM 요청 수신 (수신자용)
@@ -111,14 +111,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
           requesterName: data.requesterName,
           timestamp: data.timestamp
         }
-      })
-
-      // Windows 네이티브 알림 표시
-      window.api.showUniNotification({
-        title: 'VM 사용 요청',
-        body: `${data.requesterName}님이 ${data.vmName} 사용을 요청했습니다!`,
-        vmName: data.vmName,
-        notificationType: 'vm-request'
       })
     })
 
@@ -169,8 +161,8 @@ export const useHypervStore = create<HypervStore>((set) => ({
     // VM 요청 타임아웃
     socket.on('vm:timeout', (data: { vmName: string; notificationId?: string }) => {
       console.log('[VM Timeout]:', data)
-      set({ activeRequest: null, vmResponseDialog: null })
-      toast.warning(`${data.vmName} 요청이 60초간 응답이 없어 만료되었습니다.`)
+      set({ activeRequest: null, vmResponseDialog: null, vmRequestDialog: null })
+      toast.warning(`${data.vmName} 요청이 30초간 응답이 없어 만료되었습니다.`)
 
       if (data.notificationId) {
         console.log('[VM Timeout] 알림 삭제 대상:', data.notificationId)

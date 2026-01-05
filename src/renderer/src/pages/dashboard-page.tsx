@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight01Icon, Task01Icon, UserIcon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -154,7 +153,6 @@ export function DashboardPage() {
                             onClick={() => {
                               if (!vm.currentHostname) return
                               requestVM(vm.vmName, vm.currentHostname)
-                              toast.success(`${vm.currentUser}님에게 사용 요청을 전송했습니다.`)
                             }}
                           >
                             사용 요청
