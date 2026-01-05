@@ -182,18 +182,6 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       console.log('[Notification] 새 알림 수신:', notification)
       get().addNotification(notification)
 
-      // VM 요청 알림인 경우 즉시 다이얼로그 표시
-      if (notification.type === 'vm-request' && notification.vmName) {
-        const { useHypervStore } = await import('./hyperv')
-        useHypervStore.getState().setVMRequestDialog({
-          isOpen: true,
-          vmName: notification.vmName,
-          requesterName: notification.senderName,
-          timestamp: notification.timestamp
-        })
-        console.log('[Notification] VM 요청 다이얼로그 자동 표시:', notification.vmName)
-      }
-
       // Windows 토스트 알림 표시
       window.api.showUniNotification({
         title:

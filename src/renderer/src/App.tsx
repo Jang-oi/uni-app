@@ -29,8 +29,6 @@ export default function App() {
   const initHypervListeners = useHypervStore((state) => state.initListeners)
   const initNotificationListeners = useNotificationStore((state) => state.initListeners)
   const initVersion = useVersionStore((state) => state.initVersion)
-  const setVMRequestDialog = useHypervStore((state) => state.setVMRequestDialog) // 추가
-  const setVMResponseDialog = useHypervStore((state) => state.setVMResponseDialog)
 
   // 앱 시작 시 공유 Socket 연결 및 각 스토어 리스너 등록
   useEffect(() => {
@@ -60,54 +58,6 @@ export default function App() {
 
     initializeApp()
   }, [initSocket, initCalendarListeners, initTaskListeners, initHypervListeners, initNotificationListeners, initVersion])
-
-  // Native Notification 클릭 이벤트 처리
-  useEffect(() => {
-    // VM 요청 알림 클릭 시 (알림 페이지 이동 + 해당 알림 다이얼로그 오픈)
-    const unsubscribeVMRequestClick = window.api.onVMRequestClicked((data) => {
-      console.log('[App] VM 요청 알림 클릭:', data)
-      setVMRequestDialog({
-        isOpen: true,
-        vmName: data.vmName,
-        requesterName: data.senderName,
-        timestamp: new Date().toISOString()
-      })
-    })
-
-    // VM 결과 알림 클릭 시 (Dialog 열기)
-    const unsubscribeResultClick = window.api.onVMResultClicked((data) => {
-      console.log('[App] VM 결과 알림 클릭:', data)
-      // Dialog가 이미 열려 있지 않으면 열기
-      const currentDialog = useHypervStore.getState().vmResponseDialog
-      if (!currentDialog || !currentDialog.isOpen) {
-        if (data.type === 'vm-approved') {
-          // 승인된 경우: VMs 목록에서 해당 VM의 정보를 찾아서 전달
-          const vms = useHypervStore.getState().vms
-          const vm = vms.find((v) => v.vmName === data.vmName)
-
-          setVMResponseDialog({
-            type: 'approved',
-            vmName: data.vmName,
-            isOpen: true,
-            hostServer: vm?.hostServer,
-            approverName: vm?.currentUser || undefined
-          })
-        } else {
-          // 거부된 경우: 간단하게 표시
-          setVMResponseDialog({
-            type: 'rejected',
-            vmName: data.vmName,
-            isOpen: true
-          })
-        }
-      }
-    })
-
-    return () => {
-      unsubscribeVMRequestClick()
-      unsubscribeResultClick()
-    }
-  }, [])
 
   // 렌더링 로직 분기
   if (serverError) return <ServerErrorPage />

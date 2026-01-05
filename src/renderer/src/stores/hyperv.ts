@@ -96,7 +96,12 @@ export const useHypervStore = create<HypervStore>((set) => ({
       toast.info(`${data.vmName} 사용 요청을 전송했습니다. (60초간 유효)`)
     })
 
-    // VM 요청 수신 (수신자용) - 새로 추가
+    // VM 요청 Lock 상태 (다른 사람이 먼저 요청 중)
+    socket.on('vm:request-locked', (data: { vmName: string; firstRequesterName: string }) => {
+      toast.error(`이미 ${data.firstRequesterName}님이 요청 중입니다. (60초 동안 Lock)`)
+    })
+
+    // VM 요청 수신 (수신자용)
     socket.on('vm:request-received', (data: { vmName: string; requesterName: string; timestamp: string }) => {
       console.log('[VM Request Received]:', data)
       set({
@@ -165,9 +170,8 @@ export const useHypervStore = create<HypervStore>((set) => ({
     socket.on('vm:timeout', (data: { vmName: string; notificationId?: string }) => {
       console.log('[VM Timeout]:', data)
       set({ activeRequest: null, vmResponseDialog: null })
+      toast.warning(`${data.vmName} 요청이 60초간 응답이 없어 만료되었습니다.`)
 
-      // 서버에서 notificationId를 보내지 않은 경우를 대비해 로컬에서 알림 필터링
-      // 실제로는 서버에서 notification:removed 이벤트를 보내야 함
       if (data.notificationId) {
         console.log('[VM Timeout] 알림 삭제 대상:', data.notificationId)
       }
@@ -187,6 +191,7 @@ export const useHypervStore = create<HypervStore>((set) => ({
     console.log('[HyperV] 이벤트 리스너 제거')
     socket.off('hyperv:updated')
     socket.off('vm:request-sent')
+    socket.off('vm:request-locked')
     socket.off('vm:request-received')
     socket.off('vm:approved')
     socket.off('vm:rejected')

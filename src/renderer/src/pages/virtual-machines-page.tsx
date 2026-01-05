@@ -18,11 +18,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PageHeader } from '../components/page-header'
 import { ScrollArea } from '../components/ui/scroll-area'
 import { useHypervStore, type HypervVM } from '../stores/hyperv'
-import { useSocketStore } from '../stores/socket'
 
 export function VirtualMachinesPage() {
   const vms = useHypervStore((state) => state.vms)
-  const socket = useSocketStore((state) => state.socket)
   const activeRequest = useHypervStore((state) => state.activeRequest)
   const cancelVMRequest = useHypervStore((state) => state.cancelVMRequest)
 
@@ -62,29 +60,6 @@ export function VirtualMachinesPage() {
 
     return () => clearInterval(interval)
   }, [activeRequest])
-
-  // Socket 이벤트 리스너 등록
-  useEffect(() => {
-    if (!socket) return
-
-    // Lock 상태 처리 (다른 사람이 먼저 요청 중)
-    const handleLocked = (data: { vmName: string; firstRequesterName: string }) => {
-      toast.error(`이미 ${data.firstRequesterName}님이 요청 중입니다. (60초 동안 Lock)`)
-    }
-
-    // 타임아웃 처리
-    const handleTimeout = (data: { vmName: string }) => {
-      toast.warning(`${data.vmName} 요청이 60초간 응답이 없어 만료되었습니다.`)
-    }
-
-    socket.on('vm:request-locked', handleLocked)
-    socket.on('vm:timeout', handleTimeout)
-
-    return () => {
-      socket.off('vm:request-locked', handleLocked)
-      socket.off('vm:timeout', handleTimeout)
-    }
-  }, [socket])
 
   const columns: ColumnDef<HypervVM>[] = [
     {
