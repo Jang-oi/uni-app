@@ -54,7 +54,7 @@ export function DashboardPage() {
   // 본인이 사용 중인 VM 제외
   const filteredVMs = useMemo(() => {
     if (!myHostname) return vms
-    return vms.filter((vm) => vm.isConnected)
+    return vms.filter((vm) => vm.currentHostname !== myHostname && vm.isConnected)
   }, [vms, myHostname])
 
   const requestVM = useHypervStore((state) => state.requestVM)
@@ -67,7 +67,11 @@ export function DashboardPage() {
         icon={<HugeiconsIcon icon={Task01Icon} size={20} />}
         action={
           activeRequest ? (
-            <VMRequestProgress vmName={activeRequest.vmName} expiresAt={activeRequest.expiresAt} onCancel={() => cancelVMRequest(activeRequest.vmName)} />
+            <VMRequestProgress
+              vmName={activeRequest.vmName}
+              expiresAt={activeRequest.expiresAt}
+              onCancel={() => cancelVMRequest(activeRequest.vmName)}
+            />
           ) : undefined
         }
       />
