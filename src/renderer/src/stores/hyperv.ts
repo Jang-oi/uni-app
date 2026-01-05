@@ -81,7 +81,7 @@ export const useHypervStore = create<HypervStore>((set) => ({
       set({ vms: updatedVms })
     })
 
-    // VM 요청 성공 (Lock 시작)
+    // VM 요청 성공 (Lock 시작) - 요청자용
     socket.on('vm:request-sent', (data: { vmName: string; requestId: string }) => {
       console.log('[VM Request Sent]:', data)
       const now = Date.now()
@@ -94,6 +94,27 @@ export const useHypervStore = create<HypervStore>((set) => ({
         }
       })
       toast.info(`${data.vmName} 사용 요청을 전송했습니다. (60초간 유효)`)
+    })
+
+    // VM 요청 수신 (수신자용) - 새로 추가
+    socket.on('vm:request-received', (data: { vmName: string; requesterName: string; timestamp: string }) => {
+      console.log('[VM Request Received]:', data)
+      set({
+        vmRequestDialog: {
+          isOpen: true,
+          vmName: data.vmName,
+          requesterName: data.requesterName,
+          timestamp: data.timestamp
+        }
+      })
+
+      // Windows 네이티브 알림 표시
+      window.api.showUniNotification({
+        title: 'VM 사용 요청',
+        body: `${data.requesterName}님이 ${data.vmName} 사용을 요청했습니다!`,
+        vmName: data.vmName,
+        notificationType: 'vm-request'
+      })
     })
 
     // VM 승인 수신
@@ -166,6 +187,7 @@ export const useHypervStore = create<HypervStore>((set) => ({
     console.log('[HyperV] 이벤트 리스너 제거')
     socket.off('hyperv:updated')
     socket.off('vm:request-sent')
+    socket.off('vm:request-received')
     socket.off('vm:approved')
     socket.off('vm:rejected')
     socket.off('vm:timeout')
