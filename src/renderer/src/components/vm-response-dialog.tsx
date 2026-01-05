@@ -32,6 +32,7 @@ export function VMResponseDialog() {
       })
 
       if (result.success) {
+        await new Promise((resolve) => setTimeout(resolve, 800))
         toast.success(`${dialogState.vmName} 연결 완료!`)
         handleClose()
       } else {
