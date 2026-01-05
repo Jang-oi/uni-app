@@ -91,9 +91,6 @@ export function VMResponseDialog() {
 
   // 거부됨 상태
   if (dialogState.type === 'rejected') {
-    const isManualReject = dialogState.rejectionReason === 'manual'
-    const message = isManualReject ? '사용자가 요청을 거부했습니다.' : `${dialogState.approvedUserName}님이 먼저 승인받아 사용 중입니다.`
-
     return (
       <Dialog open={dialogState.isOpen}>
         <DialogContent className="sm:max-w-[400px]">
@@ -111,8 +108,8 @@ export function VMResponseDialog() {
 
           <div className="py-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-              <p className="text-sm font-medium text-red-900 mb-1">{message}</p>
-              {!isManualReject && <p className="text-xs text-red-700">다시 요청하시려면 대기 후 시도해주세요.</p>}
+              <p className="text-sm font-medium text-red-900 mb-1">사용자가 요청을 거부했습니다.</p>
+              <p className="text-xs text-red-700">나중에 다시 시도해주세요.</p>
             </div>
           </div>
 

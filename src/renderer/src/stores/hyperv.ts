@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { create } from 'zustand'
 import { useSocketStore } from './socket'
 
@@ -37,8 +38,6 @@ export interface VMResponseDialogState {
   isOpen: boolean
   hostServer?: string
   approverName?: string
-  rejectionReason?: 'manual' | 'other-approved'
-  approvedUserName?: string
 }
 
 interface HypervStore {
@@ -94,12 +93,7 @@ export const useHypervStore = create<HypervStore>((set) => ({
           expiresAt: now + 60000 // 60초 후
         }
       })
-    })
-
-    // VM 요청 Lock 상태 (다른 사람이 먼저 요청 중)
-    socket.on('vm:request-locked', (data: { vmName: string; firstRequesterName: string }) => {
-      console.log('[VM Request Locked]:', data)
-      // Toast로 표시 (virtual-machines-page에서 처리)
+      toast.info(`${data.vmName} 사용 요청을 전송했습니다. (60초간 유효)`)
     })
 
     // VM 승인 수신
@@ -126,37 +120,24 @@ export const useHypervStore = create<HypervStore>((set) => ({
     })
 
     // VM 거부 수신
-    socket.on('vm:rejected', (data: { vmName: string; reason: 'manual' | 'other-approved'; approvedUserName?: string }) => {
+    socket.on('vm:rejected', (data: { vmName: string }) => {
       console.log('[VM Rejected]:', data)
       set({
         activeRequest: null, // 요청 완료
         vmResponseDialog: {
           type: 'rejected',
           vmName: data.vmName,
-          isOpen: true,
-          rejectionReason: data.reason,
-          approvedUserName: data.approvedUserName
+          isOpen: true
         }
       })
 
       // Windows 네이티브 알림 표시
-      const rejectionMessage =
-        data.reason === 'manual'
-          ? `${data.vmName} 사용 요청이 거부되었습니다.`
-          : `${data.vmName} 사용 요청이 거부되었습니다. (${data.approvedUserName}님이 승인받음)`
-
       window.api.showUniNotification({
         title: 'VM 사용 거부',
-        body: rejectionMessage,
+        body: `${data.vmName} 사용 요청이 거부되었습니다.`,
         vmName: data.vmName,
         notificationType: 'vm-rejected'
       })
-    })
-
-    // VM 중복 요청 감지
-    socket.on('vm:request-duplicate', (data: { vmName: string; firstRequesterName: string }) => {
-      console.log('[VM Request Duplicate]:', data)
-      // Toast로 표시 (virtual-machines-page에서 처리)
     })
 
     // VM 요청 타임아웃
@@ -179,10 +160,8 @@ export const useHypervStore = create<HypervStore>((set) => ({
     console.log('[HyperV] 이벤트 리스너 제거')
     socket.off('hyperv:updated')
     socket.off('vm:request-sent')
-    socket.off('vm:request-locked')
     socket.off('vm:approved')
     socket.off('vm:rejected')
-    socket.off('vm:request-duplicate')
     socket.off('vm:timeout')
     socket.off('users:connected')
   },

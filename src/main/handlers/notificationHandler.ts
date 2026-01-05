@@ -1,7 +1,28 @@
 /**
  * 알림 관련 IPC 핸들러
  */
-import { BrowserWindow, ipcMain, Notification, shell } from 'electron'
+import { join } from 'path'
+import { is } from '@electron-toolkit/utils'
+import { BrowserWindow, ipcMain, nativeImage, Notification, shell } from 'electron'
+
+const getIconPath = (type?: string) => {
+  const iconFolder = is.dev ? join(__dirname, '../../build') : join(process.resourcesPath, '/')
+
+  switch (type) {
+    case 'task-support':
+      return join(iconFolder, 'task_support.png')
+    case 'task-check':
+      return join(iconFolder, 'task_check.png')
+    case 'vm-request':
+      return join(iconFolder, 'vm_request.png')
+    case 'vm-approved':
+      return join(iconFolder, 'vm_approved.png')
+    case 'vm-rejected':
+      return join(iconFolder, 'vm_rejected.png')
+    default:
+      return join(iconFolder, 'logo.png') // 기본 로고
+  }
+}
 
 export function registerNotificationHandlers() {
   // Windows 네이티브 알림 핸들러 (업그레이드)
@@ -19,9 +40,12 @@ export function registerNotificationHandlers() {
       }
     ) => {
       try {
+        const iconPath = getIconPath(args.notificationType)
+
         const notificationOptions: Electron.NotificationConstructorOptions = {
           title: args.title,
           body: args.body,
+          icon: nativeImage.createFromPath(iconPath),
           timeoutType: 'default'
         }
 

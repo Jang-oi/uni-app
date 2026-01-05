@@ -72,23 +72,16 @@ export function VirtualMachinesPage() {
       toast.error(`이미 ${data.firstRequesterName}님이 요청 중입니다. (60초 동안 Lock)`)
     }
 
-    // 중복 요청 처리
-    const handleDuplicate = (data: { vmName: string; firstRequesterName: string }) => {
-      toast.error(`${data.firstRequesterName}님이 먼저 요청하신 상태입니다.`)
-    }
-
     // 타임아웃 처리
     const handleTimeout = (data: { vmName: string }) => {
       toast.warning(`${data.vmName} 요청이 60초간 응답이 없어 만료되었습니다.`)
     }
 
     socket.on('vm:request-locked', handleLocked)
-    socket.on('vm:request-duplicate', handleDuplicate)
     socket.on('vm:timeout', handleTimeout)
 
     return () => {
       socket.off('vm:request-locked', handleLocked)
-      socket.off('vm:request-duplicate', handleDuplicate)
       socket.off('vm:timeout', handleTimeout)
     }
   }, [socket])
@@ -172,7 +165,6 @@ export function VirtualMachinesPage() {
                 return
               }
               requestVM(vm.vmName, vm.currentHostname)
-              toast.info(`${vm.vmName} 사용 요청을 전송했습니다. (60초간 유효)`)
             }}
           >
             요청하기

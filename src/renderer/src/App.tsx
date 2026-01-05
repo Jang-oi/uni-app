@@ -80,11 +80,26 @@ export default function App() {
       // Dialog가 이미 열려 있지 않으면 열기
       const currentDialog = useHypervStore.getState().vmResponseDialog
       if (!currentDialog || !currentDialog.isOpen) {
-        setVMResponseDialog({
-          type: data.type === 'vm-approved' ? 'approved' : 'rejected',
-          vmName: data.vmName,
-          isOpen: true
-        })
+        if (data.type === 'vm-approved') {
+          // 승인된 경우: VMs 목록에서 해당 VM의 정보를 찾아서 전달
+          const vms = useHypervStore.getState().vms
+          const vm = vms.find((v) => v.vmName === data.vmName)
+
+          setVMResponseDialog({
+            type: 'approved',
+            vmName: data.vmName,
+            isOpen: true,
+            hostServer: vm?.hostServer,
+            approverName: vm?.currentUser || undefined
+          })
+        } else {
+          // 거부된 경우: 간단하게 표시
+          setVMResponseDialog({
+            type: 'rejected',
+            vmName: data.vmName,
+            isOpen: true
+          })
+        }
       }
     })
 

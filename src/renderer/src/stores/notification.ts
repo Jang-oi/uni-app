@@ -85,7 +85,17 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
   addNotification: (notification) => {
     set((state) => {
-      const newNotifications = [notification, ...state.notifications]
+      // 중복 알림 방지: 같은 ID가 이미 존재하면 업데이트만 수행
+      const existingIndex = state.notifications.findIndex((n) => n.id === notification.id)
+      let newNotifications
+
+      if (existingIndex >= 0) {
+        console.log('[Notification] 중복 알림 감지, 업데이트로 처리:', notification.id)
+        newNotifications = state.notifications.map((n) => (n.id === notification.id ? notification : n))
+      } else {
+        newNotifications = [notification, ...state.notifications]
+      }
+
       const unreadCount = newNotifications.filter((n) => !n.isRead).length
       // 배지 카운트 업데이트
       const badgeData = createClearRedBadge(unreadCount)
