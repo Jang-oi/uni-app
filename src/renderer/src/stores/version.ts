@@ -2,19 +2,8 @@
  * 버전 관리 Zustand 스토어
  */
 
+import { VersionHistory, VersionInfo } from '@shared/types/github'
 import { create } from 'zustand'
-
-// 서버 데이터와 일치하는 인터페이스
-export interface VersionHistory {
-  version: string
-  date: string
-  changes: string[]
-}
-
-interface VersionInfo {
-  currentVersion: string
-  releases: VersionHistory[]
-}
 
 interface VersionStore {
   // 버전 데이터
@@ -44,7 +33,7 @@ interface VersionStore {
   initVersion: () => Promise<void>
 }
 
-export const useVersionStore = create<VersionStore>((set, get) => ({
+export const useVersionStore = create<VersionStore>((set) => ({
   currentVersion: '',
   history: [],
   isChecking: false,
@@ -91,7 +80,13 @@ export const useVersionStore = create<VersionStore>((set, get) => ({
     try {
       const result = await window.api.getVersion()
       if (result.success && result.versionInfo) {
-        get().setVersionInfo(result.versionInfo)
+        const { currentVersion, latestVersion, isLatest, releases } = result.versionInfo
+        set({
+          currentVersion,
+          history: releases || [],
+          updateAvailable: !isLatest,
+          availableVersion: latestVersion
+        })
       }
     } catch (error) {
       console.error('[Version Store] 버전 정보 로드 실패:', error)

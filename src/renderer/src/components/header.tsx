@@ -1,4 +1,4 @@
-import { UserMultiple02Icon } from '@hugeicons/core-free-icons'
+import { ArrowDown01Icon, UserMultiple02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useHypervStore } from '@/stores/hyperv'
 import { useNotificationStore } from '@/stores/notification'
+import { useVersionStore } from '@/stores/version'
 
 interface HeaderProps {
   activeTab: string
@@ -26,6 +28,8 @@ const tabs = [
 export function Header({ activeTab, setActiveTab }: HeaderProps) {
   const unreadCount = useNotificationStore((state) => state.unreadCount)
   const connectedUsers = useHypervStore((state) => state.connectedUsers)
+  const updateAvailable = useVersionStore((state) => state.updateAvailable)
+  const availableVersion = useVersionStore((state) => state.availableVersion)
 
   return (
     <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 drag-region">
@@ -62,6 +66,37 @@ export function Header({ activeTab, setActiveTab }: HeaderProps) {
 
       {/* Right: Connected Users */}
       <div className="flex items-center gap-2">
+        {/* 업데이트 알림 아이콘 */}
+        {updateAvailable && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <button
+                  onClick={() => setActiveTab('버전관리')}
+                  className="cursor-pointer relative h-9 w-9 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors focus:outline-none"
+                >
+                  <div className="relative">
+                    {/* 아이콘 색상을 Primary(Indigo) 계열로 변경 */}
+                    <HugeiconsIcon icon={ArrowDown01Icon} size={20} className="text-primary" />
+
+                    {/* 알림 점: Primary 색상과 일치시키고 생동감을 위해 animate-ping 추가 */}
+                    <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                    </span>
+                  </div>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-white">
+                새 버전 v{availableVersion} 이용 가능
+                <br />
+                클릭하여 업데이트 페이지로 이동
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {/* 접속 중인 사용자 */}
         <Popover>
           <PopoverTrigger className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100">
             <HugeiconsIcon icon={UserMultiple02Icon} size={18} className="text-slate-600" />

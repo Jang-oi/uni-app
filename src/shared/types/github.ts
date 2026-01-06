@@ -11,6 +11,12 @@ export interface GitHubRelease {
   prerelease: boolean
 }
 
+export interface VersionHistory {
+  version: string
+  date: string
+  changes: string[]
+}
+
 export interface releases {
   version: string
   date: string
