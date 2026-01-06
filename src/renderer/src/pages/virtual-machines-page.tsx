@@ -81,7 +81,7 @@ export function VirtualMachinesPage() {
                   })
 
                   if (result.success) {
-                    await new Promise((resolve) => setTimeout(resolve, 800))
+                    await new Promise((resolve) => setTimeout(resolve, 1500))
                     toast.success(`${vm.vmName} 연결 완료!`)
                   } else {
                     toast.error(`연결 실패: ${result.error || '알 수 없는 오류'}`)

@@ -29,15 +29,21 @@ export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
         foreach ($conn in $networkConnections) {
           $activePID = $conn.OwningProcess;
           $proc = Get-CimInstance Win32_Process -Filter "ProcessId = '$activePID' AND Name = 'vmconnect.exe'";
-          if ($proc -and ($proc.CommandLine -match '"[^"]+"\\s+"[^"]+"\\s+"([^"]+)"')) {
-            $results += $matches[1];
+          if ($proc -and $proc.CommandLine) {
+            $parts = $proc.CommandLine.Trim() -split '\\s+';
+            $rawName = $parts[-1];
+            $vmName = $rawName.Trim('"');
+
+            if ($vmName) {
+              $results += $vmName;
+            }
           }
         }
       }
-      $results | ConvertTo-Json
-    `
 
-    const child = spawn('powershell.exe', ['-Command', psScript])
+      $results | Select-Object -Unique | ConvertTo-Json
+    `
+    const child = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript])
     let stdoutData = ''
 
     child.stdout.on('data', (data) => {
