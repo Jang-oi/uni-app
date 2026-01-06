@@ -71,26 +71,33 @@ export function Header({ activeTab, setActiveTab }: HeaderProps) {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <button
-                  onClick={() => setActiveTab('버전관리')}
-                  className="cursor-pointer relative h-9 w-9 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors focus:outline-none"
-                >
-                  <div className="relative">
-                    {/* 아이콘 색상을 Primary(Indigo) 계열로 변경 */}
-                    <HugeiconsIcon icon={ArrowDown01Icon} size={20} className="text-primary" />
+                <div className="relative cursor-pointer">
+                  {/* 아이콘 색상을 Primary(Indigo) 계열로 변경 */}
+                  <HugeiconsIcon icon={ArrowDown01Icon} size={20} className="text-primary" />
 
-                    {/* 알림 점: Primary 색상과 일치시키고 생동감을 위해 animate-ping 추가 */}
-                    <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
-                    </span>
-                  </div>
-                </button>
+                  {/* 알림 점: Primary 색상과 일치시키고 생동감을 위해 animate-ping 추가 */}
+                  <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                  </span>
+                </div>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-white">
-                새 버전 v{availableVersion} 이용 가능
-                <br />
-                클릭하여 업데이트 페이지로 이동
+              <TooltipContent
+                className="bg-white border-2 shadow-lg px-0 py-0 max-w-[280px] cursor-pointer"
+                onClick={() => setActiveTab('버전관리')}
+              >
+                <div className="flex items-start gap-3 p-3">
+                  {/* 로봇 아바타 */}
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                    <span className="text-white text-lg">🤖</span>
+                  </div>
+                  {/* 말풍선 내용 */}
+                  <div className="flex-1 space-y-1 pt-0.5">
+                    <p className="text-sm font-semibold text-slate-900">새로운 버전이 있어요!</p>
+                    <p className="text-xs text-slate-600 leading-relaxed">v{availableVersion}로 업데이트할 수 있습니다</p>
+                    <p className="text-xs text-blue-600 font-medium pt-1">클릭하여 업데이트 하러가기→</p>
+                  </div>
+                </div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
