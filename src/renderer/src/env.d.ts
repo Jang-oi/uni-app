@@ -23,6 +23,7 @@ interface ElectronAPI {
   getHostname: () => Promise<string>
   getUserInfo: () => Promise<{ success: boolean; data?: any; error?: any }>
   connectToVM: (args: { hostServer: string; vmName: string }) => Promise<{ success: boolean; error?: any }>
+  killVMProcess: (args: { vmName: string }) => Promise<{ success: boolean; error?: any }>
   getVersion: () => Promise<{ success: boolean; versionInfo?: any; error?: any }>
   checkForUpdates: () => Promise<any>
   downloadUpdate: () => Promise<any>

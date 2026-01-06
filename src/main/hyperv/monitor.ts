@@ -29,12 +29,13 @@ export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
         foreach ($conn in $networkConnections) {
           $activePID = $conn.OwningProcess;
           $proc = Get-CimInstance Win32_Process -Filter "ProcessId = '$activePID' AND Name = 'vmconnect.exe'";
-          if ($proc -and $proc.CommandLine) {
-            $parts = $proc.CommandLine.Trim() -split '\\s+';
-            $rawName = $parts[-1];
-            $vmName = $rawName.Trim('"');
 
-            if ($vmName) {
+          if ($proc -and $proc.CommandLine) {
+            $cleanCmd = $proc.CommandLine.Replace('"', '').Trim();
+            $parts = $cleanCmd -split '\\s+';
+
+            if ($parts.Count -ge 3) {
+              $vmName = $parts[2];
               $results += $vmName;
             }
           }

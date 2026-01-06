@@ -32,6 +32,9 @@ const api = {
   // HyperV VM 연결
   connectToVM: (args: { hostServer: string; vmName: string }) => ipcRenderer.invoke('hyperv:connect-vm', args),
 
+  // HyperV VM 프로세스 종료
+  killVMProcess: (args: { vmName: string }) => ipcRenderer.invoke('hyperv:kill-vm-process', args),
+
   // 업데이트 이벤트 리스너
   onChecking: (callback: () => void) => {
     ipcRenderer.on('updater:checking', callback)

@@ -25,6 +25,16 @@ export function VMRequestReceiverDialog() {
 
   const handleApprove = async () => {
     const approverHostname = await window.api.getHostname()
+
+    // VM 프로세스 종료 시도
+    try {
+      await window.api.killVMProcess({ vmName: dialogState.vmName })
+      console.log(`[VM] ${dialogState.vmName} 프로세스 종료 완료`)
+    } catch (error) {
+      console.warn(`[VM] ${dialogState.vmName} 프로세스 종료 실패 (이미 종료되었을 수 있음):`, error)
+    }
+
+    // 서버에 승인 이벤트 전송
     if (socket) {
       socket.emit('vm:approve-request', {
         vmName: dialogState.vmName,
@@ -76,8 +86,11 @@ export function VMRequestReceiverDialog() {
           </div>
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs text-amber-900">
+            <p className="text-xs text-amber-900 mb-2">
               <strong>{dialogState.requesterName}님</strong>이 <strong>{dialogState.vmName}</strong> 사용을 요청했습니다.
+            </p>
+            <p className="text-xs text-red-700">
+              ⚠️ 승인 시 현재 실행 중인 <strong>{dialogState.vmName}</strong> 자동으로 종료됩니다.
             </p>
           </div>
         </div>
