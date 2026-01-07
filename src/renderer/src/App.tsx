@@ -59,15 +59,13 @@ export default function App() {
     initializeApp()
   }, [initSocket, initCalendarListeners, initTaskListeners, initHypervListeners, initNotificationListeners, initVersion])
 
-  // 렌더링 로직 분기
   if (serverError) return <ServerErrorPage />
-
-  // 초기화 중이면 로딩 스크린 표시
   if (isInitializing) return <LoadingScreen />
+
   const renderPage = () => {
     switch (activeTab) {
       case '대시보드':
-        return <DashboardPage key="dashboard" />
+        return <DashboardPage key="dashboard" setActiveTab={setActiveTab} />
       case '업무':
         return <TasksPage key="tasks" />
       case 'HYPER-V':
@@ -77,7 +75,7 @@ export default function App() {
       case '버전관리':
         return <VersionPage key="version" />
       default:
-        return <DashboardPage key="dashboard" />
+        return <DashboardPage key="dashboard" setActiveTab={setActiveTab} />
     }
   }
 

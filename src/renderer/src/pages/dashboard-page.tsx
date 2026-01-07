@@ -12,23 +12,31 @@ import { useCalendarStore } from '@/stores/calendar'
 import { useHypervStore } from '@/stores/hyperv'
 import { useTaskStore } from '@/stores/task'
 import { openUniPost } from '@/util/util'
+import { VersionUpdateDialog } from '../components/version-update-dialog'
+import { useVersionStore } from '../stores/version'
 
-export function DashboardPage() {
+interface DashboardPageProps {
+  setActiveTab: (tab: string) => void
+}
+
+export function DashboardPage({ setActiveTab }: DashboardPageProps) {
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const vms = useHypervStore((state) => state.vms)
   const activeRequest = useHypervStore((state) => state.activeRequest)
   const cancelVMRequest = useHypervStore((state) => state.cancelVMRequest)
+  const initVersion = useVersionStore((state) => state.initVersion)
 
   const [myHostname, setMyHostname] = useState<string>('')
 
-  // 컴포넌트 마운트 시 본인의 호스트네임 가져오기
   useEffect(() => {
-    const fetchHostname = async () => {
+    const initialize = async () => {
       const hostname = await window.api.getHostname()
       setMyHostname(hostname)
+      // 대시보드 방문 시마다 버전 체크 (앱을 계속 사용 중인 사용자를 위해)
+      await initVersion()
     }
-    fetchHostname()
+    initialize()
   }, [])
 
   // 오늘 날짜 (YYYY-MM-DD)
@@ -213,6 +221,7 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+      <VersionUpdateDialog setActiveTab={setActiveTab} />
     </div>
   )
 }
