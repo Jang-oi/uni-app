@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { Header } from '@/components/header'
-import { LoadingScreen } from '@/components/loading-screen' // 로딩 스크린 임포트
+import { LoadingScreen } from '@/components/loading-screen'
 import { Toaster } from '@/components/ui/sonner'
 import { VMResponseDialog } from '@/components/vm-response-dialog'
 import { DashboardPage } from '@/pages/dashboard-page'
@@ -61,7 +61,15 @@ export default function App() {
     }
 
     initializeApp()
-  }, [initSocket, initCalendarListeners, initTaskListeners, initDinnerListeners, initHypervListeners, initNotificationListeners, initVersion])
+  }, [
+    initSocket,
+    initCalendarListeners,
+    initTaskListeners,
+    initDinnerListeners,
+    initHypervListeners,
+    initNotificationListeners,
+    initVersion
+  ])
 
   if (serverError) return <ServerErrorPage />
   if (isInitializing) return <LoadingScreen />
@@ -69,7 +77,7 @@ export default function App() {
   const renderPage = () => {
     switch (activeTab) {
       case '대시보드':
-        return <DashboardPage key="dashboard" setActiveTab={setActiveTab} />
+        return <DashboardPage key="dashboard" />
       case '업무':
         return <TasksPage key="tasks" />
       case '회식일정':
@@ -81,7 +89,7 @@ export default function App() {
       case '버전관리':
         return <VersionPage key="version" />
       default:
-        return <DashboardPage key="dashboard" setActiveTab={setActiveTab} />
+        return <DashboardPage key="dashboard" />
     }
   }
 

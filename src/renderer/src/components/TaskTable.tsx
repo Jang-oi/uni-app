@@ -54,7 +54,7 @@ export function TaskTable({ data, onRequestClick }: TaskTableProps) {
       accessorKey: 'REQ_TITLE',
       header: '제목',
       cell: ({ row }) => {
-        const { displayText } = truncateText(row.original.REQ_TITLE, 28)
+        const { displayText } = truncateText(row.original.REQ_TITLE, 24)
         return (
           <Button
             className="leading-tight text-left hover:text-blue-600 hover:underline transition-colors"
@@ -65,7 +65,7 @@ export function TaskTable({ data, onRequestClick }: TaskTableProps) {
           </Button>
         )
       },
-      size: 280
+      size: 260
     },
     {
       accessorKey: 'STATUS',
@@ -74,10 +74,32 @@ export function TaskTable({ data, onRequestClick }: TaskTableProps) {
       size: 100
     },
     {
-      accessorKey: 'REQ_DATE_ALL',
-      header: '요청일',
-      cell: ({ row }) => <div className="text-slate-500">{row.getValue('REQ_DATE_ALL')}</div>,
-      size: 120
+      accessorKey: 'REQ_DATE',
+      header: '접수일',
+      cell: ({ row }) => {
+        const reqDate = row.original.REQ_DATE
+        const reqDateAll = row.original.REQ_DATE_ALL
+
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <div className="text-slate-500">{reqDate}</div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{reqDateAll}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+      },
+      size: 80
+    },
+    {
+      accessorKey: 'PROCESS_DATE',
+      header: '처리일',
+      cell: ({ row }) => <div className="text-slate-500">{row.getValue('PROCESS_DATE')}</div>,
+      size: 80
     },
     {
       id: 'actions',

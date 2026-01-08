@@ -3,6 +3,16 @@ import { Calendar03Icon, Cancel01Icon, CheckmarkCircle02Icon } from '@hugeicons/
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DinnerCandidate } from '@shared/types/dinner'
 import { PageHeader } from '@/components/page-header'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -19,8 +29,10 @@ export function DinnerSchedulePage() {
   const [isConfirming, setIsConfirming] = useState(false)
   const [myHostname, setMyHostname] = useState<string>('')
 
+  // 확정 대기 중인 날짜 상태 관리
+  const [dateToConfirm, setDateToConfirm] = useState<string | null>(null)
+
   useEffect(() => {
-    // Hostname 가져오기
     window.api.getHostname().then(setMyHostname)
   }, [])
 
@@ -46,24 +58,21 @@ export function DinnerSchedulePage() {
 
   const votingProgress = (currentSchedule.votedMembers.length / currentSchedule.totalMembers) * 100
   const isVotingClosed = currentSchedule.status === 'confirmed'
-  const canConfirm = myHostname === 'pc-lovestar1124' || 'local-jang'
+
+  // 권한 체크 로직 수정 (|| 'local-jang'은 항상 true를 반환하므로 수정 필요)
+  const canConfirm = myHostname === 'pc-lovestar1124' || myHostname === 'local-jang'
 
   const handleToggleDate = (date: string, type: 'available' | 'unavailable') => {
     if (isVotingClosed) return
-
     if (type === 'available') {
-      // 가능한 날짜 토글
       setAvailableDates((prev) => {
         const newSelected = prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]
-        // 안되는 날짜에서 제거
         setUnavailableDates((unavail) => unavail.filter((d) => d !== date))
         return newSelected
       })
     } else {
-      // 안되는 날짜 토글
       setUnavailableDates((prev) => {
         const newUnavailable = prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]
-        // 가능한 날짜에서 제거
         setAvailableDates((sel) => sel.filter((d) => d !== date))
         return newUnavailable
       })
@@ -79,12 +88,15 @@ export function DinnerSchedulePage() {
     }
   }
 
-  const handleConfirm = async (date: string) => {
+  // 실제 확정 요청 함수
+  const handleConfirm = async () => {
+    if (!dateToConfirm) return
     setIsConfirming(true)
     try {
-      await confirmDate(date)
+      await confirmDate(dateToConfirm)
     } finally {
       setIsConfirming(false)
+      setDateToConfirm(null) // 처리 후 초기화
     }
   }
 
@@ -121,27 +133,21 @@ export function DinnerSchedulePage() {
             </div>
             <ScrollArea className="h-[calc(63vh)]">
               <div className="p-4 space-y-3">
-                {currentSchedule.candidates.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400">
-                    <p className="text-sm">후보 날짜가 없습니다.</p>
-                  </div>
-                ) : (
-                  currentSchedule.candidates.map((candidate) => (
-                    <CandidateCard
-                      key={candidate.date}
-                      candidate={candidate}
-                      isAvailable={availableDates.includes(candidate.date)}
-                      isUnavailable={unavailableDates.includes(candidate.date)}
-                      onToggleAvailable={() => handleToggleDate(candidate.date, 'available')}
-                      onToggleUnavailable={() => handleToggleDate(candidate.date, 'unavailable')}
-                      isVotingClosed={isVotingClosed}
-                      isConfirmed={currentSchedule.confirmedDate === candidate.date}
-                      canConfirm={canConfirm && currentSchedule.status !== 'confirmed'}
-                      onConfirm={() => handleConfirm(candidate.date)}
-                      isConfirming={isConfirming}
-                    />
-                  ))
-                )}
+                {currentSchedule.candidates.map((candidate) => (
+                  <CandidateCard
+                    key={candidate.date}
+                    candidate={candidate}
+                    isAvailable={availableDates.includes(candidate.date)}
+                    isUnavailable={unavailableDates.includes(candidate.date)}
+                    onToggleAvailable={() => handleToggleDate(candidate.date, 'available')}
+                    onToggleUnavailable={() => handleToggleDate(candidate.date, 'unavailable')}
+                    isVotingClosed={isVotingClosed}
+                    isConfirmed={currentSchedule.confirmedDate === candidate.date}
+                    canConfirm={canConfirm && currentSchedule.status !== 'confirmed'}
+                    onConfirm={() => setDateToConfirm(candidate.date)}
+                    isConfirming={isConfirming}
+                  />
+                ))}
               </div>
             </ScrollArea>
             <CardContent>
@@ -155,6 +161,7 @@ export function DinnerSchedulePage() {
         </div>
 
         <div className="col-span-1">
+          {/* 투표 현황 UI (변동 없음) */}
           <Card className="h-full border-slate-200 shadow-none flex flex-col">
             <div className="px-5 py-3 border-b border-slate-100">
               <span className="text-sm font-bold text-slate-800">투표 현황</span>
@@ -181,10 +188,34 @@ export function DinnerSchedulePage() {
           </Card>
         </div>
       </div>
+
+      {/* 일정 확정 확인 다이얼로그 */}
+      <AlertDialog open={!!dateToConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>회식 일정 확정</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-bold text-slate-900">{dateToConfirm}</span> 날짜로 회식 일정을 최종 확정하시겠습니까?
+              <br /> 확정 후에는 투표를 수정할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setDateToConfirm(null)
+              }}
+            >
+              취소
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm}>확정하기</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
 
+// CandidateCard 컴포넌트는 기존과 거의 동일하나 가독성을 위해 생략하지 않고 유지합니다.
 function CandidateCard({
   candidate,
   isAvailable,
@@ -208,7 +239,7 @@ function CandidateCard({
   onConfirm: () => void
   isConfirming: boolean
 }) {
-  const isHoliday = !!candidate.holidayName // 공휴일 여부 확인
+  const isHoliday = !!candidate.holidayName
 
   return (
     <div
@@ -223,7 +254,6 @@ function CandidateCard({
               : 'border-slate-200'
       )}
     >
-      {/* 공휴일 차단 레이어: 카드 위를 덮어서 클릭 방지 */}
       {isHoliday && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[2px]">
           <div className="flex flex-col items-center p-4 text-center">
@@ -268,17 +298,15 @@ function CandidateCard({
             </div>
           )}
 
-          {/* 투표 종료 후에도 내가 불가 선택한 날짜 표시 */}
           {(isVotingClosed || isConfirmed) && isUnavailable && (
             <Badge variant="destructive" className="text-[10px] justify-center">
               <HugeiconsIcon icon={Cancel01Icon} size={12} className="mr-1" />내 불가 투표
             </Badge>
           )}
 
-          {/* 요구사항 8: 특정 hostname만 확정 가능 */}
           {canConfirm && !isConfirmed && (
             <Button size="sm" variant="default" className="h-7 text-[11px] bg-green-600" onClick={onConfirm} disabled={isConfirming}>
-              {isConfirming ? '확정 중...' : '확정'}
+              {isConfirming ? '처리 중...' : '확정'}
             </Button>
           )}
         </div>

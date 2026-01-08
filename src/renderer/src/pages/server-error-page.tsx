@@ -39,7 +39,6 @@ export function ServerErrorPage() {
     window.api.onUpdateAvailable((info) => {
       setIsChecking(false)
       setUpdateAvailable(true, info.version)
-      toast.success(`새 버전 v${info.version}이 준비되었습니다.`, { id: 'upd-toast' })
     })
     window.api.onUpdateNotAvailable(() => {
       setIsChecking(false)

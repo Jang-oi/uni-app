@@ -1,157 +1,242 @@
-import { useEffect, useState } from 'react'
-import { ArrowDown01Icon, ArrowRight01Icon, Cancel01Icon } from '@hugeicons/core-free-icons'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowRight01Icon, PackageIcon, RefreshIcon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useVersionStore } from '../stores/version'
 
-const SKIP_VERSION_KEY = 'skip-update-version'
+const SKIP_VERSION_KEY = 'skip-update-config'
 
-interface VersionUpdateDialogProps {
-  setActiveTab: (tab: string) => void
-}
-
-export function VersionUpdateDialog({ setActiveTab }: VersionUpdateDialogProps) {
+export function VersionUpdateDialog() {
   const [isOpen, setIsOpen] = useState(false)
-  const [skipThisVersion, setSkipThisVersion] = useState(false)
+  const [skipForToday, setSkipForToday] = useState(false)
+  const isListenerSet = useRef(false)
 
-  const updateAvailable = useVersionStore((state) => state.updateAvailable)
-  const currentVersion = useVersionStore((state) => state.currentVersion)
-  const availableVersion = useVersionStore((state) => state.availableVersion)
-  const history = useVersionStore((state) => state.history)
+  // Zustand Store 상태 구독
+  const {
+    currentVersion,
+    updateAvailable,
+    availableVersion,
+    history,
+    isChecking,
+    isDownloading,
+    downloadProgress,
+    isDownloaded,
+    setIsChecking,
+    setUpdateAvailable,
+    setDownloadProgress,
+    setIsDownloading,
+    setIsDownloaded
+  } = useVersionStore()
 
-  // 업데이트 다이얼로그 표시 여부 결정
+  // 1. Electron 메인 프로세스의 업데이트 이벤트 리스너 설정
+  useEffect(() => {
+    if (isListenerSet.current) return
+    isListenerSet.current = true
+
+    window.api.onChecking(() => setIsChecking(true))
+    window.api.onUpdateAvailable((info) => {
+      setIsChecking(false)
+      setUpdateAvailable(true, info.version)
+    })
+    window.api.onUpdateNotAvailable(() => {
+      setIsChecking(false)
+    })
+    window.api.onDownloadProgress((p) => setDownloadProgress(Math.round(p.percent)))
+    window.api.onUpdateDownloaded(() => {
+      setIsDownloading(false)
+      setIsDownloaded(true)
+      toast.success('업데이트 파일 다운로드 완료!')
+    })
+    window.api.onError((err) => {
+      setIsChecking(false)
+      setIsDownloading(false)
+      toast.error(`업데이트 중 오류 발생: ${err.message}`)
+    })
+  }, [])
+
+  // 2. 업데이트 감지 시 다이얼로그 표시 여부 결정 (오늘 날짜 체크 로직 포함)
   useEffect(() => {
     if (!updateAvailable || !availableVersion) {
       setIsOpen(false)
       return
     }
 
-    // 로컬스토리지에서 스킵한 버전 확인
-    const skippedVersion = localStorage.getItem(SKIP_VERSION_KEY)
-    if (skippedVersion === availableVersion) {
-      setIsOpen(false)
-      return
+    // localStorage에서 저장된 스킵 정보 확인
+    const savedConfig = localStorage.getItem(SKIP_VERSION_KEY)
+    if (savedConfig) {
+      try {
+        const { version, date } = JSON.parse(savedConfig)
+        const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+
+        // 저장된 버전이 최신 버전과 같고, 저장된 날짜가 오늘이라면 다이얼로그를 띄우지 않음
+        if (version === availableVersion && date === today) {
+          setIsOpen(false)
+          return
+        }
+      } catch (e) {
+        localStorage.removeItem(SKIP_VERSION_KEY)
+      }
     }
 
     setIsOpen(true)
+    window.api.checkForUpdates()
   }, [updateAvailable, availableVersion])
 
-  // "나중에" 버튼 핸들러
+  // '나중에' 또는 '오늘 하루 보지 않기' 클릭 시 처리
   const handleLater = () => {
-    if (skipThisVersion) localStorage.setItem(SKIP_VERSION_KEY, availableVersion)
+    if (skipForToday) {
+      const today = new Date().toISOString().split('T')[0]
+      const config = {
+        version: availableVersion,
+        date: today
+      }
+      localStorage.setItem(SKIP_VERSION_KEY, JSON.stringify(config))
+    }
     setIsOpen(false)
   }
 
-  const handleGoToVersionPage = () => {
-    setIsOpen(false)
-    setActiveTab('버전관리')
+  const handleDownload = async () => {
+    setIsDownloading(true)
+    const result = await window.api.downloadUpdate()
+    if (!result.success) {
+      toast.error(result.message || '다운로드 시작 실패')
+      setIsDownloading(false)
+    }
   }
 
-  // 최신 릴리즈 정보 (최대 3개)
-  const latestReleases = history.slice(0, 3)
+  const handleInstall = () => {
+    window.api.installUpdate()
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-sm">
-              <HugeiconsIcon icon={ArrowDown01Icon} size={24} className="text-white" />
+    <Dialog open={isOpen}>
+      <DialogContent className="sm:max-w-[480px] overflow-hidden border-none shadow-2xl">
+        <DialogHeader className="relative pb-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              {isDownloaded ? (
+                <HugeiconsIcon icon={Tick02Icon} className="w-8 h-8" />
+              ) : isDownloading ? (
+                <HugeiconsIcon icon={RefreshIcon} className="w-8 h-8 animate-spin" />
+              ) : (
+                <HugeiconsIcon icon={PackageIcon} className="w-8 h-8" />
+              )}
             </div>
-            <div className="flex-1">
-              <DialogTitle className="text-lg">새로운 버전이 있습니다!</DialogTitle>
-              <DialogDescription className="text-sm mt-1">업데이트를 권장합니다</DialogDescription>
+            <div className="flex-1 text-left">
+              <DialogTitle className="text-xl font-bold text-slate-900">
+                {isDownloaded ? '설치 준비 완료' : '새로운 업데이트 발견'}
+              </DialogTitle>
+              <DialogDescription className="text-sm font-medium text-slate-500 mt-1">
+                {isDownloaded ? '지금 즉시 새로운 버전을 적용할 수 있습니다.' : `v${availableVersion} 버전으로 업데이트가 가능합니다.`}
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        {/* 버전 비교 */}
-        <div className="py-4 space-y-3">
-          <div className="bg-slate-50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex-1">
-                <span className="text-xs text-slate-500 block mb-1">현재 버전</span>
-                <span className="text-lg font-bold text-slate-700">v{currentVersion}</span>
-              </div>
-              <HugeiconsIcon icon={ArrowRight01Icon} className="text-slate-400 mx-2" size={20} />
-              <div className="flex-1 text-right">
-                <span className="text-xs text-slate-500 block mb-1">최신 버전</span>
-                <span className="text-lg font-bold text-primary">v{availableVersion}</span>
-              </div>
+        <div className="space-y-5">
+          {/* 버전 비교 카드 */}
+          <div className="grid grid-cols-7 items-center bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <div className="col-span-3 text-center">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">현재 버전</p>
+              <p className="text-base font-bold text-slate-600">v{currentVersion}</p>
+            </div>
+            <div className="col-span-1 flex justify-center">
+              <HugeiconsIcon icon={ArrowRight01Icon} className="w-5 h-5 text-slate-300" />
+            </div>
+            <div className="col-span-3 text-center">
+              <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">최신 버전</p>
+              <p className="text-base font-bold text-primary">v{availableVersion}</p>
             </div>
           </div>
 
-          {/* 주요 변경사항 */}
-          {latestReleases.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                <span className="text-primary">📝</span>
-                주요 변경사항
+          {/* 다운로드 진행바 */}
+          <AnimatePresence>
+            {isDownloading && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2"
+              >
+                <div className="flex justify-between text-xs font-bold px-1">
+                  <span className="text-primary flex items-center gap-1">
+                    <HugeiconsIcon icon={RefreshIcon} className="w-3.5 h-3.5 animate-spin" />
+                    다운로드 중...
+                  </span>
+                  <span className="text-slate-500">{downloadProgress}%</span>
+                </div>
+                <Progress value={downloadProgress} className="h-2.5 bg-slate-100" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 업데이트 소식 리스트 */}
+          {!isDownloading && history.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 px-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                업데이트 소식
               </h4>
-              <ScrollArea className="max-h-[200px]">
-                <div className="space-y-3">
-                  {latestReleases.map((release, index) => (
-                    <motion.div
-                      key={release.version}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="border-l-2 border-primary/30 pl-3"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-primary">v{release.version}</span>
-                        <span className="text-xs text-slate-400">•</span>
-                        <span className="text-xs text-slate-500">{release.date}</span>
+              <ScrollArea className="h-[280px] w-full rounded-lg border border-slate-100 bg-white p-3">
+                <div className="space-y-4">
+                  {history.map((release) => (
+                    <div key={release.version} className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-primary bg-primary/5 px-1.5 py-0.5 rounded">v{release.version}</span>
+                        <span className="text-[10px] text-slate-400 font-medium">{release.date}</span>
                       </div>
-                      <div className="text-xs text-slate-600 leading-relaxed">
-                        {release.changes.length > 0 ? (
-                          <ul className="list-disc list-inside space-y-1">
-                            {release.changes.slice(0, 3).map((change, idx) => (
-                              <li key={idx} className="line-clamp-1">
-                                {change}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p>업데이트 내역이 없습니다.</p>
-                        )}
-                      </div>
-                    </motion.div>
+                      <ul className="space-y-1">
+                        {release.changes.map((change, idx) => (
+                          <li key={idx} className="text-[11px] text-slate-600 flex items-start gap-2 leading-relaxed">
+                            <span className="mt-1 flex-shrink-0 w-1 h-1 rounded-full bg-slate-300" />
+                            {change}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ))}
                 </div>
               </ScrollArea>
             </div>
           )}
-
-          {/* 추가 안내 메시지 */}
-          <p className="text-xs text-slate-500 text-center px-4">
-            새로운 기능과 개선 사항이 포함되어 있습니다. 더 나은 경험을 위해 업데이트해주세요.
-          </p>
         </div>
 
-        {/* 다시 보지 않기 옵션 */}
-        <div className="flex items-center gap-2 px-1">
-          <Checkbox id="skip-version" checked={skipThisVersion} onCheckedChange={(checked) => setSkipThisVersion(checked === true)} />
-          <label htmlFor="skip-version" className="text-xs text-slate-600 cursor-pointer select-none">
-            이 버전에서 다시 보지 않기
-          </label>
-        </div>
+        <div className="mt-6 space-y-4">
+          {!isDownloading && !isDownloaded && (
+            <div className="flex items-center gap-2 px-1">
+              <Checkbox id="skip-today" checked={skipForToday} onCheckedChange={(checked) => setSkipForToday(checked === true)} />
+              <label htmlFor="skip-today" className="text-xs font-medium text-slate-500 cursor-pointer select-none">
+                오늘 하루 동안 보지 않기
+              </label>
+            </div>
+          )}
 
-        {/* 액션 버튼 */}
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={handleLater} className="flex-1 gap-2">
-            <HugeiconsIcon icon={Cancel01Icon} size={16} />
-            나중에
-          </Button>
-          <Button onClick={handleGoToVersionPage} className="flex-1 gap-2">
-            버전관리 페이지로 이동
-            <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
-          </Button>
-        </DialogFooter>
+          <DialogFooter className="flex-row gap-2 sm:gap-0">
+            {!isDownloaded ? (
+              <>
+                <Button variant="ghost" onClick={handleLater} disabled={isDownloading}>
+                  나중에
+                </Button>
+                <Button onClick={handleDownload} disabled={isDownloading || isChecking}>
+                  {isDownloading ? '다운로드 중...' : <>지금 업데이트 시작</>}
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={handleInstall}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 h-12 text-base font-bold animate-pulse"
+              >
+                설치 후 앱 재시작
+              </Button>
+            )}
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -17,7 +17,6 @@ interface VersionStore {
   isDownloading: boolean
   downloadProgress: number
   isDownloaded: boolean
-  lastCheckTime: string
 
   // Actions
   setVersionInfo: (info: VersionInfo) => void
@@ -26,7 +25,6 @@ interface VersionStore {
   setDownloadProgress: (progress: number) => void
   setIsDownloading: (isDownloading: boolean) => void
   setIsDownloaded: (isDownloaded: boolean) => void
-  setLastCheckTime: (time: string) => void
   resetUpdateState: () => void
 
   // 초기화
@@ -42,7 +40,6 @@ export const useVersionStore = create<VersionStore>((set) => ({
   isDownloading: false,
   downloadProgress: 0,
   isDownloaded: false,
-  lastCheckTime: '확인 전',
 
   setVersionInfo: (info) =>
     set({
@@ -63,8 +60,6 @@ export const useVersionStore = create<VersionStore>((set) => ({
   setIsDownloading: (isDownloading) => set({ isDownloading }),
 
   setIsDownloaded: (isDownloaded) => set({ isDownloaded }),
-
-  setLastCheckTime: (time) => set({ lastCheckTime: time }),
 
   resetUpdateState: () =>
     set({

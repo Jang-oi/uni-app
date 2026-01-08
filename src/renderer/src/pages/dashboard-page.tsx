@@ -15,11 +15,7 @@ import { openUniPost } from '@/util/util'
 import { VersionUpdateDialog } from '../components/version-update-dialog'
 import { useVersionStore } from '../stores/version'
 
-interface DashboardPageProps {
-  setActiveTab: (tab: string) => void
-}
-
-export function DashboardPage({ setActiveTab }: DashboardPageProps) {
+export function DashboardPage() {
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const vms = useHypervStore((state) => state.vms)
@@ -221,7 +217,7 @@ export function DashboardPage({ setActiveTab }: DashboardPageProps) {
           </div>
         </div>
       </div>
-      <VersionUpdateDialog setActiveTab={setActiveTab} />
+      <VersionUpdateDialog />
     </div>
   )
 }

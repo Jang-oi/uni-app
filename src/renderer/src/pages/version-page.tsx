@@ -22,7 +22,6 @@ export function VersionPage() {
   const isDownloading = useVersionStore((state) => state.isDownloading)
   const downloadProgress = useVersionStore((state) => state.downloadProgress)
   const isDownloaded = useVersionStore((state) => state.isDownloaded)
-  const lastCheckTime = useVersionStore((state) => state.lastCheckTime)
 
   // Store의 액션 가져오기
   const setIsChecking = useVersionStore((state) => state.setIsChecking)
@@ -30,7 +29,6 @@ export function VersionPage() {
   const setDownloadProgress = useVersionStore((state) => state.setDownloadProgress)
   const setIsDownloading = useVersionStore((state) => state.setIsDownloading)
   const setIsDownloaded = useVersionStore((state) => state.setIsDownloaded)
-  const setLastCheckTime = useVersionStore((state) => state.setLastCheckTime)
 
   useEffect(() => {
     if (isListenerSet.current) return
@@ -41,12 +39,9 @@ export function VersionPage() {
     window.api.onUpdateAvailable((info) => {
       setIsChecking(false)
       setUpdateAvailable(true, info.version)
-      setLastCheckTime('방금 전')
-      toast.success(`새 버전 v${info.version}이 준비되었습니다.`, { id: 'upd-toast' })
     })
     window.api.onUpdateNotAvailable(() => {
       setIsChecking(false)
-      setLastCheckTime('방금 전')
       toast.info('최신 버전을 이용 중입니다.', { id: 'upd-toast' })
     })
     window.api.onDownloadProgress((p) => setDownloadProgress(Math.round(p.percent)))
@@ -59,7 +54,7 @@ export function VersionPage() {
       setIsChecking(false)
       toast.error(`오류 발생: ${err.message}`, { id: 'upd-toast' })
     })
-  }, [setIsChecking, setUpdateAvailable, setDownloadProgress, setIsDownloading, setIsDownloaded, setLastCheckTime])
+  }, [setIsChecking, setUpdateAvailable, setDownloadProgress, setIsDownloading, setIsDownloaded])
 
   return (
     <div className="p-8 h-full flex flex-col bg-white">
@@ -90,7 +85,6 @@ export function VersionPage() {
               ) : (
                 <Badge className="bg-emerald-500 hover:bg-emerald-600 border-none">최신 버전</Badge>
               )}
-              <span className="text-[11px] text-slate-400 font-medium">체크: {lastCheckTime}</span>
             </div>
           </CardContent>
         </Card>
