@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Loading03Icon, Search01Icon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
@@ -19,21 +19,16 @@ import { VMRequestProgress } from '@/components/vm-request-progress'
 import { PageHeader } from '../components/page-header'
 import { ScrollArea } from '../components/ui/scroll-area'
 import { useHypervStore, type HypervVM } from '../stores/hyperv'
+import { useUserStore } from '../stores/user'
 
 export function VirtualMachinesPage() {
   const vms = useHypervStore((state) => state.vms)
   const activeRequest = useHypervStore((state) => state.activeRequest)
   const cancelVMRequest = useHypervStore((state) => state.cancelVMRequest)
-
+  const userHostName = useUserStore((state) => state.userHostName)
   const [sorting, setSorting] = useState<SortingState>([])
-  const [myHostname, setMyHostname] = useState<string | null>(null)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [connectingVM, setConnectingVM] = useState<string | null>(null)
-
-  // 내 hostname 가져오기
-  useEffect(() => {
-    window.api.getHostname().then(setMyHostname)
-  }, [])
 
   const columns: ColumnDef<HypervVM>[] = [
     {
@@ -110,7 +105,7 @@ export function VirtualMachinesPage() {
             size="sm"
             onClick={async () => {
               if (!vm.currentHostname) return
-              if (vm.currentHostname === myHostname) {
+              if (vm.currentHostname === userHostName) {
                 toast.success(`본인이 사용중인 VM 입니다.`)
                 return
               }

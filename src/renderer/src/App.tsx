@@ -8,6 +8,8 @@ import { DashboardPage } from '@/pages/dashboard-page'
 import { DinnerSchedulePage } from '@/pages/dinner-schedule-page'
 import { NotificationsPage } from '@/pages/notifications-page'
 import { ServerErrorPage } from '@/pages/server-error-page'
+import { TasksPage } from '@/pages/tasks-page'
+import { VersionPage } from '@/pages/version-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
 import { useCalendarStore } from '@/stores/calendar'
 import { useDinnerStore } from '@/stores/dinner'
@@ -15,10 +17,9 @@ import { useHypervStore } from '@/stores/hyperv'
 import { useNotificationStore } from '@/stores/notification'
 import { useSocketStore } from '@/stores/socket'
 import { useTaskStore } from '@/stores/task'
+import { useUserStore } from '@/stores/user'
 import { useVersionStore } from '@/stores/version'
 import { VMRequestReceiverDialog } from './components/vm-request-receiver-dialog'
-import { TasksPage } from './pages/tasks-page'
-import { VersionPage } from './pages/version-page'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('대시보드')
@@ -28,6 +29,7 @@ export default function App() {
   const initSocket = useSocketStore((state) => state.initSocket)
   const initCalendarListeners = useCalendarStore((state) => state.initListeners)
   const initTaskListeners = useTaskStore((state) => state.initListeners)
+  const initUserListeners = useUserStore((state) => state.initListeners)
   const initDinnerListeners = useDinnerStore((state) => state.initListeners)
   const initHypervListeners = useHypervStore((state) => state.initListeners)
   const initNotificationListeners = useNotificationStore((state) => state.initListeners)
@@ -38,7 +40,7 @@ export default function App() {
     const initializeApp = async () => {
       try {
         const handleError = () => setServerError(true)
-        // 1. 공유 소켓 연결 (가장 먼저!)
+        initUserListeners()
         initSocket(handleError)
 
         // 2. 각 스토어의 이벤트 리스너 등록

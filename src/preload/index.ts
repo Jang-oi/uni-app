@@ -32,9 +32,6 @@ const api = {
   // 배지 카운트 설정
   setBadgeCount: (count: number, badgeData: string | null) => ipcRenderer.invoke('badge:set-count', count, badgeData),
 
-  // hostname 조회
-  getHostname: () => ipcRenderer.invoke('system:get-hostname'),
-
   // 사용자 정보 조회 (서버에서 가져오기)
   getUserInfo: () => ipcRenderer.invoke('user:get-info'),
 

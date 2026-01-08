@@ -6,6 +6,7 @@
 import { BASE_URL } from '@shared/api/client'
 import { io, Socket } from 'socket.io-client'
 import { create } from 'zustand'
+import { useUserStore } from './user'
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
 
@@ -42,11 +43,9 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
     newSocket.on('connect', async () => {
       console.log('[Socket] ✅ 연결 성공 (Socket ID:', newSocket.id, ')')
       set({ connectionStatus: 'connected' })
-
-      // hostname 등록 (서버의 connectedUsers 관리용)
-      const hostname = await window.api.getHostname()
-      newSocket.emit('register:user', { hostname })
-      console.log('[Socket] 사용자 등록:', hostname)
+      const { userHostName } = useUserStore.getState()
+      newSocket.emit('register:user', { hostname: userHostName })
+      console.log('[Socket] 사용자 등록:', userHostName)
     })
 
     // 연결 오류

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { ArrowRight01Icon, Task01Icon, UserIcon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { PageHeader } from '@/components/page-header'
@@ -13,6 +13,7 @@ import { useHypervStore } from '@/stores/hyperv'
 import { useTaskStore } from '@/stores/task'
 import { openUniPost } from '@/util/util'
 import { VersionUpdateDialog } from '../components/version-update-dialog'
+import { useUserStore } from '../stores/user'
 import { useVersionStore } from '../stores/version'
 
 export function DashboardPage() {
@@ -22,14 +23,10 @@ export function DashboardPage() {
   const activeRequest = useHypervStore((state) => state.activeRequest)
   const cancelVMRequest = useHypervStore((state) => state.cancelVMRequest)
   const initVersion = useVersionStore((state) => state.initVersion)
-
-  const [myHostname, setMyHostname] = useState<string>('')
+  const userHostName = useUserStore((state) => state.userHostName)
 
   useEffect(() => {
     const initialize = async () => {
-      const hostname = await window.api.getHostname()
-      setMyHostname(hostname)
-      // 대시보드 방문 시마다 버전 체크 (앱을 계속 사용 중인 사용자를 위해)
       await initVersion()
     }
     initialize()
@@ -57,9 +54,9 @@ export function DashboardPage() {
 
   // 본인이 사용 중인 VM 제외
   const filteredVMs = useMemo(() => {
-    if (!myHostname) return vms
-    return vms.filter((vm) => vm.currentHostname !== myHostname && vm.isConnected)
-  }, [vms, myHostname])
+    if (!userHostName) return vms
+    return vms.filter((vm) => vm.currentHostname !== userHostName && vm.isConnected)
+  }, [vms, userHostName])
 
   const requestVM = useHypervStore((state) => state.requestVM)
 

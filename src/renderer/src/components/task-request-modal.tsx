@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { useSocketStore } from '@/stores/socket'
 import type { TaskDisplayData } from '@/stores/task'
 import { useTaskStore } from '@/stores/task'
+import { useUserStore } from '../stores/user'
 
 interface TaskRequestModalProps {
   task: TaskDisplayData | null
@@ -24,13 +25,14 @@ export function TaskRequestModal({ task, isOpen, onClose }: TaskRequestModalProp
   const [searchQuery, setSearchQuery] = useState<string>('')
 
   const memberTasks = useTaskStore((state) => state.memberTasks)
-  const currentUser = useTaskStore((state) => state.currentUser)
+  const userName = useUserStore((state) => state.userName)
+  const userHostName = useUserStore((state) => state.userHostName)
   const socket = useSocketStore((state) => state.socket)
 
   // 팀원 목록 (본인 제외)
   const teamMembers = useMemo(() => {
-    return Object.keys(memberTasks).filter((member) => member !== currentUser)
-  }, [memberTasks, currentUser])
+    return Object.keys(memberTasks).filter((member) => member !== userName)
+  }, [memberTasks, userName])
 
   // 검색 필터링
   const filteredMembers = useMemo(() => {
@@ -56,13 +58,11 @@ export function TaskRequestModal({ task, isOpen, onClose }: TaskRequestModalProp
     }
 
     try {
-      const myHostname = await window.api.getHostname()
-
       // Socket으로 요청 전송 (서버에서 처리)
       socket.emit('task:request', {
         taskId: task.SR_IDX,
         taskTitle: task.REQ_TITLE,
-        senderHostname: myHostname,
+        senderHostname: userHostName,
         receiverName: selectedMember, // 이름으로 전송 (서버에서 hostname으로 변환)
         type: requestType
       })

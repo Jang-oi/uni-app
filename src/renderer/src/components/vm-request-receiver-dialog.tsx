@@ -11,12 +11,13 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useHypervStore } from '@/stores/hyperv'
 import { useSocketStore } from '@/stores/socket'
+import { useUserStore } from '../stores/user'
 
 export function VMRequestReceiverDialog() {
   const dialogState = useHypervStore((state) => state.vmRequestDialog)
   const setDialogState = useHypervStore((state) => state.setVMRequestDialog)
   const socket = useSocketStore((state) => state.getSocket())
-
+  const userHostName = useUserStore((state) => state.userHostName)
   if (!dialogState) return null
 
   const handleClose = () => {
@@ -24,9 +25,6 @@ export function VMRequestReceiverDialog() {
   }
 
   const handleApprove = async () => {
-    const approverHostname = await window.api.getHostname()
-
-    // VM 프로세스 종료 시도
     try {
       await window.api.killVMProcess({ vmName: dialogState.vmName })
       console.log(`[VM] ${dialogState.vmName} 프로세스 종료 완료`)
@@ -38,7 +36,7 @@ export function VMRequestReceiverDialog() {
     if (socket) {
       socket.emit('vm:approve-request', {
         vmName: dialogState.vmName,
-        approverHostname
+        approverHostname: userHostName
       })
       toast.success(`${dialogState.requesterName}님에게 승인했습니다`)
     }
@@ -46,11 +44,10 @@ export function VMRequestReceiverDialog() {
   }
 
   const handleReject = async () => {
-    const rejectorHostname = await window.api.getHostname()
     if (socket) {
       socket.emit('vm:reject-request', {
         vmName: dialogState.vmName,
-        rejectorHostname
+        rejectorHostname: userHostName
       })
       toast.info('요청을 거부했습니다')
     }

@@ -6,6 +6,7 @@ import { DinnerSchedule } from '@shared/types/dinner'
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { useSocketStore } from './socket'
+import { useUserStore } from './user'
 
 interface DinnerStore {
   currentSchedule: DinnerSchedule | null
@@ -13,8 +14,8 @@ interface DinnerStore {
   myUnavailableVotes: string[] // 내가 선택한 안되는 날짜 목록
   setCurrentSchedule: (schedule: DinnerSchedule | null) => void
   setMyAvailableDates: (votes: string[], unavailableVotes: string[]) => void
-  vote: (availableDates: string[], unavailableDates: string[]) => Promise<void>
-  confirmDate: (date: string) => Promise<void>
+  vote: (hostname: string, availableDates: string[], unavailableDates: string[]) => Promise<void>
+  confirmDate: (hostname: string, date: string) => Promise<void>
   initListeners: () => void
   cleanupListeners: () => void
 }
@@ -31,7 +32,7 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
   /**
    * 투표하기 (가능한 날짜 + 안되는 날짜)
    */
-  vote: async (availableDates: string[], unavailableDates: string[]) => {
+  vote: async (hostname: string, availableDates: string[], unavailableDates: string[]) => {
     const socket = useSocketStore.getState().getSocket()
     if (!socket) {
       console.error('[Dinner] 공유 소켓이 없습니다')
@@ -39,8 +40,6 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
     }
 
     try {
-      const hostname = await window.api.getHostname()
-
       // Socket으로 투표 전송
       socket.emit('dinner:vote', {
         hostname,
@@ -60,7 +59,7 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
   /**
    * 일정 확정 (Master 전용 - pc-lovestar1124 또는 local-jang)
    */
-  confirmDate: async (confirmedDate: string) => {
+  confirmDate: async (hostname: string, confirmedDate: string) => {
     const socket = useSocketStore.getState().getSocket()
     if (!socket) {
       console.error('[Dinner] 공유 소켓이 없습니다')
@@ -68,9 +67,6 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
     }
 
     try {
-      const hostname = await window.api.getHostname()
-
-      // Socket으로 확정 요청
       socket.emit('dinner:confirm', {
         hostname,
         confirmedDate
@@ -104,13 +100,11 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
     // 일정 업데이트 (연결 시 초기 데이터 + 실시간 업데이트)
     socket.on('dinner:schedule-updated', (schedule: DinnerSchedule) => {
       set({ currentSchedule: schedule })
-
-      // 내 투표 복원 (가능한 날짜 + 안되는 날짜)
-      window.api.getHostname().then((hostname) => {
-        const MyAvailableDates = schedule.candidates.filter((c) => c.votes.includes(hostname)).map((c) => c.date)
-        const myUnavailableVotes = schedule.candidates.filter((c) => c.unavailableVotes.includes(hostname)).map((c) => c.date)
-        set({ MyAvailableDates, myUnavailableVotes })
-      })
+      const { userHostName } = useUserStore.getState()
+      console.log(userHostName)
+      const MyAvailableDates = schedule.candidates.filter((c) => c.availableVotes.includes(userHostName)).map((c) => c.date)
+      const myUnavailableVotes = schedule.candidates.filter((c) => c.unavailableVotes.includes(userHostName)).map((c) => c.date)
+      set({ MyAvailableDates, myUnavailableVotes })
     })
 
     // 투표 현황 실시간 업데이트

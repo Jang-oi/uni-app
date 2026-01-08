@@ -2,9 +2,7 @@
 export interface DinnerCandidate {
   date: string // YYYY-MM-DD
   dayOfWeek: string // 월, 화, 수, 목, 금
-  votes: string[] // 투표한 팀원 hostname 목록
   holidayName?: string
-  voteCount: number // 총 투표 수
   availableVotes: string[] // 되는 날짜로 선택한 팀원 hostname 목록
   unavailableVotes: string[] // 안되는 날짜로 선택한 팀원 hostname 목록
 }

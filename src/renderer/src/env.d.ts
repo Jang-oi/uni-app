@@ -29,7 +29,6 @@ interface ElectronAPI {
     senderName?: string
   }) => Promise<{ success: boolean; error?: any }>
   setBadgeCount: (count: number, badgeData: string | null) => Promise<{ success: boolean; error?: any }>
-  getHostname: () => Promise<string>
   getUserInfo: () => Promise<{ success: boolean; data?: any; error?: any }>
   connectToVM: (args: { hostServer: string; vmName: string }) => Promise<{ success: boolean; error?: any }>
   killVMProcess: (args: { vmName: string }) => Promise<{ success: boolean; error?: any }>

@@ -2,7 +2,7 @@ import os from 'os'
 import { api, ApiResponse } from '@shared/api/client'
 
 export interface UserInfo {
-  hostname: string
+  userHostName: string
   userName: string | null
   isRegistered: boolean
 }
@@ -25,7 +25,7 @@ export async function getUserInfoFromServer(): Promise<UserInfo> {
     // 서버에서 사용자를 찾지 못한 경우
     console.warn(`[User] 등록되지 않은 hostname: ${hostname}`)
     return {
-      hostname,
+      userHostName: hostname,
       userName: null,
       isRegistered: false
     }
@@ -33,7 +33,7 @@ export async function getUserInfoFromServer(): Promise<UserInfo> {
     console.error('[User] 사용자 정보 조회 오류:', error)
     const hostname = os.hostname()
     return {
-      hostname,
+      userHostName: hostname,
       userName: null,
       isRegistered: false
     }

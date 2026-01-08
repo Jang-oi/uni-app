@@ -1,6 +1,7 @@
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { useSocketStore } from './socket'
+import { useUserStore } from './user'
 
 export interface ConnectedUser {
   hostname: string
@@ -198,16 +199,15 @@ export const useHypervStore = create<HypervStore>((set) => ({
       return
     }
 
+    const { userHostName } = useUserStore.getState()
     // 요청자 hostname 가져오기
-    window.api.getHostname().then((requestedByHostname) => {
-      socket.emit('vm:request', {
-        vmName,
-        requestedByHostname,
-        currentHostname
-      })
-
-      console.log('[VM Request] 요청 전송:', { vmName, requestedByHostname, currentHostname })
+    socket.emit('vm:request', {
+      vmName,
+      requestedByHostname: userHostName,
+      currentHostname
     })
+
+    console.log('[VM Request] 요청 전송:', { vmName, userHostName, currentHostname })
   },
 
   // VM 요청 취소 메서드
@@ -217,17 +217,16 @@ export const useHypervStore = create<HypervStore>((set) => ({
       console.error('[VM Cancel] 공유 소켓이 없습니다')
       return
     }
+    const { userHostName } = useUserStore.getState()
 
-    window.api.getHostname().then((requesterHostname) => {
-      socket.emit('vm:cancel-request', {
-        vmName,
-        requesterHostname
-      })
-
-      console.log('[VM Cancel] 요청 취소:', { vmName, requesterHostname })
-
-      // 상태 초기화
-      set({ activeRequest: null, vmResponseDialog: null })
+    socket.emit('vm:cancel-request', {
+      vmName,
+      requesterHostname: userHostName
     })
+
+    console.log('[VM Cancel] 요청 취소:', { vmName, userHostName })
+
+    // 상태 초기화
+    set({ activeRequest: null, vmResponseDialog: null })
   }
 }))

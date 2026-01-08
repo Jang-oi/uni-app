@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Calendar03Icon, Cancel01Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DinnerCandidate } from '@shared/types/dinner'
@@ -15,31 +15,18 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useDinnerStore } from '@/stores/dinner'
+import { useUserStore } from '../stores/user'
 
 export function DinnerSchedulePage() {
   const { currentSchedule, MyAvailableDates, myUnavailableVotes, vote, confirmDate } = useDinnerStore()
-  const [availableDates, setAvailableDates] = useState<string[]>([])
-  const [unavailableDates, setUnavailableDates] = useState<string[]>([])
-  const [isVoting, setIsVoting] = useState(false)
+  const userHostName = useUserStore((state) => state.userHostName)
   const [isConfirming, setIsConfirming] = useState(false)
-  const [myHostname, setMyHostname] = useState<string>('')
-
-  // 확정 대기 중인 날짜 상태 관리
   const [dateToConfirm, setDateToConfirm] = useState<string | null>(null)
-
-  useEffect(() => {
-    window.api.getHostname().then(setMyHostname)
-  }, [])
-
-  useEffect(() => {
-    setAvailableDates(MyAvailableDates)
-    setUnavailableDates(myUnavailableVotes)
-  }, [MyAvailableDates, myUnavailableVotes])
 
   if (!currentSchedule) {
     return (
@@ -58,34 +45,31 @@ export function DinnerSchedulePage() {
 
   const votingProgress = (currentSchedule.votedMembers.length / currentSchedule.totalMembers) * 100
   const isVotingClosed = currentSchedule.status === 'confirmed'
+  const canConfirm = userHostName === 'pc-lovestar1124'
 
-  // 권한 체크 로직 수정 (|| 'local-jang'은 항상 true를 반환하므로 수정 필요)
-  const canConfirm = myHostname === 'pc-lovestar1124' || myHostname === 'local-jang'
-
-  const handleToggleDate = (date: string, type: 'available' | 'unavailable') => {
+  const handleToggleDate = async (date: string, type: 'available' | 'unavailable') => {
     if (isVotingClosed) return
-    if (type === 'available') {
-      setAvailableDates((prev) => {
-        const newSelected = prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]
-        setUnavailableDates((unavail) => unavail.filter((d) => d !== date))
-        return newSelected
-      })
-    } else {
-      setUnavailableDates((prev) => {
-        const newUnavailable = prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]
-        setAvailableDates((sel) => sel.filter((d) => d !== date))
-        return newUnavailable
-      })
-    }
-  }
+    // 현재 스토어에 저장된 최신 값을 가져옵니다.
+    let nextAvailable = [...MyAvailableDates]
+    let nextUnavailable = [...myUnavailableVotes]
 
-  const handleVote = async () => {
-    setIsVoting(true)
-    try {
-      await vote(availableDates, unavailableDates)
-    } finally {
-      setIsVoting(false)
+    if (type === 'available') {
+      if (nextAvailable.includes(date)) {
+        nextAvailable = nextAvailable.filter((d) => d !== date)
+      } else {
+        nextAvailable = [...nextAvailable, date]
+        nextUnavailable = nextUnavailable.filter((d) => d !== date)
+      }
+    } else {
+      if (nextUnavailable.includes(date)) {
+        nextUnavailable = nextUnavailable.filter((d) => d !== date)
+      } else {
+        nextUnavailable = [...nextUnavailable, date]
+        nextAvailable = nextAvailable.filter((d) => d !== date)
+      }
     }
+
+    await vote(userHostName, nextAvailable, nextUnavailable)
   }
 
   // 실제 확정 요청 함수
@@ -93,7 +77,7 @@ export function DinnerSchedulePage() {
     if (!dateToConfirm) return
     setIsConfirming(true)
     try {
-      await confirmDate(dateToConfirm)
+      await confirmDate(userHostName, dateToConfirm)
     } finally {
       setIsConfirming(false)
       setDateToConfirm(null) // 처리 후 초기화
@@ -131,14 +115,14 @@ export function DinnerSchedulePage() {
                 </Badge>
               </div>
             </div>
-            <ScrollArea className="h-[calc(63vh)]">
+            <ScrollArea className="h-[calc(65vh)]">
               <div className="p-4 space-y-3">
                 {currentSchedule.candidates.map((candidate) => (
                   <CandidateCard
                     key={candidate.date}
                     candidate={candidate}
-                    isAvailable={availableDates.includes(candidate.date)}
-                    isUnavailable={unavailableDates.includes(candidate.date)}
+                    isAvailable={MyAvailableDates.includes(candidate.date)}
+                    isUnavailable={myUnavailableVotes.includes(candidate.date)}
                     onToggleAvailable={() => handleToggleDate(candidate.date, 'available')}
                     onToggleUnavailable={() => handleToggleDate(candidate.date, 'unavailable')}
                     isVotingClosed={isVotingClosed}
@@ -150,13 +134,6 @@ export function DinnerSchedulePage() {
                 ))}
               </div>
             </ScrollArea>
-            <CardContent>
-              {!isVotingClosed && (
-                <Button onClick={handleVote} disabled={isVoting} className="w-full">
-                  {isVoting ? '투표 중...' : `투표하기 (가능: ${availableDates.length}개 / 불가: ${unavailableDates.length}개)`}
-                </Button>
-              )}
-            </CardContent>
           </Card>
         </div>
 

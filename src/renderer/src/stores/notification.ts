@@ -5,6 +5,7 @@
 import { create } from 'zustand'
 import { useHypervStore } from './hyperv'
 import { useSocketStore } from './socket'
+import { useUserStore } from './user'
 
 type NotificationType = 'task-check' | 'task-support' | 'vm-request' | 'dinner-confirmed'
 
@@ -144,11 +145,9 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       console.error('[Notification] 공유 소켓이 없습니다')
       return
     }
-
+    const { userHostName } = useUserStore.getState()
     // 서버에 읽음 처리 요청
-    window.api.getHostname().then((hostname) => {
-      socket.emit('notification:read', { notificationId, hostname })
-    })
+    socket.emit('notification:read', { notificationId, hostname: userHostName })
   },
 
   markAllAsRead: () => {
@@ -158,10 +157,9 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       return
     }
 
+    const { userHostName } = useUserStore.getState()
     // 서버에 전체 읽음 처리 요청
-    window.api.getHostname().then((hostname) => {
-      socket.emit('notification:read-all', { hostname })
-    })
+    socket.emit('notification:read-all', { hostname: userHostName })
   },
 
   initListeners: () => {
