@@ -5,10 +5,12 @@ import { LoadingScreen } from '@/components/loading-screen' // 로딩 스크린 
 import { Toaster } from '@/components/ui/sonner'
 import { VMResponseDialog } from '@/components/vm-response-dialog'
 import { DashboardPage } from '@/pages/dashboard-page'
+import { DinnerSchedulePage } from '@/pages/dinner-schedule-page'
 import { NotificationsPage } from '@/pages/notifications-page'
 import { ServerErrorPage } from '@/pages/server-error-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
 import { useCalendarStore } from '@/stores/calendar'
+import { useDinnerStore } from '@/stores/dinner'
 import { useHypervStore } from '@/stores/hyperv'
 import { useNotificationStore } from '@/stores/notification'
 import { useSocketStore } from '@/stores/socket'
@@ -26,6 +28,7 @@ export default function App() {
   const initSocket = useSocketStore((state) => state.initSocket)
   const initCalendarListeners = useCalendarStore((state) => state.initListeners)
   const initTaskListeners = useTaskStore((state) => state.initListeners)
+  const initDinnerListeners = useDinnerStore((state) => state.initListeners)
   const initHypervListeners = useHypervStore((state) => state.initListeners)
   const initNotificationListeners = useNotificationStore((state) => state.initListeners)
   const initVersion = useVersionStore((state) => state.initVersion)
@@ -41,6 +44,7 @@ export default function App() {
         // 2. 각 스토어의 이벤트 리스너 등록
         initCalendarListeners()
         initTaskListeners()
+        initDinnerListeners()
         initHypervListeners()
         initNotificationListeners()
 
@@ -57,7 +61,7 @@ export default function App() {
     }
 
     initializeApp()
-  }, [initSocket, initCalendarListeners, initTaskListeners, initHypervListeners, initNotificationListeners, initVersion])
+  }, [initSocket, initCalendarListeners, initTaskListeners, initDinnerListeners, initHypervListeners, initNotificationListeners, initVersion])
 
   if (serverError) return <ServerErrorPage />
   if (isInitializing) return <LoadingScreen />
@@ -68,6 +72,8 @@ export default function App() {
         return <DashboardPage key="dashboard" setActiveTab={setActiveTab} />
       case '업무':
         return <TasksPage key="tasks" />
+      case '회식일정':
+        return <DinnerSchedulePage key="dinner" />
       case 'HYPER-V':
         return <VirtualMachinesPage key="vm" />
       case '알림':

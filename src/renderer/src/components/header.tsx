@@ -21,6 +21,7 @@ const tabs = [
   { id: '대시보드', label: '대시보드' },
   { id: 'HYPER-V', label: 'HYPER-V' },
   { id: '업무', label: '업무' },
+  { id: '회식일정', label: '회식일정' },
   { id: '알림', label: '알림' },
   { id: '버전관리', label: '버전관리' }
 ]

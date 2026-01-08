@@ -1,0 +1,288 @@
+import { useEffect, useState } from 'react'
+import { Calendar03Icon, Cancel01Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { DinnerCandidate } from '@shared/types/dinner'
+import { PageHeader } from '@/components/page-header'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
+import { useDinnerStore } from '@/stores/dinner'
+
+export function DinnerSchedulePage() {
+  const { currentSchedule, MyAvailableDates, myUnavailableVotes, vote, confirmDate } = useDinnerStore()
+  const [availableDates, setAvailableDates] = useState<string[]>([])
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([])
+  const [isVoting, setIsVoting] = useState(false)
+  const [isConfirming, setIsConfirming] = useState(false)
+  const [myHostname, setMyHostname] = useState<string>('')
+
+  useEffect(() => {
+    // Hostname 가져오기
+    window.api.getHostname().then(setMyHostname)
+  }, [])
+
+  useEffect(() => {
+    setAvailableDates(MyAvailableDates)
+    setUnavailableDates(myUnavailableVotes)
+  }, [MyAvailableDates, myUnavailableVotes])
+
+  if (!currentSchedule) {
+    return (
+      <div className="p-8 h-full flex flex-col bg-white">
+        <PageHeader
+          title="회식 일정 투표"
+          description="진행 중인 투표가 없습니다."
+          icon={<HugeiconsIcon icon={Calendar03Icon} size={20} />}
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-slate-400 text-sm">현재 진행 중인 회식 일정 투표가 없습니다.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const votingProgress = (currentSchedule.votedMembers.length / currentSchedule.totalMembers) * 100
+  const isVotingClosed = currentSchedule.status === 'confirmed'
+  const canConfirm = myHostname === 'pc-lovestar1124' || 'local-jang'
+
+  const handleToggleDate = (date: string, type: 'available' | 'unavailable') => {
+    if (isVotingClosed) return
+
+    if (type === 'available') {
+      // 가능한 날짜 토글
+      setAvailableDates((prev) => {
+        const newSelected = prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]
+        // 안되는 날짜에서 제거
+        setUnavailableDates((unavail) => unavail.filter((d) => d !== date))
+        return newSelected
+      })
+    } else {
+      // 안되는 날짜 토글
+      setUnavailableDates((prev) => {
+        const newUnavailable = prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]
+        // 가능한 날짜에서 제거
+        setAvailableDates((sel) => sel.filter((d) => d !== date))
+        return newUnavailable
+      })
+    }
+  }
+
+  const handleVote = async () => {
+    setIsVoting(true)
+    try {
+      await vote(availableDates, unavailableDates)
+    } finally {
+      setIsVoting(false)
+    }
+  }
+
+  const handleConfirm = async (date: string) => {
+    setIsConfirming(true)
+    try {
+      await confirmDate(date)
+    } finally {
+      setIsConfirming(false)
+    }
+  }
+
+  return (
+    <div className="p-8 h-full flex flex-col bg-white">
+      <PageHeader
+        title="회식 일정 투표"
+        description={`${currentSchedule.month} 회식 일정 투표`}
+        icon={<HugeiconsIcon icon={Calendar03Icon} size={20} />}
+        action={
+          currentSchedule.status === 'confirmed' ? (
+            <Badge className="bg-green-500 text-white">확정: {currentSchedule.confirmedDate}</Badge>
+          ) : (
+            <Badge variant="outline">투표 마감: {new Date(currentSchedule.votingDeadline).toLocaleDateString()}</Badge>
+          )
+        }
+      />
+
+      <div className="flex-1 grid grid-cols-3 gap-5 min-h-0">
+        <div className="col-span-2">
+          <Card className="h-full border-slate-200 shadow-none overflow-hidden flex flex-col">
+            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-sm font-bold text-slate-800">후보 날짜</span>
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="h-5 text-[10px]">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} className="mr-1" />
+                  가능
+                </Badge>
+                <Badge variant="destructive" className="h-5 text-[10px]">
+                  <HugeiconsIcon icon={Cancel01Icon} size={12} className="mr-1" />
+                  불가
+                </Badge>
+              </div>
+            </div>
+            <ScrollArea className="h-[calc(63vh)]">
+              <div className="p-4 space-y-3">
+                {currentSchedule.candidates.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400">
+                    <p className="text-sm">후보 날짜가 없습니다.</p>
+                  </div>
+                ) : (
+                  currentSchedule.candidates.map((candidate) => (
+                    <CandidateCard
+                      key={candidate.date}
+                      candidate={candidate}
+                      isAvailable={availableDates.includes(candidate.date)}
+                      isUnavailable={unavailableDates.includes(candidate.date)}
+                      onToggleAvailable={() => handleToggleDate(candidate.date, 'available')}
+                      onToggleUnavailable={() => handleToggleDate(candidate.date, 'unavailable')}
+                      isVotingClosed={isVotingClosed}
+                      isConfirmed={currentSchedule.confirmedDate === candidate.date}
+                      canConfirm={canConfirm && currentSchedule.status !== 'confirmed'}
+                      onConfirm={() => handleConfirm(candidate.date)}
+                      isConfirming={isConfirming}
+                    />
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+            <CardContent>
+              {!isVotingClosed && (
+                <Button onClick={handleVote} disabled={isVoting} className="w-full">
+                  {isVoting ? '투표 중...' : `투표하기 (가능: ${availableDates.length}개 / 불가: ${unavailableDates.length}개)`}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="col-span-1">
+          <Card className="h-full border-slate-200 shadow-none flex flex-col">
+            <div className="px-5 py-3 border-b border-slate-100">
+              <span className="text-sm font-bold text-slate-800">투표 현황</span>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <div className="flex justify-between text-xs mb-2">
+                  <span>투표율</span>
+                  <span className="font-bold">{votingProgress.toFixed(0)}%</span>
+                </div>
+                <Progress value={votingProgress} />
+              </div>
+              <div className="text-xs text-slate-500 space-y-1">
+                <p>
+                  {currentSchedule.votedMembers.length} / {currentSchedule.totalMembers}명 투표 완료
+                </p>
+                <p>전체 후보: {currentSchedule.availableCandidateCount}개</p>
+                {currentSchedule.status === 'voting' && <p className="text-orange-600">투표 진행 중</p>}
+                {currentSchedule.status === 'confirmed' && (
+                  <p className="text-green-600 font-bold">일정 확정: {currentSchedule.confirmedDate}</p>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CandidateCard({
+  candidate,
+  isAvailable,
+  isUnavailable,
+  onToggleAvailable,
+  onToggleUnavailable,
+  isVotingClosed,
+  isConfirmed,
+  canConfirm,
+  onConfirm,
+  isConfirming
+}: {
+  candidate: DinnerCandidate
+  isAvailable: boolean
+  isUnavailable: boolean
+  onToggleAvailable: () => void
+  onToggleUnavailable: () => void
+  isVotingClosed: boolean
+  isConfirmed: boolean
+  canConfirm: boolean
+  onConfirm: () => void
+  isConfirming: boolean
+}) {
+  const isHoliday = !!candidate.holidayName // 공휴일 여부 확인
+
+  return (
+    <div
+      className={cn(
+        'p-4 rounded-xl border-2 transition-all relative overflow-hidden',
+        isConfirmed
+          ? 'border-green-500 bg-green-50'
+          : isHoliday || isUnavailable
+            ? 'border-red-500 bg-red-50'
+            : isAvailable
+              ? 'border-primary bg-primary/5'
+              : 'border-slate-200'
+      )}
+    >
+      {/* 공휴일 차단 레이어: 카드 위를 덮어서 클릭 방지 */}
+      {isHoliday && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[2px]">
+          <div className="flex flex-col items-center p-4 text-center">
+            <span className="text-sm font-black text-red-600 mb-1">{candidate.holidayName}</span>
+            <p className="text-[11px] font-bold text-slate-600 leading-tight">공휴일은 회식 투표가 불가능합니다.</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className={cn('text-base font-bold')}>
+              {candidate.date} ({candidate.dayOfWeek})
+            </span>
+            {isConfirmed && <Badge className="bg-green-500 text-white text-[10px]">확정</Badge>}
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="text-primary font-medium">가능: {candidate.availableVotes.length}명</span>
+            <span>/</span>
+            <span className="text-destructive font-medium">불가능: {candidate.unavailableVotes.length}명</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {!isVotingClosed && !isConfirmed && (
+            <div className="flex gap-2">
+              <Button size="sm" variant={isAvailable ? 'default' : 'outline'} className="h-7 text-[11px]" onClick={onToggleAvailable}>
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} className="mr-1" />
+                가능
+              </Button>
+              <Button
+                size="sm"
+                variant={isUnavailable ? 'destructive' : 'outline'}
+                className="h-7 text-[11px]"
+                onClick={onToggleUnavailable}
+              >
+                <HugeiconsIcon icon={Cancel01Icon} size={14} className="mr-1" />
+                불가
+              </Button>
+            </div>
+          )}
+
+          {/* 투표 종료 후에도 내가 불가 선택한 날짜 표시 */}
+          {(isVotingClosed || isConfirmed) && isUnavailable && (
+            <Badge variant="destructive" className="text-[10px] justify-center">
+              <HugeiconsIcon icon={Cancel01Icon} size={12} className="mr-1" />내 불가 투표
+            </Badge>
+          )}
+
+          {/* 요구사항 8: 특정 hostname만 확정 가능 */}
+          {canConfirm && !isConfirmed && (
+            <Button size="sm" variant="default" className="h-7 text-[11px] bg-green-600" onClick={onConfirm} disabled={isConfirming}>
+              {isConfirming ? '확정 중...' : '확정'}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -7,21 +7,9 @@ import { BrowserWindow, ipcMain, nativeImage, Notification, shell } from 'electr
 
 const getIconPath = (type?: string) => {
   const iconFolder = is.dev ? join(__dirname, '../../build') : join(process.resourcesPath, '/')
+  if (!type) return join(iconFolder, 'task-check.png')
 
-  switch (type) {
-    case 'task-support':
-      return join(iconFolder, 'task_support.png')
-    case 'task-check':
-      return join(iconFolder, 'task_check.png')
-    case 'vm-request':
-      return join(iconFolder, 'vm_request.png')
-    case 'vm-approved':
-      return join(iconFolder, 'vm_approved.png')
-    case 'vm-rejected':
-      return join(iconFolder, 'vm_rejected.png')
-    default:
-      return join(iconFolder, 'logo.png') // 기본 로고
-  }
+  return join(iconFolder, `${type}.png`)
 }
 
 export function registerNotificationHandlers() {
@@ -36,7 +24,7 @@ export function registerNotificationHandlers() {
         taskId?: string
         vmName?: string
         senderName?: string
-        notificationType?: 'task-check' | 'task-support' | 'vm-request' | 'vm-approved' | 'vm-rejected'
+        notificationType?: 'task-check' | 'task-support' | 'vm-request' | 'vm-approved' | 'vm-rejected' | 'dinner-confirmed'
       }
     ) => {
       try {
@@ -68,7 +56,6 @@ export function registerNotificationHandlers() {
             const url = `https://114.unipost.co.kr/home.uni?access=list&srIdx=${args.taskId}`
             try {
               await shell.openExternal(url)
-              console.log('[Notification] 알림 클릭으로 URL 열기:', url)
             } catch (error) {
               console.error('[Notification] URL 열기 실패:', error)
             }
@@ -76,8 +63,6 @@ export function registerNotificationHandlers() {
         })
 
         notification.show()
-        console.log('[Notification] 알림 표시:', args.title)
-
         return { success: true }
       } catch (error) {
         console.error('[Notification] 알림 표시 실패:', error)

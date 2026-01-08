@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Message02Icon, Notification02Icon, Tick02Icon } from '@hugeicons/core-free-icons'
+import { Calendar03Icon, Message02Icon, Notification02Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
@@ -41,11 +41,7 @@ export function NotificationsPage() {
     if (notification.type !== 'vm-request') return true
 
     // VM 요청이 취소되었거나, 만료되었거나, 이미 처리된 경우 클릭 불가
-    if (notification.isCancelled || notification.isProcessed || isVMRequestExpired(notification)) {
-      return false
-    }
-
-    return true
+    return !(notification.isCancelled || notification.isProcessed || isVMRequestExpired(notification))
   }
 
   const handleNotificationClick = (notification: Notification) => {
@@ -87,6 +83,7 @@ export function NotificationsPage() {
   const getTypeIcon = (type: string) => {
     if (type === 'task-check') return Tick02Icon
     if (type === 'task-support') return Message02Icon
+    if (type === 'dinner-confirmed') return Calendar03Icon
     return Notification02Icon
   }
 
@@ -94,6 +91,7 @@ export function NotificationsPage() {
     if (type === 'task-check') return '확인 요청'
     if (type === 'task-support') return '지원 요청'
     if (type === 'vm-request') return 'VM 요청'
+    if (type === 'dinner-confirmed') return '회식 확정'
     return '알림'
   }
 

@@ -16,7 +16,16 @@ interface ElectronAPI {
     body: string
     taskId?: string
     vmName?: string
-    notificationType?: 'task-check' | 'task-support' | 'vm-request' | 'vm-approved' | 'vm-rejected'
+    notificationType?:
+      | 'task-check'
+      | 'task-support'
+      | 'vm-request'
+      | 'vm-approved'
+      | 'vm-rejected'
+      | 'dinner-voting'
+      | 'dinner-confirmed'
+      | 'dinner-deadline'
+      | 'error'
     senderName?: string
   }) => Promise<{ success: boolean; error?: any }>
   setBadgeCount: (count: number, badgeData: string | null) => Promise<{ success: boolean; error?: any }>

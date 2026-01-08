@@ -93,7 +93,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
           expiresAt: now + 30000 // 30초 후
         }
       })
-      toast.info(`${data.vmName} 사용 요청을 전송했습니다. (30초간 유효)`)
     })
 
     // VM 요청 Lock 상태 (다른 사람이 먼저 요청 중)

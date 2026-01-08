@@ -6,7 +6,7 @@ import { create } from 'zustand'
 import { useHypervStore } from './hyperv'
 import { useSocketStore } from './socket'
 
-type NotificationType = 'task-check' | 'task-support' | 'vm-request'
+type NotificationType = 'task-check' | 'task-support' | 'vm-request' | 'dinner-confirmed'
 
 export interface Notification {
   id: string
@@ -15,6 +15,7 @@ export interface Notification {
   senderName: string
   receiverHostname: string
   receiverName: string
+  title: string
   message: string
   timestamp: string
   isRead: boolean
@@ -170,8 +171,6 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       return
     }
 
-    console.log('[Notification] 이벤트 리스너 등록')
-
     // 초기 알림 데이터 수신
     socket.on('notification:initial', (notifications: Notification[]) => {
       console.log('[Notification] 초기 알림 데이터 수신:', notifications.length, '건')
@@ -185,8 +184,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
       // Windows 토스트 알림 표시
       window.api.showUniNotification({
-        title:
-          notification.type === 'task-check' ? '업무 확인 요청' : notification.type === 'task-support' ? '업무 지원 요청' : 'VM 사용 요청',
+        title: notification.title,
         body: notification.message,
         taskId: notification.taskId, // 알림 클릭 시 URL 열기용 taskId 전달
         vmName: notification.vmName, // VM 관련 알림의 경우 vmName 전달
