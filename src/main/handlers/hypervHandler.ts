@@ -10,8 +10,6 @@ export function registerHypervHandlers() {
       const { hostServer, vmName } = args
       const vmconnectPath = 'vmconnect.exe'
 
-      console.log('[HyperV] VM 연결 시도:', { hostServer, vmName })
-
       // spawn을 사용하여 프로세스를 독립적으로 실행
       const child = spawn(vmconnectPath, [hostServer, vmName], {
         detached: true, // 부모 프로세스(Electron)와 독립적으로 실행
@@ -32,7 +30,6 @@ export function registerHypervHandlers() {
   ipcMain.handle('hyperv:kill-vm-process', async (_event, args: { vmName: string }) => {
     try {
       const { vmName } = args
-      console.log('[HyperV] VM 프로세스 종료 시도:', vmName)
 
       // PowerShell 명령어로 vmconnect.exe 프로세스 중 해당 VM 이름을 포함하는 프로세스 종료
       const psCommand = `Get-Process vmconnect -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like '*${vmName}*' } | Stop-Process -Force`
@@ -55,7 +52,6 @@ export function registerHypervHandlers() {
 
         child.on('close', (code) => {
           if (code === 0 || !stderr) {
-            console.log('[HyperV] VM 프로세스 종료 성공:', vmName)
             resolve({ success: true })
           } else {
             console.error('[HyperV] VM 프로세스 종료 실패:', stderr)

@@ -27,7 +27,6 @@ export function VMRequestReceiverDialog() {
   const handleApprove = async () => {
     try {
       await window.api.killVMProcess({ vmName: dialogState.vmName })
-      console.log(`[VM] ${dialogState.vmName} 프로세스 종료 완료`)
     } catch (error) {
       console.warn(`[VM] ${dialogState.vmName} 프로세스 종료 실패 (이미 종료되었을 수 있음):`, error)
     }

@@ -29,11 +29,8 @@ export const useCalendarStore = create<CalendarStore>((set) => ({
       return
     }
 
-    console.log('[Calendar] 이벤트 리스너 등록')
-
     // 일정 업데이트 이벤트 리스너
     socket.on('calendar:updated', (data: { vacationsDate: Record<string, ProcessedEvent[]> }) => {
-      console.log('[Calendar] 일정 업데이트 수신')
       set({ eventsByDate: data.vacationsDate })
     })
   },
@@ -42,7 +39,6 @@ export const useCalendarStore = create<CalendarStore>((set) => ({
     const socket = useSocketStore.getState().getSocket()
     if (!socket) return
 
-    console.log('[Calendar] 이벤트 리스너 제거')
     socket.off('calendar:updated')
   }
 }))

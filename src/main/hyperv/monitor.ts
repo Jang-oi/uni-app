@@ -81,7 +81,6 @@ export function createHyperVMonitor(onStatusChange: OnStatusChangeCallback) {
     state.isRunning = false
     if (state.intervalId) clearInterval(state.intervalId)
     state.activeVMs.clear()
-    console.log('[HyperV Monitor] 모니터링 종료')
   }
 
   return { start, stop }

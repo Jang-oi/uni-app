@@ -72,7 +72,6 @@ const gotTheLock = app.requestSingleInstanceLock()
 
 if (!gotTheLock) {
   // 이미 앱이 실행 중이면 종료
-  console.log('[App] 이미 실행 중인 인스턴스가 있습니다. 종료합니다.')
   app.quit()
 } else {
   // 두 번째 인스턴스 실행 시도 시 기존 창 포커스
@@ -80,7 +79,6 @@ if (!gotTheLock) {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.focus()
-      console.log('[App] 기존 창으로 포커스 이동')
     }
   })
 
@@ -138,7 +136,6 @@ const createTray = () => {
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   hypervMonitor.stop()
-  console.log('[App] HyperV 모니터링 백그라운드 서비스 종료')
 
   if (process.platform !== 'darwin') {
     app.quit()

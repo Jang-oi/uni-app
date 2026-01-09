@@ -49,7 +49,6 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
 
       // 로컬 상태 즉시 업데이트 (낙관적 업데이트)
       set({ MyAvailableDates: availableDates, myUnavailableVotes: unavailableDates })
-      console.log('[Dinner] 투표 전송 - 가능:', availableDates, '/ 불가:', unavailableDates)
     } catch (error) {
       console.error('[Dinner] 투표 오류:', error)
       throw error
@@ -101,7 +100,6 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
     socket.on('dinner:schedule-updated', (schedule: DinnerSchedule) => {
       set({ currentSchedule: schedule })
       const { userHostName } = useUserStore.getState()
-      console.log(userHostName)
       const MyAvailableDates = schedule.candidates.filter((c) => c.availableVotes.includes(userHostName)).map((c) => c.date)
       const myUnavailableVotes = schedule.candidates.filter((c) => c.unavailableVotes.includes(userHostName)).map((c) => c.date)
       set({ MyAvailableDates, myUnavailableVotes })
@@ -140,7 +138,6 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
     const socket = useSocketStore.getState().getSocket()
     if (!socket) return
 
-    console.log('[Dinner] 이벤트 리스너 제거')
     socket.off('dinner:schedule-created')
     socket.off('dinner:schedule-updated')
     socket.off('dinner:vote-updated')

@@ -15,7 +15,6 @@ export const useUserStore = create<UserStore>((set) => ({
   initListeners: async () => {
     try {
       const response = await window.api.getUserInfo()
-      console.log(response)
       if (response.success) {
         set({
           userName: response.data.userName,

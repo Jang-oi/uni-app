@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Loading03Icon, Message02Icon, PackageIcon, RefreshIcon, WifiOff01Icon } from '@hugeicons/core-free-icons'
+import { Loading03Icon, Message02Icon, PackageIcon, WifiOff01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
@@ -58,7 +58,6 @@ export function ServerErrorPage() {
 
   const handleReconnect = () => {
     setIsReconnecting(true)
-    console.log('[ServerError] 재연결 시도 중...')
 
     // 페이지 새로고침으로 재연결 시도
     setTimeout(() => {
@@ -152,7 +151,6 @@ export function ServerErrorPage() {
 
                 {!updateAvailable ? (
                   <Button onClick={() => window.api.checkForUpdates()} disabled={isChecking} variant="outline">
-                    <HugeiconsIcon icon={RefreshIcon} className={`w-4 h-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
                     업데이트 확인
                   </Button>
                 ) : !isDownloaded ? (
@@ -190,21 +188,6 @@ export function ServerErrorPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* 귀여운 장식 요소 */}
-        <motion.div
-          animate={{
-            rotate: [0, 5, -5, 0]
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: 'easeInOut'
-          }}
-          className="text-center mt-6"
-        >
-          <span className="text-4xl">🔌💔</span>
-        </motion.div>
       </motion.div>
       <Toaster position="top-right" richColors theme={'light'} />
     </div>

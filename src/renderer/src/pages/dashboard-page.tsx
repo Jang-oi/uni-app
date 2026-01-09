@@ -55,7 +55,9 @@ export function DashboardPage() {
   }, [eventsByDate, today])
 
   const filteredTasks = useMemo(() => {
-    return teamTasks.filter((task) => task.STATUS_CODE === 'N' || task.REQ_TITLE.includes('긴급'))
+    return teamTasks.filter(
+      (task) => task.STATUS_CODE === 'N' || task.REQ_TITLE.includes('긴급') || (task.STATUS_CODE === 'A' && !task.WRITER)
+    )
   }, [teamTasks])
 
   // 본인이 사용 중인 VM 제외
@@ -65,6 +67,13 @@ export function DashboardPage() {
   }, [vms, userHostName])
 
   const requestVM = useHypervStore((state) => state.requestVM)
+  const getBadgeProps = (task) => {
+    if (task.STATUS_CODE === 'N') return { variant: 'destructive', label: task.STATUS }
+    if (task.REQ_TITLE.includes('긴급')) return { variant: 'secondary', label: '제목에 긴급 포함 건' }
+    if (task.STATUS_CODE === 'A' && !task.WRITER) return { variant: 'default', label: task.STATUS }
+
+    return { variant: 'outline', label: task.STATUS } as any
+  }
 
   return (
     <div className="p-8 h-full flex flex-col bg-white">
@@ -90,6 +99,9 @@ export function DashboardPage() {
               <div className="flex items-center gap-2">
                 <HugeiconsIcon icon={DocumentValidationIcon} size={16} className="text-primary" />
                 <span className="text-sm font-bold text-slate-800">업무 현황</span>
+                <Badge variant="default" className="h-5 text-[10px]">
+                  접수 건
+                </Badge>
                 <Badge variant="destructive" className="h-5 text-[10px]">
                   고객사답변 건
                 </Badge>
@@ -106,28 +118,32 @@ export function DashboardPage() {
                     <p className="text-sm">긴급 업무가 없습니다.</p>
                   </div>
                 ) : (
-                  filteredTasks.map((task) => (
-                    <div
-                      key={task.SR_IDX}
-                      onClick={() => openUniPost(task.SR_IDX)}
-                      className="group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer"
-                    >
-                      <div className="flex flex-col gap-1 flex-1 min-w-0">
-                        <span className="text-[10px] font-bold text-primary uppercase truncate">{task.CM_NAME}</span>
-                        <span className="text-sm font-medium text-slate-900 truncate">{task.REQ_TITLE}</span>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                          <span>{task.WRITER}</span>
-                          <span>•</span>
-                          <span>{task.REQ_DATE}</span>
-                          <span>•</span>
-                          <Badge variant={task.STATUS_CODE === 'N' ? 'destructive' : 'secondary'} className="h-4 text-[9px] px-1.5">
-                            {task.STATUS_CODE === 'N' ? task.STATUS : '제목에 긴급 포함 건'}
-                          </Badge>
+                  filteredTasks.map((task) => {
+                    const { variant, label } = getBadgeProps(task)
+
+                    return (
+                      <div
+                        key={task.SR_IDX}
+                        onClick={() => openUniPost(task.SR_IDX)}
+                        className="group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer hover:bg-slate-50"
+                      >
+                        <div className="flex flex-col gap-1 flex-1 min-w-0">
+                          <span className="text-[10px] font-bold text-primary uppercase truncate">{task.CM_NAME}</span>
+                          <span className="text-sm font-medium text-slate-900 truncate">{task.REQ_TITLE}</span>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                            <span>{task.WRITER || '작성자 없음'}</span>
+                            <span>•</span>
+                            <span>{task.REQ_DATE}</span>
+                            <span>•</span>
+                            <Badge variant={variant} className="h-4 text-[9px] px-1.5">
+                              {label}
+                            </Badge>
+                          </div>
                         </div>
+                        <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4 text-slate-300 group-hover:text-red-500 ml-2" />
                       </div>
-                      <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4 text-slate-300 group-hover:text-red-500 ml-2" />
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
             </ScrollArea>

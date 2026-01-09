@@ -155,7 +155,6 @@ export function TaskTable({ data, onRequestClick }: TaskTableProps) {
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                onClick={() => console.log(row.original)}
                 className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
                 data-state={row.getIsSelected() && 'selected'}
               >

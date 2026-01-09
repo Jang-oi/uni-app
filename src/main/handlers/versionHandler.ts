@@ -87,7 +87,6 @@ export function registerVersionHandlers() {
    */
   ipcMain.handle('updater:check', async () => {
     try {
-      console.log('[Updater] 업데이트 확인 시작')
       await checkForUpdates()
       return { success: true }
     } catch (error) {
@@ -101,7 +100,6 @@ export function registerVersionHandlers() {
    */
   ipcMain.handle('updater:download', async () => {
     try {
-      console.log('[Updater] 업데이트 다운로드 시작')
       await downloadUpdate()
       return { success: true }
     } catch (error) {
@@ -115,7 +113,6 @@ export function registerVersionHandlers() {
    */
   ipcMain.handle('updater:install', async () => {
     try {
-      console.log('[Updater] 업데이트 설치 시작')
       installUpdate()
       return { success: true }
     } catch (error) {

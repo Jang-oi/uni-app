@@ -25,11 +25,9 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
   initSocket: (onError?: () => void) => {
     // 이미 연결되어 있다면 재연결 방지
     if (get().socket) {
-      console.log('[Socket] 이미 연결되어 있음')
       return
     }
 
-    console.log('[Socket] 공유 소켓 연결 시작...')
     set({ connectionStatus: 'connecting' })
 
     const newSocket = io(BASE_URL, {
@@ -41,11 +39,9 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
 
     // 연결 성공
     newSocket.on('connect', async () => {
-      console.log('[Socket] ✅ 연결 성공 (Socket ID:', newSocket.id, ')')
       set({ connectionStatus: 'connected' })
       const { userHostName } = useUserStore.getState()
       newSocket.emit('register:user', { hostname: userHostName })
-      console.log('[Socket] 사용자 등록:', userHostName)
     })
 
     // 연결 오류
@@ -68,13 +64,12 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
     })
 
     // 재연결 시도
-    newSocket.on('reconnect_attempt', (attemptNumber) => {
-      console.log('[Socket] 🔄 재연결 시도:', attemptNumber)
+    newSocket.on('reconnect_attempt', () => {
+      // 재연결 시도 중
     })
 
     // 재연결 성공
-    newSocket.on('reconnect', (attemptNumber) => {
-      console.log('[Socket] ✅ 재연결 성공 (시도 횟수:', attemptNumber, ')')
+    newSocket.on('reconnect', () => {
       set({ connectionStatus: 'connected' })
     })
 
@@ -88,7 +83,6 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
   disconnect: () => {
     const socket = get().socket
     if (socket) {
-      console.log('[Socket] 연결 종료')
       socket.disconnect()
       set({ socket: null, connectionStatus: 'disconnected' })
     }

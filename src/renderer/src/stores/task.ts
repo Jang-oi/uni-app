@@ -71,11 +71,8 @@ export const useTaskStore = create<TaskStore>((set) => ({
       return
     }
 
-    console.log('[Task] 이벤트 리스너 등록')
-
     // 업무 업데이트 이벤트 리스너
     socket.on('task:updated', (data: TaskSocketData) => {
-      console.log('[Task] 업무 업데이트 수신')
       set({
         teamTasks: data.team,
         memberTasks: data.members,
@@ -88,7 +85,6 @@ export const useTaskStore = create<TaskStore>((set) => ({
     const socket = useSocketStore.getState().getSocket()
     if (!socket) return
 
-    console.log('[Task] 이벤트 리스너 제거')
     socket.off('task:updated')
   }
 }))

@@ -84,7 +84,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
 
     // VM 요청 성공 (Lock 시작) - 요청자용
     socket.on('vm:request-sent', (data: { vmName: string; requestId: string }) => {
-      console.log('[VM Request Sent]:', data)
       const now = Date.now()
       set({
         activeRequest: {
@@ -103,7 +102,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
 
     // VM 요청 수신 (수신자용)
     socket.on('vm:request-received', (data: { vmName: string; requesterName: string; timestamp: string }) => {
-      console.log('[VM Request Received]:', data)
       set({
         vmRequestDialog: {
           isOpen: true,
@@ -116,7 +114,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
 
     // VM 승인 수신
     socket.on('vm:approved', (data: { vmName: string; hostServer: string; approverName: string }) => {
-      console.log('[VM Approved]:', data)
       set({
         activeRequest: null, // 요청 완료
         vmResponseDialog: {
@@ -139,7 +136,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
 
     // VM 거부 수신
     socket.on('vm:rejected', (data: { vmName: string }) => {
-      console.log('[VM Rejected]:', data)
       set({
         activeRequest: null, // 요청 완료
         vmResponseDialog: {
@@ -160,18 +156,12 @@ export const useHypervStore = create<HypervStore>((set) => ({
 
     // VM 요청 타임아웃
     socket.on('vm:timeout', (data: { vmName: string; notificationId?: string }) => {
-      console.log('[VM Timeout]:', data)
       set({ activeRequest: null, vmResponseDialog: null, vmRequestDialog: null })
       toast.warning(`${data.vmName} 요청이 30초간 응답이 없어 만료되었습니다.`)
-
-      if (data.notificationId) {
-        console.log('[VM Timeout] 알림 삭제 대상:', data.notificationId)
-      }
     })
 
     // 접속자 목록 업데이트 수신
     socket.on('users:connected', (users: ConnectedUser[]) => {
-      console.log('[HyperV] 접속자 목록 업데이트:', users.length, '명')
       set({ connectedUsers: users })
     })
   },
@@ -180,7 +170,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
     const socket = useSocketStore.getState().getSocket()
     if (!socket) return
 
-    console.log('[HyperV] 이벤트 리스너 제거')
     socket.off('hyperv:updated')
     socket.off('vm:request-sent')
     socket.off('vm:request-locked')
@@ -206,8 +195,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
       requestedByHostname: userHostName,
       currentHostname
     })
-
-    console.log('[VM Request] 요청 전송:', { vmName, userHostName, currentHostname })
   },
 
   // VM 요청 취소 메서드
@@ -223,8 +210,6 @@ export const useHypervStore = create<HypervStore>((set) => ({
       vmName,
       requesterHostname: userHostName
     })
-
-    console.log('[VM Cancel] 요청 취소:', { vmName, userHostName })
 
     // 상태 초기화
     set({ activeRequest: null, vmResponseDialog: null })

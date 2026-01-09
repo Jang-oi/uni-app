@@ -21,13 +21,11 @@ export function initAutoUpdater(mainWindow: BrowserWindow | null) {
 
   // 업데이트 확인 이벤트
   autoUpdater.on('checking-for-update', () => {
-    console.log('[Updater] Checking for update...')
     mainWindow?.webContents.send('updater:checking')
   })
 
   // 업데이트 가능 이벤트
   autoUpdater.on('update-available', (info) => {
-    console.log('[Updater] Update available:', info.version)
     mainWindow?.webContents.send('updater:available', {
       version: info.version,
       releaseDate: info.releaseDate,
@@ -37,7 +35,6 @@ export function initAutoUpdater(mainWindow: BrowserWindow | null) {
 
   // 업데이트 없음 이벤트
   autoUpdater.on('update-not-available', (info) => {
-    console.log('[Updater] Update not available. Current version:', info.version)
     mainWindow?.webContents.send('updater:not-available', {
       version: info.version
     })
@@ -45,7 +42,6 @@ export function initAutoUpdater(mainWindow: BrowserWindow | null) {
 
   // 다운로드 진행 이벤트
   autoUpdater.on('download-progress', (progressObj) => {
-    console.log(`[Updater] Download progress: ${progressObj.percent}%`)
     mainWindow?.webContents.send('updater:progress', {
       percent: progressObj.percent,
       bytesPerSecond: progressObj.bytesPerSecond,
@@ -56,7 +52,6 @@ export function initAutoUpdater(mainWindow: BrowserWindow | null) {
 
   // 다운로드 완료 이벤트
   autoUpdater.on('update-downloaded', (info) => {
-    console.log('[Updater] Update downloaded:', info.version)
     mainWindow?.webContents.send('updater:downloaded', {
       version: info.version
     })

@@ -94,12 +94,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       let newNotifications
 
       if (existingIndex >= 0) {
-        console.log('[Notification] 중복 알림 감지, 업데이트로 처리:', notification.id)
         newNotifications = state.notifications.map((n) => (n.id === notification.id ? notification : n))
       } else {
         // VM 요청 알림의 경우, 같은 VM에 대한 이전 요청 알림 삭제
         if (notification.type === 'vm-request' && notification.vmName) {
-          console.log('[Notification] VM 요청 알림 추가, 같은 VM의 이전 알림 제거:', notification.vmName)
           newNotifications = [
             notification,
             ...state.notifications.filter((n) => !(n.type === 'vm-request' && n.vmName === notification.vmName && n.id !== notification.id))
@@ -171,13 +169,11 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     // 초기 알림 데이터 수신
     socket.on('notification:initial', (notifications: Notification[]) => {
-      console.log('[Notification] 초기 알림 데이터 수신:', notifications.length, '건')
       get().setNotifications(notifications)
     })
 
     // 새 알림 수신
     socket.on('notification:new', async (notification: Notification) => {
-      console.log('[Notification] 새 알림 수신:', notification)
       get().addNotification(notification)
 
       // Windows 토스트 알림 표시
@@ -193,13 +189,11 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     // 알림 업데이트 수신
     socket.on('notification:updated', (notification: Notification) => {
-      console.log('[Notification] 알림 업데이트 수신:', notification.id)
       get().updateNotification(notification)
     })
 
     // 전체 읽음 처리 완료
     socket.on('notification:all-read', (notifications: Notification[]) => {
-      console.log('[Notification] 전체 읽음 처리 완료:', notifications.length, '건')
       notifications.forEach((n) => {
         get().updateNotification(n)
       })
@@ -207,7 +201,6 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     // 알림 삭제 수신 (VM 요청 취소/만료/처리 완료 시)
     socket.on('notification:removed', (notificationId: string) => {
-      console.log('[Notification] 알림 삭제 수신:', notificationId)
       get().removeNotification(notificationId)
       useHypervStore.setState({ vmRequestDialog: null })
     })
@@ -217,7 +210,6 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     const socket = useSocketStore.getState().getSocket()
     if (!socket) return
 
-    console.log('[Notification] 이벤트 리스너 제거')
     socket.off('notification:initial')
     socket.off('notification:new')
     socket.off('notification:updated')
