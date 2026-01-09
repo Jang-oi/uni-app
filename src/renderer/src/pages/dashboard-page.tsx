@@ -1,5 +1,11 @@
 import { useEffect, useMemo } from 'react'
-import { ArrowRight01Icon, Task01Icon, UserIcon, VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
+import {
+  ArrowRight01Icon,
+  DashboardSquare03Icon,
+  DocumentValidationIcon,
+  TwitterIcon,
+  VirtualRealityVr01Icon
+} from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
@@ -65,7 +71,7 @@ export function DashboardPage() {
       <PageHeader
         title="대시보드"
         description="실시간 팀 현황 및 주요 지표를 요약하여 보여줍니다."
-        icon={<HugeiconsIcon icon={Task01Icon} size={20} />}
+        icon={<HugeiconsIcon icon={DashboardSquare03Icon} size={20} />}
         action={
           activeRequest ? (
             <VMRequestProgress
@@ -82,6 +88,7 @@ export function DashboardPage() {
           <Card className="h-full border-slate-200 shadow-none overflow-hidden flex flex-col">
             <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
+                <HugeiconsIcon icon={DocumentValidationIcon} size={16} className="text-primary" />
                 <span className="text-sm font-bold text-slate-800">업무 현황</span>
                 <Badge variant="destructive" className="h-5 text-[10px]">
                   고객사답변 건
@@ -131,9 +138,12 @@ export function DashboardPage() {
         <div className="col-span-1 flex flex-col gap-5">
           <div className="flex-1">
             <Card className="h-full border-slate-200 shadow-none flex flex-col">
-              <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
-                <HugeiconsIcon icon={VirtualRealityVr01Icon} size={16} className="text-primary" />
-                <span className="text-sm font-bold text-slate-800">VM 실시간 상태</span>
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={VirtualRealityVr01Icon} size={16} className="text-primary" />
+                  <span className="text-sm font-bold text-slate-800">VM 실시간 상태</span>
+                </div>
+                <span className="text-xs text-slate-500">{filteredVMs.length}개</span>
               </div>
               <ScrollArea className="h-[calc(48vh-80px)]">
                 <div className="px-2 space-y-2">
@@ -181,11 +191,14 @@ export function DashboardPage() {
 
           <div className="flex-1">
             <Card className="h-full border-slate-200 shadow-none flex flex-col">
-              <div className="px-5 py-2 border-b border-slate-100 flex items-center gap-2">
-                <HugeiconsIcon icon={UserIcon} size={16} className="text-primary" />
-                <span className="text-sm font-bold text-slate-800">오늘의 휴가</span>
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={TwitterIcon} size={16} className="text-primary" />
+                  <span className="text-sm font-bold text-slate-800">오늘의 휴가</span>
+                </div>
+                <span className="text-xs text-slate-500">{todayVacations.length}명</span>
               </div>
-              <ScrollArea className="h-[calc(24vh-80px)]">
+              <ScrollArea className="h-[calc(28vh-80px)]">
                 <div className="px-2 space-y-2">
                   {todayVacations.length === 0 ? (
                     <div className="text-center py-8 text-slate-400">
