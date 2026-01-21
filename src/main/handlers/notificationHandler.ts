@@ -38,6 +38,15 @@ export function registerNotificationHandlers() {
         }
 
         const notification = new Notification(notificationOptions)
+        const mainWindow = BrowserWindow.getAllWindows()[0]
+        if (mainWindow) {
+          // 작업표시줄 반짝임 효과
+          mainWindow.flashFrame(true)
+          // 사용자가 창을 확인(포커스)하면 반짝임 중지
+          mainWindow.once('focus', () => {
+            mainWindow.flashFrame(false)
+          })
+        }
 
         // 알림 클릭 시 처리
         notification.on('click', async () => {
@@ -49,7 +58,9 @@ export function registerNotificationHandlers() {
 
           // 앱 포커스
           if (mainWindow.isMinimized()) mainWindow.restore()
+          mainWindow.show()
           mainWindow.focus()
+          mainWindow.flashFrame(false)
 
           // taskId가 있으면 외부 URL 열기 (업무 관련)
           if (args.taskId) {
