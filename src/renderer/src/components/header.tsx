@@ -1,11 +1,19 @@
-import { UserMultiple02Icon } from '@hugeicons/core-free-icons'
+import { PackageIcon, Settings02Icon, UserMultiple02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { motion } from 'motion/react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useHypervStore } from '@/stores/hyperv'
 import { useNotificationStore } from '@/stores/notification'
@@ -20,8 +28,7 @@ const tabs = [
   { id: 'HYPER-V', label: 'HYPER-V' },
   { id: '업무', label: '업무' },
   { id: '회식일정', label: '회식일정' },
-  { id: '알림', label: '알림' },
-  { id: '버전관리', label: '버전관리' }
+  { id: '알림', label: '알림' }
 ]
 
 export function Header({ activeTab, setActiveTab }: HeaderProps) {
@@ -61,49 +68,54 @@ export function Header({ activeTab, setActiveTab }: HeaderProps) {
         ))}
       </nav>
 
-      {/* Right: Connected Users */}
+      {/* Right: Settings Menu */}
       <div className="flex items-center gap-2">
-        {/* 접속 중인 사용자 */}
-        <Popover>
-          <PopoverTrigger className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100">
-            <HugeiconsIcon icon={UserMultiple02Icon} size={18} className="text-slate-600" />
-            <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1.5 tabular-nums">
-              {connectedUsers.length}
-            </Badge>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-0" align="end">
-            <div className="p-3 border-b border-slate-200">
-              <h3 className="font-semibold text-sm text-slate-900">접속 중인 사용자</h3>
-              <p className="text-xs text-slate-500 mt-0.5">총 {connectedUsers.length}명이 접속 중입니다</p>
-            </div>
-            <ScrollArea className="max-h-[300px]">
-              <div className="p-2">
-                {connectedUsers.length === 0 ? (
-                  <div className="py-8 text-center">
-                    <p className="text-sm text-slate-500">접속 중인 사용자가 없습니다</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {connectedUsers.map((user) => (
-                      <div
-                        key={user.hostname}
-                        className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                          <span className="text-sm font-medium text-slate-900">{user.name}</span>
+        {/* 설정 드롭다운 */}
+        <DropdownMenu>
+          <DropdownMenuTrigger className="cursor-pointer inline-flex items-center justify-center rounded-md p-2 text-sm font-medium transition-colors hover:bg-slate-100">
+            <HugeiconsIcon icon={Settings02Icon} size={18} className="text-slate-600" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            {/* 접속 현황 서브메뉴 */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="cursor-pointer gap-2">
+                <HugeiconsIcon icon={UserMultiple02Icon} size={14} />
+                <span>접속현황</span>
+                <span className="ml-auto text-[10px] text-slate-400 tabular-nums">{connectedUsers.length}명</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-56">
+                <ScrollArea className="h-[calc(28vh-40px)]">
+                  {connectedUsers.length === 0 ? (
+                    <div className="py-6 text-center">
+                      <HugeiconsIcon icon={UserMultiple02Icon} size={24} className="mx-auto mb-2 text-slate-300" />
+                      <p className="text-xs text-slate-400">접속 중인 사용자가 없습니다</p>
+                    </div>
+                  ) : (
+                    <div className="p-1">
+                      {connectedUsers.map((user) => (
+                        <div key={user.hostname} className="flex items-center justify-between px-2 py-2 rounded-md">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-xs font-medium text-slate-700">{user.name}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            {formatDistanceToNow(new Date(user.connectedAt), { addSuffix: true, locale: ko })}
+                          </span>
                         </div>
-                        <span className="text-xs text-slate-500">
-                          {formatDistanceToNow(new Date(user.connectedAt), { addSuffix: true, locale: ko })}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </PopoverContent>
-        </Popover>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
+            {/* 버전관리 */}
+            <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => setActiveTab('버전관리')}>
+              <HugeiconsIcon icon={PackageIcon} size={14} />
+              <span>버전관리</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   )
