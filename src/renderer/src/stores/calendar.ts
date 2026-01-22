@@ -31,6 +31,7 @@ export const useCalendarStore = create<CalendarStore>((set) => ({
 
     // 일정 업데이트 이벤트 리스너
     socket.on('calendar:updated', (data: { vacationsDate: Record<string, ProcessedEvent[]> }) => {
+      if (!data) return
       set({ eventsByDate: data.vacationsDate })
     })
   },

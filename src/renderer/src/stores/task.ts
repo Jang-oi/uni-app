@@ -73,6 +73,7 @@ export const useTaskStore = create<TaskStore>((set) => ({
 
     // 업무 업데이트 이벤트 리스너
     socket.on('task:updated', (data: TaskSocketData) => {
+      if (!data) return
       set({
         teamTasks: data.team,
         memberTasks: data.members,

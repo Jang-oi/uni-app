@@ -24,9 +24,9 @@ import { VMRequestReceiverDialog } from './components/vm-request-receiver-dialog
 export default function App() {
   const [activeTab, setActiveTab] = useState('대시보드')
   const [isInitializing, setIsInitializing] = useState(true)
-  const [serverError, setServerError] = useState(false)
 
   const initSocket = useSocketStore((state) => state.initSocket)
+  const connectionStatus = useSocketStore((state) => state.connectionStatus)
   const initCalendarListeners = useCalendarStore((state) => state.initListeners)
   const initTaskListeners = useTaskStore((state) => state.initListeners)
   const initUserListeners = useUserStore((state) => state.initListeners)
@@ -39,9 +39,8 @@ export default function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        const handleError = () => setServerError(true)
         initUserListeners()
-        initSocket(handleError)
+        initSocket()
 
         // 2. 각 스토어의 이벤트 리스너 등록
         initCalendarListeners()
@@ -56,25 +55,16 @@ export default function App() {
         await new Promise((resolve) => setTimeout(resolve, 3000))
       } catch (error) {
         console.error('[App] 치명적 오류 발생:', error)
-        setServerError(true)
       } finally {
         setIsInitializing(false)
       }
     }
 
     initializeApp()
-  }, [
-    initSocket,
-    initCalendarListeners,
-    initTaskListeners,
-    initDinnerListeners,
-    initHypervListeners,
-    initNotificationListeners,
-    initVersion
-  ])
+  }, [])
 
-  if (serverError) return <ServerErrorPage />
   if (isInitializing) return <LoadingScreen />
+  if (connectionStatus === 'error' || connectionStatus === 'disconnected') return <ServerErrorPage />
 
   const renderPage = () => {
     switch (activeTab) {

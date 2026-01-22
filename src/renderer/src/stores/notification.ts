@@ -88,6 +88,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   },
 
   addNotification: (notification) => {
+    if (!notification) return
     set((state) => {
       // 중복 알림 방지: 같은 ID가 이미 존재하면 업데이트만 수행
       const existingIndex = state.notifications.findIndex((n) => n.id === notification.id)
@@ -116,6 +117,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   },
 
   updateNotification: (notification) => {
+    if (!notification) return
     set((state) => {
       const notifications = state.notifications.map((n) => (n.id === notification.id ? notification : n))
       const unreadCount = notifications.filter((n) => !n.isRead).length
@@ -127,6 +129,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   },
 
   removeNotification: (notificationId) => {
+    if (!notificationId) return
     set((state) => {
       const notifications = state.notifications.filter((n) => n.id !== notificationId)
       const unreadCount = notifications.filter((n) => !n.isRead).length
@@ -169,11 +172,13 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     // 초기 알림 데이터 수신
     socket.on('notification:initial', (notifications: Notification[]) => {
+      if (!notifications) return
       get().setNotifications(notifications)
     })
 
     // 새 알림 수신
     socket.on('notification:new', async (notification: Notification) => {
+      if (!notification) return
       get().addNotification(notification)
 
       // Windows 토스트 알림 표시
@@ -189,11 +194,13 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     // 알림 업데이트 수신
     socket.on('notification:updated', (notification: Notification) => {
+      if (!notification) return
       get().updateNotification(notification)
     })
 
     // 전체 읽음 처리 완료
     socket.on('notification:all-read', (notifications: Notification[]) => {
+      if (!notifications) return
       notifications.forEach((n) => {
         get().updateNotification(n)
       })
@@ -201,6 +208,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     // 알림 삭제 수신 (VM 요청 취소/만료/처리 완료 시)
     socket.on('notification:removed', (notificationId: string) => {
+      if (!notificationId) return
       get().removeNotification(notificationId)
       useHypervStore.setState({ vmRequestDialog: null })
     })

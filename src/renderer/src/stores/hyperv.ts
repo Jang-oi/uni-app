@@ -79,11 +79,13 @@ export const useHypervStore = create<HypervStore>((set) => ({
     }
     // HyperV 상태 업데이트
     socket.on('hyperv:updated', (updatedVms: HypervVM[]) => {
+      if (!updatedVms) return
       set({ vms: updatedVms })
     })
 
     // VM 요청 성공 (Lock 시작) - 요청자용
     socket.on('vm:request-sent', (data: { vmName: string; requestId: string }) => {
+      if (!data) return
       const now = Date.now()
       set({
         activeRequest: {
@@ -97,11 +99,13 @@ export const useHypervStore = create<HypervStore>((set) => ({
 
     // VM 요청 Lock 상태 (다른 사람이 먼저 요청 중)
     socket.on('vm:request-locked', (data: { vmName: string; firstRequesterName: string }) => {
+      if (!data) return
       toast.error(`이미 ${data.firstRequesterName}님이 요청 중입니다. (30초 동안 Lock)`)
     })
 
     // VM 요청 수신 (수신자용)
     socket.on('vm:request-received', (data: { vmName: string; requesterName: string; timestamp: string }) => {
+      if (!data) return
       set({
         vmRequestDialog: {
           isOpen: true,
@@ -114,6 +118,7 @@ export const useHypervStore = create<HypervStore>((set) => ({
 
     // VM 승인 수신
     socket.on('vm:approved', (data: { vmName: string; hostServer: string; approverName: string }) => {
+      if (!data) return
       set({
         activeRequest: null, // 요청 완료
         vmResponseDialog: {
@@ -136,6 +141,7 @@ export const useHypervStore = create<HypervStore>((set) => ({
 
     // VM 거부 수신
     socket.on('vm:rejected', (data: { vmName: string }) => {
+      if (!data) return
       set({
         activeRequest: null, // 요청 완료
         vmResponseDialog: {
@@ -156,12 +162,14 @@ export const useHypervStore = create<HypervStore>((set) => ({
 
     // VM 요청 타임아웃
     socket.on('vm:timeout', (data: { vmName: string; notificationId?: string }) => {
+      if (!data) return
       set({ activeRequest: null, vmResponseDialog: null, vmRequestDialog: null })
       toast.warning(`${data.vmName} 요청이 30초간 응답이 없어 만료되었습니다.`)
     })
 
     // 접속자 목록 업데이트 수신
     socket.on('users:connected', (users: ConnectedUser[]) => {
+      if (!users) return
       set({ connectedUsers: users })
     })
   },

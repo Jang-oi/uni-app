@@ -88,6 +88,7 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
 
     // 새 투표 생성 알림
     socket.on('dinner:schedule-created', (schedule: DinnerSchedule) => {
+      if (!schedule) return
       set({ currentSchedule: schedule, MyAvailableDates: [], myUnavailableVotes: [] })
 
       // Toast 알림
@@ -98,6 +99,7 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
 
     // 일정 업데이트 (연결 시 초기 데이터 + 실시간 업데이트)
     socket.on('dinner:schedule-updated', (schedule: DinnerSchedule) => {
+      if (!schedule) return
       set({ currentSchedule: schedule })
       const { userHostName } = useUserStore.getState()
       const MyAvailableDates = schedule.candidates.filter((c) => c.availableVotes.includes(userHostName)).map((c) => c.date)
@@ -107,11 +109,13 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
 
     // 투표 현황 실시간 업데이트
     socket.on('dinner:vote-updated', (schedule: DinnerSchedule) => {
+      if (!schedule) return
       set({ currentSchedule: schedule })
     })
 
     // 일정 확정 알림
     socket.on('dinner:confirmed', (schedule: DinnerSchedule) => {
+      if (!schedule) return
       set({ currentSchedule: schedule })
 
       // Toast 알림
@@ -122,6 +126,7 @@ export const useDinnerStore = create<DinnerStore>((set) => ({
 
     // 에러 처리
     socket.on('dinner:error', (error: { message: string }) => {
+      if (!error) return
       console.error('[Dinner] 서버 오류:', error.message)
 
       // Toast 알림
