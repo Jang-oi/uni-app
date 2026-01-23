@@ -44,6 +44,7 @@ interface ElectronAPI {
   ) => () => void
   onUpdateDownloaded: (callback: (info: { version: string }) => void) => () => void
   onError: (callback: (error: { message: string }) => void) => () => void
+  onAppFocused: (callback: () => void) => () => void
 }
 
 interface Window {

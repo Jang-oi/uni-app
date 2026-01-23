@@ -12,23 +12,34 @@ import { useVersionStore } from '@/stores/version'
 
 export function ServerErrorPage() {
   const isListenerSet = useRef(false)
+  const isReconnectingRef = useRef(false)
   const [isReconnecting, setIsReconnecting] = useState(false)
 
-  // 버전 스토어에서 상태 가져오기
-  const currentVersion = useVersionStore((state) => state.currentVersion)
-  const isChecking = useVersionStore((state) => state.isChecking)
-  const updateAvailable = useVersionStore((state) => state.updateAvailable)
-  const availableVersion = useVersionStore((state) => state.availableVersion)
-  const isDownloading = useVersionStore((state) => state.isDownloading)
-  const downloadProgress = useVersionStore((state) => state.downloadProgress)
-  const isDownloaded = useVersionStore((state) => state.isDownloaded)
+  const {
+    currentVersion,
+    updateAvailable,
+    availableVersion,
+    isDownloading,
+    downloadProgress,
+    isDownloaded,
+    setIsChecking,
+    setUpdateAvailable,
+    setDownloadProgress,
+    setIsDownloading,
+    setIsDownloaded
+  } = useVersionStore()
 
-  // 버전 스토어 액션
-  const setIsChecking = useVersionStore((state) => state.setIsChecking)
-  const setUpdateAvailable = useVersionStore((state) => state.setUpdateAvailable)
-  const setDownloadProgress = useVersionStore((state) => state.setDownloadProgress)
-  const setIsDownloading = useVersionStore((state) => state.setIsDownloading)
-  const setIsDownloaded = useVersionStore((state) => state.setIsDownloaded)
+  // 재연결 함수
+  const handleReconnect = () => {
+    if (isReconnectingRef.current) return
+    isReconnectingRef.current = true
+    setIsReconnecting(true)
+
+    // 페이지 새로고침으로 재연결 시도
+    setTimeout(() => {
+      window.location.reload()
+    }, 500)
+  }
 
   // Electron 업데이트 이벤트 리스너 등록
   useEffect(() => {
@@ -42,7 +53,6 @@ export function ServerErrorPage() {
     })
     window.api.onUpdateNotAvailable(() => {
       setIsChecking(false)
-      toast.info('최신 버전을 이용 중입니다.', { id: 'upd-toast' })
     })
     window.api.onDownloadProgress((p) => setDownloadProgress(Math.round(p.percent)))
     window.api.onUpdateDownloaded(() => {
@@ -52,21 +62,21 @@ export function ServerErrorPage() {
     })
     window.api.onError((err) => {
       setIsChecking(false)
+      setIsDownloading(false)
       toast.error(`오류 발생: ${err.message}`, { id: 'upd-toast' })
     })
+
+    // 앱 포커스 시 자동 재연결 시도
+    window.api.onAppFocused(() => {
+      handleReconnect()
+    })
+
+    // 페이지 로드 시 자동으로 업데이트 확인
+    window.api.checkForUpdates()
   }, [setIsChecking, setUpdateAvailable, setDownloadProgress, setIsDownloading, setIsDownloaded])
 
-  const handleReconnect = () => {
-    setIsReconnecting(true)
-
-    // 페이지 새로고침으로 재연결 시도
-    setTimeout(() => {
-      window.location.reload()
-    }, 500)
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 p-8">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -103,7 +113,7 @@ export function ServerErrorPage() {
             {/* 오류 설명 */}
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <HugeiconsIcon icon={Message02Icon} className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <HugeiconsIcon icon={Message02Icon} className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
                 <div className="space-y-2 text-sm text-red-900">
                   <p className="font-semibold">다음 사항을 확인해주세요:</p>
                   <ul className="space-y-1 list-disc list-inside text-red-800">
@@ -133,48 +143,54 @@ export function ServerErrorPage() {
               </div>
             </div>
 
-            {/* 재연결 버튼 */}
+            {/* 재연결/업데이트 버튼 */}
             <div className="space-y-3">
-              <p className="text-sm text-slate-600 text-center">서버가 복구되었다면 재연결을 시도하거나, 업데이트를 확인해보세요.</p>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button onClick={handleReconnect} variant="outline" disabled={isReconnecting}>
-                  {isReconnecting ? (
-                    <>
-                      <HugeiconsIcon icon={Loading03Icon} className="w-4 h-4 mr-2 animate-spin" />
-                      재연결 중...
-                    </>
+              {updateAvailable ? (
+                // 업데이트 있을 때
+                <>
+                  <p className="text-sm text-slate-600 text-center">새 버전이 있습니다. 업데이트 후 다시 시도해주세요.</p>
+                  {!isDownloaded ? (
+                    <Button
+                      onClick={() => {
+                        setIsDownloading(true)
+                        window.api.downloadUpdate()
+                      }}
+                      disabled={isDownloading}
+                      className="w-full"
+                    >
+                      {isDownloading ? `다운로드 중... ${downloadProgress}%` : `v${availableVersion} 업데이트`}
+                    </Button>
                   ) : (
-                    '재연결 시도'
+                    <Button onClick={() => window.api.installUpdate()} className="w-full">
+                      설치 및 재시작
+                    </Button>
                   )}
-                </Button>
-
-                {!updateAvailable ? (
-                  <Button onClick={() => window.api.checkForUpdates()} disabled={isChecking} variant="outline">
-                    업데이트 확인
+                  {isDownloading && (
+                    <div className="space-y-1">
+                      <Progress value={downloadProgress} className="h-2" />
+                      <p className="text-xs text-slate-500 text-center">{downloadProgress}% 완료</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                // 업데이트 없을 때 - 재연결만
+                <>
+                  <p className="text-sm text-slate-600 text-center">
+                    서버가 복구되었다면 재연결을 시도해주세요.
+                    <br />
+                    <span className="text-xs text-slate-400">앱 포커스 시 자동으로 재연결을 시도합니다.</span>
+                  </p>
+                  <Button onClick={handleReconnect} disabled={isReconnecting} className="w-full">
+                    {isReconnecting ? (
+                      <>
+                        <HugeiconsIcon icon={Loading03Icon} className="w-4 h-4 mr-2 animate-spin" />
+                        재연결 중...
+                      </>
+                    ) : (
+                      '재연결 시도'
+                    )}
                   </Button>
-                ) : !isDownloaded ? (
-                  <Button
-                    onClick={() => {
-                      setIsDownloading(true)
-                      window.api.downloadUpdate()
-                    }}
-                    disabled={isDownloading}
-                  >
-                    {isDownloading ? `다운로드 중... ${downloadProgress}%` : '지금 업데이트'}
-                  </Button>
-                ) : (
-                  <Button onClick={() => window.api.installUpdate()} className="bg-emerald-600 hover:bg-emerald-700">
-                    설치 및 재시작
-                  </Button>
-                )}
-              </div>
-
-              {isDownloading && (
-                <div className="space-y-1">
-                  <Progress value={downloadProgress} className="h-2" />
-                  <p className="text-xs text-slate-500 text-center">{downloadProgress}% 완료</p>
-                </div>
+                </>
               )}
             </div>
 

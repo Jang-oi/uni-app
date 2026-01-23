@@ -94,6 +94,9 @@ declare global {
       ) => () => void
       onUpdateDownloaded: (callback: (info: { version: string }) => void) => () => void
       onError: (callback: (error: { message: string }) => void) => () => void
+
+      // 앱 포커스 이벤트
+      onAppFocused: (callback: () => void) => () => void
     }
   }
 }

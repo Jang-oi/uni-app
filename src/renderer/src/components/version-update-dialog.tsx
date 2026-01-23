@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useVersionStore } from '../stores/version'
+import { useVersionStore } from '@/stores/version'
 
 const SKIP_VERSION_KEY = 'skip-update-config'
 
@@ -116,10 +116,10 @@ export function VersionUpdateDialog() {
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="sm:max-w-[480px] overflow-hidden border-none shadow-2xl">
+      <DialogContent className="sm:max-w-120 overflow-hidden border-none shadow-2xl">
         <DialogHeader className="relative pb-4">
           <div className="flex items-center gap-4">
-            <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+            <div className="shrink-0 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
               {isDownloaded ? (
                 <HugeiconsIcon icon={Tick02Icon} className="w-8 h-8" />
               ) : isDownloading ? (
@@ -183,7 +183,7 @@ export function VersionUpdateDialog() {
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 업데이트 소식
               </h4>
-              <ScrollArea className="h-[280px] w-full rounded-lg border border-slate-100 bg-white p-3">
+              <ScrollArea className="h-70 w-full rounded-lg border border-slate-100 bg-white p-3">
                 <div className="space-y-4">
                   {history.map((release) => (
                     <div key={release.version} className="space-y-1.5">
@@ -194,7 +194,7 @@ export function VersionUpdateDialog() {
                       <ul className="space-y-1">
                         {release.changes.map((change, idx) => (
                           <li key={idx} className="text-[11px] text-slate-600 flex items-start gap-2 leading-relaxed">
-                            <span className="mt-1 flex-shrink-0 w-1 h-1 rounded-full bg-slate-300" />
+                            <span className="mt-1 shrink-0 w-1 h-1 rounded-full bg-slate-300" />
                             {change}
                           </li>
                         ))}
@@ -210,7 +210,7 @@ export function VersionUpdateDialog() {
         <div className="mt-6 space-y-4">
           {!isDownloading && !isDownloaded && (
             <div className="flex items-center gap-2 px-1">
-              <Checkbox id="skip-today" checked={skipForToday} onCheckedChange={(checked) => setSkipForToday(checked === true)} />
+              <Checkbox id="skip-today" checked={skipForToday} onCheckedChange={(checked) => setSkipForToday(checked)} />
               <label htmlFor="skip-today" className="text-xs font-medium text-slate-500 cursor-pointer select-none">
                 오늘 하루 동안 보지 않기
               </label>
@@ -228,10 +228,7 @@ export function VersionUpdateDialog() {
                 </Button>
               </>
             ) : (
-              <Button
-                onClick={handleInstall}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 h-12 text-base font-bold animate-pulse"
-              >
+              <Button onClick={handleInstall} className="w-full h-12 text-base font-bold animate-pulse">
                 설치 후 앱 재시작
               </Button>
             )}

@@ -45,6 +45,14 @@ function createWindow(): void {
     mainWindow?.show()
   })
 
+  // 앱이 포커스되거나 보여질 때 renderer에 알림 (서버 재연결용)
+  mainWindow.on('show', () => {
+    mainWindow?.webContents.send('app:focused')
+  })
+  mainWindow.on('focus', () => {
+    mainWindow?.webContents.send('app:focused')
+  })
+
   // 4. 창이 닫힐 때 종료되는 대신 트레이로 최소화되도록 설정
   mainWindow.on('close', (event) => {
     if (!isQuiting) {

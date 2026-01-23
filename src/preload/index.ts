@@ -65,6 +65,12 @@ const api = {
   onError: (callback: (error: { message: string }) => void) => {
     ipcRenderer.on('updater:error', (_event, error) => callback(error))
     return () => ipcRenderer.removeAllListeners('updater:error')
+  },
+
+  // 앱 포커스 이벤트 리스너
+  onAppFocused: (callback: () => void) => {
+    ipcRenderer.on('app:focused', callback)
+    return () => ipcRenderer.removeListener('app:focused', callback)
   }
 }
 
