@@ -63,6 +63,17 @@ export default function App() {
     initializeApp()
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') window.api.minimizeWindow()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
   if (isInitializing) return <LoadingScreen />
   if (connectionStatus === 'error' || connectionStatus === 'disconnected') return <ServerErrorPage />
 

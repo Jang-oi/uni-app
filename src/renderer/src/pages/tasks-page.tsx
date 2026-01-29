@@ -34,7 +34,7 @@ export function TasksPage() {
 
       <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'team' | 'personal')}>
         <div className="flex items-center justify-between mb-4">
-          <TabsList className="w-[400px] grid grid-cols-2">
+          <TabsList className="w-100 grid grid-cols-2">
             <TabsTrigger value="team">팀 전체 ({teamTasks.length}건)</TabsTrigger>
             <TabsTrigger value="personal">
               {userName} 매니저 ({personalTasks.length}건)

@@ -41,6 +41,9 @@ const api = {
   // HyperV VM 프로세스 종료
   killVMProcess: (args: { vmName: string }) => ipcRenderer.invoke('hyperv:kill-vm-process', args),
 
+  // 창 최소화
+  minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+
   // 업데이트 이벤트 리스너
   onChecking: (callback: () => void) => {
     ipcRenderer.on('updater:checking', callback)

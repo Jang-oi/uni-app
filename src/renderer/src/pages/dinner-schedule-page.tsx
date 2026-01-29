@@ -20,7 +20,7 @@ import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useDinnerStore } from '@/stores/dinner'
-import { useUserStore } from '../stores/user'
+import { useUserStore } from '@/stores/user'
 
 export function DinnerSchedulePage() {
   const { currentSchedule, MyAvailableDates, myUnavailableVotes, vote, confirmDate } = useDinnerStore()

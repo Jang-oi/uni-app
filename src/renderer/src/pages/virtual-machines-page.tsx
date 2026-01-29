@@ -12,14 +12,14 @@ import {
   type SortingState
 } from '@tanstack/react-table'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { VMRequestProgress } from '@/components/vm-request-progress'
-import { PageHeader } from '../components/page-header'
-import { ScrollArea } from '../components/ui/scroll-area'
-import { useHypervStore, type HypervVM } from '../stores/hyperv'
-import { useUserStore } from '../stores/user'
+import { useHypervStore, type HypervVM } from '@/stores/hyperv'
+import { useUserStore } from '@/stores/user'
 
 export function VirtualMachinesPage() {
   const vms = useHypervStore((state) => state.vms)
@@ -49,7 +49,7 @@ export function VirtualMachinesPage() {
       header: '상태',
       cell: ({ row }) => {
         const isConnected = row.getValue('isConnected') as boolean
-        return <div className={`font-medium ${isConnected ? 'text-primary' : 'text-slate-400'}`}>{isConnected ? '활성' : '대기'}</div>
+        return <div className={`font-medium ${isConnected ? 'text-primary' : 'text-slate-400'}`}>{isConnected ? '사용 중' : '대기'}</div>
       }
     },
     {
