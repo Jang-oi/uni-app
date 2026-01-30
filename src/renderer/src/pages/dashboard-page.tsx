@@ -1,9 +1,11 @@
-import { useEffect, useMemo } from 'react'
-import { ArrowRight01Icon, DashboardSquare03Icon, DocumentValidationIcon, TwitterIcon } from '@hugeicons/core-free-icons'
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowRight01Icon, DashboardSquare03Icon, DocumentValidationIcon, Search01Icon, TwitterIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { VersionUpdateDialog } from '@/components/version-update-dialog'
 import { VMRequestProgress } from '@/components/vm-request-progress'
@@ -14,11 +16,25 @@ import { useVersionStore } from '@/stores/version'
 import { openUniPost } from '@/util/util'
 
 export function DashboardPage() {
+  const [srNumber, setSrNumber] = useState('')
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const activeRequest = useHypervStore((state) => state.activeRequest)
   const cancelVMRequest = useHypervStore((state) => state.cancelVMRequest)
   const initVersion = useVersionStore((state) => state.initVersion)
+
+  const handleSearchSR = async () => {
+    if (srNumber.trim()) {
+      await openUniPost(srNumber.trim())
+      setSrNumber('')
+    }
+  }
+
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      await handleSearchSR()
+    }
+  }
 
   useEffect(() => {
     const initialize = async () => {
@@ -149,6 +165,29 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-1 flex flex-col gap-5">
+          <Card className="border-slate-200 shadow-none">
+            <div className="px-5 py-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <HugeiconsIcon icon={Search01Icon} size={16} className="text-primary" />
+                <span className="text-sm font-bold text-slate-800">접수번호 검색</span>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="relative flex gap-2">
+                <Input
+                  value={srNumber}
+                  onChange={(e) => setSrNumber(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="접수번호를 입력하세요"
+                  className="flex-1 text-sm"
+                />
+                <Button onClick={handleSearchSR} className="px-4">
+                  <HugeiconsIcon icon={Search01Icon} size={18} />
+                </Button>
+              </div>
+            </div>
+          </Card>
+
           <div className="flex-1">
             <Card className="h-full border-slate-200 shadow-none flex flex-col">
               <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
@@ -158,7 +197,7 @@ export function DashboardPage() {
                 </div>
                 <span className="text-xs text-slate-500">{todayVacations.length}명</span>
               </div>
-              <ScrollArea className="h-[calc(74vh-80px)]">
+              <ScrollArea className="h-[calc(56vh-80px)]">
                 <div className="py-4 px-2 space-y-2">
                   {todayVacations.length === 0 ? (
                     <div className="text-center py-8 text-slate-400">
