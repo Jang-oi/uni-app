@@ -50,10 +50,10 @@ export function VMResponseDialog() {
   if (dialogState.type === 'approved') {
     return (
       <Dialog open={dialogState.isOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-100">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-100 flex items-center justify-center">
                 <HugeiconsIcon icon={CheckmarkCircle02Icon} size={24} className="text-green-600" />
               </div>
               <div>
@@ -64,7 +64,7 @@ export function VMResponseDialog() {
           </DialogHeader>
 
           <div className="py-6 space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <div className="bg-green-50 border border-green-200 p-4 text-center">
               <p className="text-sm font-medium text-green-900 mb-2">{dialogState.approverName}님이 요청을 승인했습니다</p>
               <p className="text-xs text-green-700">접속하시겠습니까?</p>
             </div>
@@ -94,10 +94,10 @@ export function VMResponseDialog() {
   if (dialogState.type === 'rejected') {
     return (
       <Dialog open={dialogState.isOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-100">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-100 flex items-center justify-center">
                 <HugeiconsIcon icon={Cancel02Icon} size={24} className="text-red-600" />
               </div>
               <div>
@@ -108,7 +108,7 @@ export function VMResponseDialog() {
           </DialogHeader>
 
           <div className="py-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <div className="bg-red-50 border border-red-200 p-4 text-center">
               <p className="text-sm font-medium text-red-900 mb-1">사용자가 요청을 거부했습니다.</p>
               <p className="text-xs text-red-700">나중에 다시 시도해주세요.</p>
             </div>

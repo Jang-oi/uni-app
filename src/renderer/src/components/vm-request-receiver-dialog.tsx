@@ -55,10 +55,10 @@ export function VMRequestReceiverDialog() {
 
   return (
     <Dialog open={dialogState.isOpen}>
-      <DialogContent className="sm:max-w-[450px]">
+      <DialogContent className="sm:max-w-112.5">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary/10 flex items-center justify-center">
               <HugeiconsIcon icon={Notification02Icon} size={24} className="text-primary" />
             </div>
             <div>
@@ -69,7 +69,7 @@ export function VMRequestReceiverDialog() {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
+          <div className="p-4 border-2 border-primary/20 bg-primary/5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-700 mb-1">요청자</p>
@@ -81,7 +81,7 @@ export function VMRequestReceiverDialog() {
             </div>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div className="bg-amber-50 border border-amber-200 p-3">
             <p className="text-xs text-amber-900 mb-2">
               <strong>{dialogState.requesterName}님</strong>이 <strong>{dialogState.vmName}</strong> 사용을 요청했습니다.
             </p>

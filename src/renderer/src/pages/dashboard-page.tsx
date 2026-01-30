@@ -44,15 +44,26 @@ export function DashboardPage() {
   }, [eventsByDate, today])
 
   const filteredTasks = useMemo(() => {
-    return teamTasks.filter(
-      (task) => task.STATUS_CODE === 'N' || task.REQ_TITLE.includes('긴급') || (task.STATUS_CODE === 'A' && !task.WRITER)
-    )
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+    const oneMonthAgoStr = `${oneMonthAgo.getFullYear()}-${String(oneMonthAgo.getMonth() + 1).padStart(2, '0')}-${String(oneMonthAgo.getDate()).padStart(2, '0')}`
+
+    return teamTasks.filter((task) => {
+      const isOldTask = task.PROCESS_DATE && task.PROCESS_DATE <= oneMonthAgoStr
+      return task.STATUS_CODE === 'N' || task.REQ_TITLE.includes('긴급') || (task.STATUS_CODE === 'A' && !task.WRITER) || isOldTask
+    })
   }, [teamTasks])
 
   const getBadgeProps = (task) => {
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+    const oneMonthAgoStr = `${oneMonthAgo.getFullYear()}-${String(oneMonthAgo.getMonth() + 1).padStart(2, '0')}-${String(oneMonthAgo.getDate()).padStart(2, '0')}`
+    const isOldTask = task.PROCESS_DATE && task.PROCESS_DATE <= oneMonthAgoStr
+
     if (task.STATUS_CODE === 'N') return { variant: 'destructive', label: task.STATUS }
     if (task.REQ_TITLE.includes('긴급')) return { variant: 'secondary', label: '제목에 긴급 포함 건' }
     if (task.STATUS_CODE === 'A' && !task.WRITER) return { variant: 'default', label: task.STATUS }
+    if (isOldTask) return { variant: 'outline', label: '처리 1개월 이상' }
 
     return { variant: 'outline', label: task.STATUS } as any
   }
@@ -61,7 +72,7 @@ export function DashboardPage() {
     <div className="p-8 h-full flex flex-col bg-white">
       <PageHeader
         title="대시보드"
-        description="실시간 팀 현황 및 주요 지표를 요약하여 보여줍니다."
+        description="최근 6개월 업무와 팀원 휴가 현황을 한눈에 확인하세요."
         icon={<HugeiconsIcon icon={DashboardSquare03Icon} size={20} />}
         action={
           activeRequest ? (
@@ -77,10 +88,15 @@ export function DashboardPage() {
       <div className="flex-1 grid grid-cols-3 gap-5 min-h-0">
         <div className="col-span-2">
           <Card className="h-full border-slate-200 shadow-none overflow-hidden flex flex-col">
-            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <HugeiconsIcon icon={DocumentValidationIcon} size={16} className="text-primary" />
-                <span className="text-sm font-bold text-slate-800">업무 현황</span>
+            <div className="px-5 py-3 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={DocumentValidationIcon} size={16} className="text-primary" />
+                  <span className="text-sm font-bold text-slate-800">업무 현황</span>
+                </div>
+                <span className="text-xs text-slate-500">{filteredTasks.length}건</span>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
                 <Badge variant="default" className="h-5 text-[10px]">
                   접수 건
                 </Badge>
@@ -90,11 +106,13 @@ export function DashboardPage() {
                 <Badge variant="secondary" className="h-5 text-[10px]">
                   제목에 긴급 포함 건
                 </Badge>
+                <Badge variant="outline" className="h-5 text-[10px]">
+                  처리 1개월 이상
+                </Badge>
               </div>
-              <span className="text-xs text-slate-500">{filteredTasks.length}건</span>
             </div>
-            <ScrollArea className="h-[calc(80vh-80px)]">
-              <div className="p-4 space-y-3">
+            <ScrollArea className="h-[calc(74vh-80px)]">
+              <div className="px-4 space-y-2">
                 {filteredTasks.length === 0 ? (
                   <div className="text-center py-8 text-slate-400">
                     <p className="text-sm">긴급 업무가 없습니다.</p>
@@ -140,7 +158,7 @@ export function DashboardPage() {
                 </div>
                 <span className="text-xs text-slate-500">{todayVacations.length}명</span>
               </div>
-              <ScrollArea className="h-[calc(80vh-80px)]">
+              <ScrollArea className="h-[calc(74vh-80px)]">
                 <div className="py-4 px-2 space-y-2">
                   {todayVacations.length === 0 ? (
                     <div className="text-center py-8 text-slate-400">

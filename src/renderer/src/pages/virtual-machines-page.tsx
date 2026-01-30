@@ -134,7 +134,7 @@ export function VirtualMachinesPage() {
     <div className="p-8 h-full flex flex-col bg-white">
       <PageHeader
         title="HYPER-V"
-        description="팀에서 공용으로 사용하는 Hyper-V 인스턴스의 실시간 점유 상태입니다."
+        description="팀에서 사용하는 Hyper-V 실시간 점유 상태입니다."
         icon={<HugeiconsIcon icon={VirtualRealityVr01Icon} size={20} />}
         action={
           activeRequest ? (

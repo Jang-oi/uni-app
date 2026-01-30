@@ -28,7 +28,7 @@ export function TasksPage() {
     <div className="p-8 h-full flex flex-col bg-white">
       <PageHeader
         title="업무 관리"
-        description="고객사 요청 사항(SR) 및 팀 내부 태스크를 실시간으로 확인합니다."
+        description="최근 6개월 고객사 요청 사항을 실시간으로 확인합니다."
         icon={<HugeiconsIcon icon={Task01Icon} size={20} />}
       />
 

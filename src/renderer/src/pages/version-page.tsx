@@ -2,13 +2,13 @@ import { useEffect, useRef } from 'react'
 import { Alert01Icon, DeveloperIcon, PackageIcon, RefreshIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useVersionStore } from '@/stores/version'
-import { PageHeader } from '../components/page-header'
 
 export function VersionPage() {
   const isListenerSet = useRef(false)
@@ -83,7 +83,7 @@ export function VersionPage() {
                   업데이트 가능 (v{availableVersion})
                 </Badge>
               ) : (
-                <Badge className="bg-emerald-500 hover:bg-emerald-600 border-none">최신 버전</Badge>
+                <Badge className="border-none">최신 버전</Badge>
               )}
             </div>
           </CardContent>
@@ -138,7 +138,7 @@ export function VersionPage() {
               history.map((item, index) => (
                 <div key={item.version} className="relative">
                   <div
-                    className={`absolute -left-[41px] top-1.5 w-5 h-5 rounded-full bg-white border-4 ${index === 0 ? 'border-primary' : 'border-slate-200'}`}
+                    className={`absolute -left-10.25 top-1.5 w-5 h-5 rounded-full bg-white border-4 ${index === 0 ? 'border-primary' : 'border-slate-200'}`}
                   />
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-lg font-bold text-slate-900">v{item.version}</span>
