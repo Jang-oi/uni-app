@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { VMRequestProgress } from '@/components/vm-request-progress'
 import { useHypervStore, type HypervVM } from '@/stores/hyperv'
 import { useUserStore } from '@/stores/user'
+import { engTypeToKor } from '@/util/util'
 
 export function VirtualMachinesPage() {
   const vms = useHypervStore((state) => state.vms)
@@ -34,6 +35,21 @@ export function VirtualMachinesPage() {
     {
       accessorKey: 'vmName',
       header: 'VM 이름',
+      filterFn: (row, columnId, filterValue: string) => {
+        if (!filterValue) return true
+        const vmName = (row.getValue(columnId) as string).toLowerCase()
+        const searchLower = filterValue.toLowerCase()
+        const koreanSearch = engTypeToKor(filterValue).toLowerCase()
+        const aliases = row.original.aliases ?? []
+
+        return (
+          vmName.includes(searchLower) ||
+          aliases.some((alias) => {
+            const a = alias.toLowerCase()
+            return a.includes(searchLower) || a.includes(koreanSearch)
+          })
+        )
+      },
       cell: ({ row }) => <div className="font-medium">{row.getValue('vmName')}</div>
     },
     {

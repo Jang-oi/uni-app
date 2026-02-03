@@ -38,7 +38,7 @@ export function Header({ activeTab, setActiveTab }: HeaderProps) {
   return (
     <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 drag-region">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-6 bg-primary rounded-md flex items-center justify-center">
+        <div className="w-12 h-6 bg-primary flex items-center justify-center">
           <span className="text-white text-xs font-bold">구독4</span>
         </div>
       </div>

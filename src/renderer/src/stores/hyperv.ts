@@ -17,6 +17,7 @@ export interface HypervVM {
   currentHostname: string | null // 현재 사용자 hostname (Socket.io room 식별용)
   isConnected: boolean
   lastUpdate: string
+  aliases?: string[]
 }
 
 export interface VMRequestState {

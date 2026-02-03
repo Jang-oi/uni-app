@@ -221,7 +221,7 @@ function CandidateCard({
   return (
     <div
       className={cn(
-        'p-4 rounded-xl border-2 transition-all relative overflow-hidden',
+        'p-4 border-2 transition-all relative overflow-hidden',
         isConfirmed
           ? 'border-green-500 bg-green-50'
           : isHoliday || isUnavailable
