@@ -15,6 +15,7 @@ export interface TaskDisplayData {
   STATUS: string
   REQ_DATE_ALL: string
   STATUS_CODE: string
+  UNIDOCU_PART: string
 }
 
 export interface TaskAlert {

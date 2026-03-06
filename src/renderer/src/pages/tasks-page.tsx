@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Task01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { PageHeader } from '@/components/page-header'
@@ -7,17 +7,18 @@ import { TaskTable } from '@/components/TaskTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { TaskDisplayData } from '@/stores/task'
 import { useTaskStore } from '@/stores/task'
-import { useUserStore } from '@/stores/user'
+
+type TeamTab = '2팀' | '4팀' | '미지정'
 
 export function TasksPage() {
-  const [activeView, setActiveView] = useState<'team' | 'personal'>('team')
+  const [activeView, setActiveView] = useState<TeamTab>('4팀')
   const [selectedTask, setSelectedTask] = useState<TaskDisplayData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const teamTasks = useTaskStore((state) => state.teamTasks)
-  const memberTasks = useTaskStore((state) => state.memberTasks)
-  const userName = useUserStore((state) => state.userName)
-  const personalTasks = memberTasks[userName] || []
+  const team2Tasks = useMemo(() => teamTasks.filter((t) => t.UNIDOCU_PART === '2팀'), [teamTasks])
+  const team4Tasks = useMemo(() => teamTasks.filter((t) => t.UNIDOCU_PART === '4팀'), [teamTasks])
+  const unassignedTasks = useMemo(() => teamTasks.filter((t) => !t.UNIDOCU_PART), [teamTasks])
 
   const handleRequestClick = (task: TaskDisplayData) => {
     setSelectedTask(task)
@@ -32,22 +33,25 @@ export function TasksPage() {
         icon={<HugeiconsIcon icon={Task01Icon} size={20} />}
       />
 
-      <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'team' | 'personal')}>
+      <Tabs value={activeView} onValueChange={(value) => setActiveView(value as TeamTab)}>
         <div className="flex items-center justify-between mb-4">
-          <TabsList className="w-100 grid grid-cols-2">
-            <TabsTrigger value="team">팀 전체 ({teamTasks.length}건)</TabsTrigger>
-            <TabsTrigger value="personal">
-              {userName} 매니저 ({personalTasks.length}건)
-            </TabsTrigger>
+          <TabsList className="grid grid-cols-3 w-120">
+            <TabsTrigger value="4팀">4팀 전체 ({team4Tasks.length}건)</TabsTrigger>
+            <TabsTrigger value="2팀">2팀 전체 ({team2Tasks.length}건)</TabsTrigger>
+            <TabsTrigger value="미지정">미지정 ({unassignedTasks.length}건)</TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="team">
-          <TaskTable data={teamTasks} onRequestClick={handleRequestClick} />
+        <TabsContent value="4팀">
+          <TaskTable data={team4Tasks} onRequestClick={handleRequestClick} />
         </TabsContent>
 
-        <TabsContent value="personal">
-          <TaskTable data={personalTasks} onRequestClick={handleRequestClick} />
+        <TabsContent value="2팀">
+          <TaskTable data={team2Tasks} onRequestClick={handleRequestClick} />
+        </TabsContent>
+
+        <TabsContent value="미지정">
+          <TaskTable data={unassignedTasks} onRequestClick={handleRequestClick} />
         </TabsContent>
       </Tabs>
 

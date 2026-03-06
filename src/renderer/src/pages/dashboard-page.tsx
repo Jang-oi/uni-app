@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { VersionUpdateDialog } from '@/components/version-update-dialog'
 import { VMRequestProgress } from '@/components/vm-request-progress'
 import { useCalendarStore } from '@/stores/calendar'
@@ -15,8 +16,11 @@ import { useTaskStore } from '@/stores/task'
 import { useVersionStore } from '@/stores/version'
 import { openUniPost } from '@/util/util'
 
+type TeamTab = '2팀' | '4팀' | '미지정'
+
 export function DashboardPage() {
   const [srNumber, setSrNumber] = useState('')
+  const [teamTab, setTeamTab] = useState<TeamTab>('4팀')
   const eventsByDate = useCalendarStore((state) => state.eventsByDate)
   const teamTasks = useTaskStore((state) => state.teamTasks)
   const activeRequest = useHypervStore((state) => state.activeRequest)
@@ -59,7 +63,7 @@ export function DashboardPage() {
     })
   }, [eventsByDate, today])
 
-  const filteredTasks = useMemo(() => {
+  const urgentTasks = useMemo(() => {
     const oneMonthAgo = new Date()
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
     const oneMonthAgoStr = `${oneMonthAgo.getFullYear()}-${String(oneMonthAgo.getMonth() + 1).padStart(2, '0')}-${String(oneMonthAgo.getDate()).padStart(2, '0')}`
@@ -69,6 +73,10 @@ export function DashboardPage() {
       return task.STATUS_CODE === 'N' || task.REQ_TITLE.includes('긴급') || (task.STATUS_CODE === 'A' && !task.WRITER) || isOldTask
     })
   }, [teamTasks])
+
+  const team2Tasks = useMemo(() => urgentTasks.filter((t) => t.UNIDOCU_PART === '2팀'), [urgentTasks])
+  const team4Tasks = useMemo(() => urgentTasks.filter((t) => t.UNIDOCU_PART === '4팀'), [urgentTasks])
+  const unassignedTasks = useMemo(() => urgentTasks.filter((t) => !t.UNIDOCU_PART), [urgentTasks])
 
   const getBadgeProps = (task) => {
     const oneMonthAgo = new Date()
@@ -83,6 +91,42 @@ export function DashboardPage() {
 
     return { variant: 'outline', label: task.STATUS } as any
   }
+
+  const renderTaskList = (tasks: typeof urgentTasks) => (
+    <ScrollArea className="h-[calc(74vh-120px)]">
+      <div className="px-4 space-y-2">
+        {tasks.length === 0 ? (
+          <div className="text-center py-8 text-slate-400">
+            <p className="text-sm">긴급 업무가 없습니다.</p>
+          </div>
+        ) : (
+          tasks.map((task) => {
+            const { variant, label } = getBadgeProps(task)
+            return (
+              <div
+                key={task.SR_IDX}
+                onClick={() => openUniPost(task.SR_IDX)}
+                className="group flex items-center justify-between p-3 border transition-all cursor-pointer hover:bg-slate-50"
+              >
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <span className="text-[10px] font-bold text-primary uppercase truncate">{task.CM_NAME}</span>
+                  <span className="text-sm font-medium text-slate-900 truncate">{task.REQ_TITLE}</span>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                    <Badge variant={variant} className="h-4 text-[9px] px-1.5">
+                      {label}
+                    </Badge>
+                    <span>•</span>
+                    <span>{task.REQ_DATE}</span>
+                  </div>
+                </div>
+                <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4 text-slate-300 group-hover:text-red-500 ml-2" />
+              </div>
+            )
+          })
+        )}
+      </div>
+    </ScrollArea>
+  )
 
   return (
     <div className="p-8 h-full flex flex-col bg-white">
@@ -105,62 +149,47 @@ export function DashboardPage() {
         <div className="col-span-2">
           <Card className="h-full border-slate-200 shadow-none overflow-hidden flex flex-col">
             <div className="px-5 py-3 border-b border-slate-100">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <HugeiconsIcon icon={DocumentValidationIcon} size={16} className="text-primary" />
                   <span className="text-sm font-bold text-slate-800">업무 현황</span>
                 </div>
-                <span className="text-xs text-slate-500">{filteredTasks.length}건</span>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="default" className="h-5 text-[10px]">
-                  접수 건
-                </Badge>
-                <Badge variant="destructive" className="h-5 text-[10px]">
-                  고객사답변 건
-                </Badge>
-                <Badge variant="secondary" className="h-5 text-[10px]">
-                  제목에 긴급 포함 건
-                </Badge>
-                <Badge variant="outline" className="h-5 text-[10px]">
-                  처리 1개월 이상
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className="h-5 text-[10px]">
+                    접수 건
+                  </Badge>
+                  <Badge variant="destructive" className="h-5 text-[10px]">
+                    고객사답변 건
+                  </Badge>
+                  <Badge variant="secondary" className="h-5 text-[10px]">
+                    긴급 포함 건
+                  </Badge>
+                  <Badge variant="outline" className="h-5 text-[10px]">
+                    처리 1개월 이상
+                  </Badge>
+                </div>
               </div>
             </div>
-            <ScrollArea className="h-[calc(74vh-80px)]">
-              <div className="px-4 space-y-2">
-                {filteredTasks.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400">
-                    <p className="text-sm">긴급 업무가 없습니다.</p>
-                  </div>
-                ) : (
-                  filteredTasks.map((task) => {
-                    const { variant, label } = getBadgeProps(task)
 
-                    return (
-                      <div
-                        key={task.SR_IDX}
-                        onClick={() => openUniPost(task.SR_IDX)}
-                        className="group flex items-center justify-between p-3 border transition-all cursor-pointer hover:bg-slate-50"
-                      >
-                        <div className="flex flex-col gap-1 flex-1 min-w-0">
-                          <span className="text-[10px] font-bold text-primary uppercase truncate">{task.CM_NAME}</span>
-                          <span className="text-sm font-medium text-slate-900 truncate">{task.REQ_TITLE}</span>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                            <Badge variant={variant} className="h-4 text-[9px] px-1.5">
-                              {label}
-                            </Badge>
-                            <span>•</span>
-                            <span>{task.REQ_DATE}</span>
-                          </div>
-                        </div>
-                        <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4 text-slate-300 group-hover:text-red-500 ml-2" />
-                      </div>
-                    )
-                  })
-                )}
+            <Tabs value={teamTab} onValueChange={(v) => setTeamTab(v as TeamTab)} className="flex flex-col flex-1 min-h-0">
+              <div className="px-5 pt-3">
+                <TabsList className="grid grid-cols-3 w-full">
+                  <TabsTrigger value="4팀">4팀 ({team4Tasks.length}건)</TabsTrigger>
+                  <TabsTrigger value="2팀">2팀 ({team2Tasks.length}건)</TabsTrigger>
+                  <TabsTrigger value="미지정">미지정 ({unassignedTasks.length}건)</TabsTrigger>
+                </TabsList>
               </div>
-            </ScrollArea>
+
+              <TabsContent value="2팀" className="flex-1 mt-2">
+                {renderTaskList(team2Tasks)}
+              </TabsContent>
+              <TabsContent value="4팀" className="flex-1 mt-2">
+                {renderTaskList(team4Tasks)}
+              </TabsContent>
+              <TabsContent value="미지정" className="flex-1 mt-2">
+                {renderTaskList(unassignedTasks)}
+              </TabsContent>
+            </Tabs>
           </Card>
         </div>
 
