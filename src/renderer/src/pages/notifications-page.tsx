@@ -83,7 +83,6 @@ export function NotificationsPage() {
   const getTypeIcon = (type: string) => {
     if (type === 'task-check') return Tick02Icon
     if (type === 'task-support') return Message02Icon
-    if (type === 'dinner-confirmed') return Calendar03Icon
     return Notification02Icon
   }
 
@@ -91,7 +90,6 @@ export function NotificationsPage() {
     if (type === 'task-check') return '확인 요청'
     if (type === 'task-support') return '지원 요청'
     if (type === 'vm-request') return 'VM 요청'
-    if (type === 'dinner-confirmed') return '회식 확정'
     return '알림'
   }
 

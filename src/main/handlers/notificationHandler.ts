@@ -24,7 +24,7 @@ export function registerNotificationHandlers() {
         taskId?: string
         vmName?: string
         senderName?: string
-        notificationType?: 'task-check' | 'task-support' | 'vm-request' | 'vm-approved' | 'vm-rejected' | 'dinner-confirmed'
+        notificationType?: 'task-check' | 'task-support' | 'vm-request' | 'vm-approved' | 'vm-rejected'
       }
     ) => {
       try {

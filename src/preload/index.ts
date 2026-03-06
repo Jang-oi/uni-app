@@ -17,16 +17,7 @@ const api = {
     body: string
     taskId?: string
     vmName?: string
-    notificationType?:
-      | 'task-check'
-      | 'task-support'
-      | 'vm-request'
-      | 'vm-approved'
-      | 'vm-rejected'
-      | 'dinner-voting'
-      | 'dinner-confirmed'
-      | 'dinner-deadline'
-      | 'error'
+    notificationType?: 'task-check' | 'task-support' | 'vm-request' | 'vm-approved' | 'vm-rejected' | 'error'
   }) => ipcRenderer.invoke('notification:show', args),
 
   // 배지 카운트 설정

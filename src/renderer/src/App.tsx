@@ -5,14 +5,12 @@ import { LoadingScreen } from '@/components/loading-screen'
 import { Toaster } from '@/components/ui/sonner'
 import { VMResponseDialog } from '@/components/vm-response-dialog'
 import { DashboardPage } from '@/pages/dashboard-page'
-import { DinnerSchedulePage } from '@/pages/dinner-schedule-page'
 import { NotificationsPage } from '@/pages/notifications-page'
 import { ServerErrorPage } from '@/pages/server-error-page'
 import { TasksPage } from '@/pages/tasks-page'
 import { VersionPage } from '@/pages/version-page'
 import { VirtualMachinesPage } from '@/pages/virtual-machines-page'
 import { useCalendarStore } from '@/stores/calendar'
-import { useDinnerStore } from '@/stores/dinner'
 import { useHypervStore } from '@/stores/hyperv'
 import { useNotificationStore } from '@/stores/notification'
 import { useSocketStore } from '@/stores/socket'
@@ -30,7 +28,6 @@ export default function App() {
   const initCalendarListeners = useCalendarStore((state) => state.initListeners)
   const initTaskListeners = useTaskStore((state) => state.initListeners)
   const initUserListeners = useUserStore((state) => state.initListeners)
-  const initDinnerListeners = useDinnerStore((state) => state.initListeners)
   const initHypervListeners = useHypervStore((state) => state.initListeners)
   const initNotificationListeners = useNotificationStore((state) => state.initListeners)
   const initVersion = useVersionStore((state) => state.initVersion)
@@ -45,7 +42,6 @@ export default function App() {
         // 2. 각 스토어의 이벤트 리스너 등록
         initCalendarListeners()
         initTaskListeners()
-        initDinnerListeners()
         initHypervListeners()
         initNotificationListeners()
 
@@ -83,8 +79,6 @@ export default function App() {
         return <DashboardPage key="dashboard" />
       case '업무':
         return <TasksPage key="tasks" />
-      case '회식일정':
-        return <DinnerSchedulePage key="dinner" />
       case 'HYPER-V':
         return <VirtualMachinesPage key="vm" />
       case '알림':

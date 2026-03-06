@@ -7,7 +7,7 @@ import { useHypervStore } from './hyperv'
 import { useSocketStore } from './socket'
 import { useUserStore } from './user'
 
-type NotificationType = 'task-check' | 'task-support' | 'vm-request' | 'dinner-confirmed'
+type NotificationType = 'task-check' | 'task-support' | 'vm-request'
 
 export interface Notification {
   id: string
